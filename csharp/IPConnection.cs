@@ -1284,9 +1284,7 @@ namespace Tinkerforge
 		///  the position, the hardware and firmware version as well as the
 		///  device identifier.
 		/// </summary>
-		public abstract void GetIdentity(out string uid, out string connectedUid, out char position,
-		                                 out byte[] hardwareVersion, out byte[] firmwareVersion,
-		                                 out int deviceIdentifier);
+		public abstract (string Uid, string ConnectedUid, char Position, byte[] HardwareVersion, byte[] FirmwareVersion, int DeviceIdentifier) GetIdentity();
 
 		internal byte[] CreateRequestPacket(byte length, byte fid)
 		{
