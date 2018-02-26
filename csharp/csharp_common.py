@@ -35,16 +35,18 @@ class CSharpDevice(common.Device):
         return self.get_category().camel + self.get_name().camel
 
 class CSharpPacket(common.Packet):
-    def get_csharp_parameters(self, context='signature', high_level=False, callback_wrapper=False):
+    def get_csharp_parameters(self, context='signature', high_level=False, callback_wrapper=False, exclude_out=False):
         parameters = []
-        in_count = len(self.get_elements(direction='in', high_level=high_level))
-
-        if in_count == 0:
-            return ''
+        out_count = len(self.get_elements(direction='out', high_level=high_level))
 
         for element in self.get_elements(high_level=high_level):
-            if element.get_direction() == 'out' and self.get_type() == 'function':
-                continue
+             if element.get_direction() == 'out' and self.get_type() == 'function':
+                if out_count == 1 or exclude_out:
+                    continue
+                else:
+                    out = 'out '
+            else:
+                out = ''
 
             if context == 'call':
                 csharp_type = ''
@@ -72,7 +74,7 @@ class CSharpPacket(common.Packet):
         ret_parameters = []
         sig_format = "public {4}{0} {1}{2}({3})"
         ret_count = len(self.get_elements(direction='out', high_level=high_level))
-        params = self.get_csharp_parameters(high_level=high_level)
+        params = self.get_csharp_parameters(high_level=high_level, exclude_out=True) #exclude out parameters
         return_type = 'void'
 
         if ret_count == 1:
