@@ -68,10 +68,7 @@ class CSharpPacket(common.Packet):
 
         for element in elements:
             parameter_type = element.get_csharp_type() + ' '
-            if camel_case:
-                name = element.get_name().camel
-            else:
-                name = element.get_name()
+            name = element.get_name().camel if camel_case else element.get_name().headless
             parameters.append(''.join([parameter_type, name]))
 
         return ', '.join(parameters)
