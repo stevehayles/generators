@@ -805,7 +805,7 @@ namespace Tinkerforge
 			{stream_length_type} {stream_name_headless}Length;
 			{chunk_data_type} {stream_name_headless}Data = {chunk_data_new};
 
-			{function_name}LowLevel({parameters});
+            ({ret_parameters}) = {function_name}LowLevel({parameters});
 
 			{stream_name_headless} = {stream_data_new};
 
