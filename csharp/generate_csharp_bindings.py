@@ -748,7 +748,7 @@ namespace Tinkerforge
 
 			lock (streamLock)
 			{{{extra_default}
-				{function_name}LowLevel({parameters});
+				({ret_parameters}) = {function_name}LowLevel({parameters});
 
 				{chunk_offset_check}{stream_name_headless}OutOfSync = {stream_name_headless}ChunkOffset != 0;{chunk_offset_check_end}
 
@@ -762,7 +762,7 @@ namespace Tinkerforge
 
 					while ({stream_name_headless}CurrentLength < {stream_name_headless}Length)
 					{{
-						{function_name}LowLevel({parameters});
+                        ({ret_parameters}) = {function_name}LowLevel({parameters});
 
 						{stream_name_headless}OutOfSync = {stream_name_headless}ChunkOffset != {stream_name_headless}CurrentLength;
 
@@ -782,7 +782,7 @@ namespace Tinkerforge
 					// discard remaining stream to bring it back in-sync
 					while ({stream_name_headless}ChunkOffset + {chunk_cardinality} < {stream_name_headless}Length)
 					{{
-						{function_name}LowLevel({parameters});
+                        ({ret_parameters}) = {function_name}LowLevel({parameters});
 					}}
 
 					throw new StreamOutOfSyncException("{stream_name_space} is out-of-sync");
@@ -865,6 +865,8 @@ namespace Tinkerforge
                     if element.get_role() == None:
                         extra_default += '\t\t\t\t{0} = {1}; // stop the compiler from wrongly complaining that this variable is used unassigned\n' \
                                           .format(element.get_name().headless, element.get_csharp_default_value())
+                
+                all_parameters = packet.get_csharp_parameters(context='call', csharp7=True)
 
                 methods += template.format(doc=packet.get_csharp_formatted_doc(),
                                            function_name=packet.get_name(skip=-2).camel,
@@ -874,7 +876,8 @@ namespace Tinkerforge
                                            result_return=result_return,
                                            result_single_return=result_single_return,
                                            high_level_parameters=packet.get_csharp_parameters(high_level=True),
-                                           parameters=packet.get_csharp_parameters(context='call'),
+                                           parameters=all_parameters[0],
+                                           ret_parameters=all_parameters[1],
                                            stream_name_space=stream_in.get_name().space,
                                            stream_name_headless=stream_in.get_name().headless,
                                            stream_length_type=stream_length_type,
