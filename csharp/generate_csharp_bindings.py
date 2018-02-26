@@ -484,6 +484,7 @@ namespace Tinkerforge
 {0}"""
 
         for packet in self.get_packets('function'):
+            ret_parameters = [] 
             ret_count = len(packet.get_elements(direction='out'))
             size = str(packet.get_request_size())
             name_upper = packet.get_name().upper
@@ -540,10 +541,10 @@ namespace Tinkerforge
 
             method_tail = ''
             read_convs = ''
-            read_conv = '\n\t\t\t{0} = LEConverter.{1}({2}, response{3});'
+            read_conv = '\n\t\t\tvar {0} = LEConverter.{1}({2}, response{3});'
             read_conv_bool_array = """\n			byte[] {0} = new byte[{1}];
 			{4} = new bool[{3}];
-			{0} = LEConverter.ByteArrayFrom({2}, response, {1});
+			var {0} = LEConverter.ByteArrayFrom({2}, response, {1});
 			for (int i = 0; i < {3}; i++) {{
 				{4}[i] = ({0}[i / 8] & (1 << (i % 8))) != 0;
 			}}"""
@@ -570,11 +571,15 @@ namespace Tinkerforge
                                                                   aname)
                     else:
                         read_convs += read_conv.format(aname, from_method, pos, length)
+                
+                    ret_parameters.append(aname)
 
                 pos += element.get_size()
 
             if ret_count > 0:
                 method_tail = template_response.format(read_convs)
+                if len(ret_parameters) > 1:
+                    method_tail += '\n\n\t\t\treturn (' + ', '.join(ret_parameters) + ');'
             else:
                 method_tail = template_noresponse
 

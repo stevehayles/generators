@@ -37,16 +37,14 @@ class CSharpDevice(common.Device):
 class CSharpPacket(common.Packet):
     def get_csharp_parameters(self, context='signature', high_level=False, callback_wrapper=False):
         parameters = []
-        out_count = len(self.get_elements(direction='out', high_level=high_level))
+        in_count = len(self.get_elements(direction='in', high_level=high_level))
+
+        if in_count == 0:
+            return ''
 
         for element in self.get_elements(high_level=high_level):
             if element.get_direction() == 'out' and self.get_type() == 'function':
-                if out_count == 1:
-                    continue
-                else:
-                    out = 'out '
-            else:
-                out = ''
+                continue
 
             if context == 'call':
                 csharp_type = ''
@@ -58,7 +56,7 @@ class CSharpPacket(common.Packet):
             else:
                 name = element.get_name().headless
 
-            parameters.append(''.join([out, csharp_type, name]))
+            parameters.append(''.join([csharp_type, name]))
 
         return ', '.join(parameters)
 
@@ -71,6 +69,7 @@ class CSharpPacket(common.Packet):
             return None
 
     def get_csharp_method_signature(self, print_full_name=False, is_doc=False, high_level=False):
+        ret_parameters = []
         sig_format = "public {4}{0} {1}{2}({3})"
         ret_count = len(self.get_elements(direction='out', high_level=high_level))
         params = self.get_csharp_parameters(high_level=high_level)
@@ -78,6 +77,12 @@ class CSharpPacket(common.Packet):
 
         if ret_count == 1:
             return_type = self.get_elements(direction='out', high_level=high_level)[0].get_csharp_type()
+        elif ret_count > 1:
+            for element in self.get_elements(direction='out', high_level=high_level):
+                parameter_type = element.get_csharp_type() + ' '
+                name = element.get_name().camel
+                ret_parameters.append(''.join([parameter_type, name]))
+            return_type = '(' + ', '.join(ret_parameters) + ')'
 
         class_prefix = ''
 
