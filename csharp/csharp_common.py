@@ -39,19 +39,21 @@ class CSharpPacket(common.Packet):
     def get_csharp_parameters(self, context='signature', high_level=False, callback_wrapper=False):
         parameters = []
 
-        for element in self.get_elements(direction='in', high_level=high_level):
-            if self.get_type() == 'function':
-                if context == 'call':
-                    csharp_type = ''
-                else: # signature
-                    csharp_type = element.get_csharp_type() + ' '
+        for element in self.get_elements(high_level=high_level):
+            if element.get_direction() == 'out' and not self.get_type() == 'callback':
+                continue # if it's an out parameter only proceed if it's a callback
 
-                if high_level and callback_wrapper and element.get_level() == 'high' and element.get_role() == 'stream_data':
-                    name = '({0})highLevelCallback.data'.format(element.get_csharp_type())
-                else:
-                    name = element.get_name().headless
+            if context == 'call':
+                csharp_type = ''
+            else: # signature
+                csharp_type = element.get_csharp_type() + ' '
 
-                parameters.append(''.join([csharp_type, name]))
+            if high_level and callback_wrapper and element.get_level() == 'high' and element.get_role() == 'stream_data':
+                name = '({0})highLevelCallback.data'.format(element.get_csharp_type())
+            else:
+                name = element.get_name().headless
+
+            parameters.append(''.join([csharp_type, name]))
 
         return ', '.join(parameters)
 

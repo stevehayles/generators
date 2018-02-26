@@ -748,7 +748,7 @@ namespace Tinkerforge
 
 			lock (streamLock)
 			{{{extra_default}
-				({ret_parameters}) = {function_name}LowLevel({parameters});
+				({return_parameters}) = {function_name}LowLevel({parameters});
 
 				{chunk_offset_check}{stream_name_headless}OutOfSync = {stream_name_headless}ChunkOffset != 0;{chunk_offset_check_end}
 
@@ -762,7 +762,7 @@ namespace Tinkerforge
 
 					while ({stream_name_headless}CurrentLength < {stream_name_headless}Length)
 					{{
-                        ({ret_parameters}) = {function_name}LowLevel({parameters});
+                        ({return_parameters}) = {function_name}LowLevel({parameters});
 
 						{stream_name_headless}OutOfSync = {stream_name_headless}ChunkOffset != {stream_name_headless}CurrentLength;
 
@@ -782,7 +782,7 @@ namespace Tinkerforge
 					// discard remaining stream to bring it back in-sync
 					while ({stream_name_headless}ChunkOffset + {chunk_cardinality} < {stream_name_headless}Length)
 					{{
-                        ({ret_parameters}) = {function_name}LowLevel({parameters});
+                        ({return_parameters}) = {function_name}LowLevel({parameters});
 					}}
 
 					throw new StreamOutOfSyncException("{stream_name_space} is out-of-sync");
@@ -805,7 +805,7 @@ namespace Tinkerforge
 			{stream_length_type} {stream_name_headless}Length;
 			{chunk_data_type} {stream_name_headless}Data = {chunk_data_new};
 
-            ({ret_parameters}) = {function_name}LowLevel({parameters});
+            ({return_parameters}) = {function_name}LowLevel({parameters});
 
 			{stream_name_headless} = {stream_data_new};
 
@@ -875,7 +875,7 @@ namespace Tinkerforge
                                            result_single_return=result_single_return,
                                            high_level_parameters=packet.get_csharp_parameters(high_level=True),
                                            parameters=packet.get_csharp_parameters(context='call'),
-                                           ret_parameters=packet.get_csharp_return_parameters(),
+                                           return_parameters=packet.get_csharp_return_parameters(),
                                            stream_name_space=stream_in.get_name().space,
                                            stream_name_headless=stream_in.get_name().headless,
                                            stream_length_type=stream_length_type,
@@ -938,7 +938,7 @@ namespace Tinkerforge
                                            result_return=result_return,
                                            high_level_parameters=packet.get_csharp_parameters(high_level=True),
                                            parameters=packet.get_csharp_parameters(context='call'),
-                                           ret_parameters=packet.get_csharp_return_parameters(),
+                                           return_parameters=packet.get_csharp_return_parameters(),
                                            stream_name_space=stream_out.get_name().space,
                                            stream_name_headless=stream_out.get_name().headless,
                                            stream_length_type=stream_length_type,
