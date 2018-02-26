@@ -69,7 +69,7 @@ class CSharpPacket(common.Packet):
             name = element.get_name().camel
             parameters.append(''.join([parameter_type, name]))
 
-        return '(' + ', '.join(ret_parameters) + ')'
+        return '(' + ', '.join(parameters) + ')'
 
     def get_csharp_return_element(self, high_level=False):
         elements = self.get_elements(direction='out', high_level=high_level)
