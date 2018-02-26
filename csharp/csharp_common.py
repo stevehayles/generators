@@ -35,13 +35,13 @@ class CSharpDevice(common.Device):
         return self.get_category().camel + self.get_name().camel
 
 class CSharpPacket(common.Packet):
-    def get_csharp_parameters(self, context='signature', high_level=False, callback_wrapper=False, exclude_out=False):
+    def get_csharp_parameters(self, context='signature', high_level=False, callback_wrapper=False, csharp7=False):
         parameters = []
         out_count = len(self.get_elements(direction='out', high_level=high_level))
 
         for element in self.get_elements(high_level=high_level):
             if element.get_direction() == 'out' and self.get_type() == 'function':
-                if out_count == 1 or exclude_out:
+                if out_count == 1:
                     continue
                 else:
                     out = 'out '
@@ -58,9 +58,14 @@ class CSharpPacket(common.Packet):
             else:
                 name = element.get_name().headless
 
-            parameters.append(''.join([csharp_type, name]))
+            parameters.append(''.join([out, csharp_type, name]))
 
-        return ', '.join(parameters)
+        if not csharp7:
+            return ', '.join(parameters)
+        else:
+            ret_parameters = filter(lambda x: 'out ' not in x , parameters)
+            out_parameters = filter(lambda x: 'out ' in x , parameters)
+            return ret_parameters, map(lambda x: re.sub(r'out ', '', x) , out_parameters)
 
     def get_csharp_return_element(self, high_level=False):
         elements = self.get_elements(direction='out', high_level=high_level)
@@ -74,7 +79,7 @@ class CSharpPacket(common.Packet):
         ret_parameters = []
         sig_format = "public {4}{0} {1}{2}({3})"
         ret_count = len(self.get_elements(direction='out', high_level=high_level))
-        params = self.get_csharp_parameters(high_level=high_level, exclude_out=True) #exclude out parameters
+        params = self.get_csharp_parameters(high_level=high_level, csharp7=True)
         return_type = 'void'
 
         if ret_count == 1:
