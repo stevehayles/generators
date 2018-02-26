@@ -307,12 +307,8 @@ namespace Tinkerforge
 		/// <summary>
 		/// </summary>
 		protected void On{0}Callback(byte[] response)
-		{{{1}{3}			var handler = {0}Callback;
-
-			if (handler != null)
-			{{
-				handler(this{2});
-			}}
+		{{{1}{3}
+            {0}Callback?.Invoke(this{2})
 		}}
 """
         template_stream_out = """			HighLevelCallback highLevelCallback = highLevelCallbacks[-CALLBACK_{callback_name}];
