@@ -64,10 +64,10 @@ class CSharpPacket(common.Packet):
         if len(elements) == 0:
             return 'void'
         elif len(elements) == 1:
-            return elements[0].get_csharp_type() + ' '
+            return elements[0].get_csharp_type()
 
         for element in elements:
-            parameter_type = element.get_csharp_type()
+            parameter_type = element.get_csharp_type() + ' '
             name = element.get_name().camel
             parameters.append(''.join([parameter_type, name]))
 
