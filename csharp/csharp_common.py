@@ -61,12 +61,12 @@ class CSharpPacket(common.Packet):
 
             parameters.append(''.join([out, csharp_type, name]))
 
-        if not csharp7:
+        if not csharp7: # pre csharp7 we return standard out parameters
             return ', '.join(parameters)
-        else:
-            ret_parameters = filter(lambda x: 'out ' not in x , parameters)
+        else: # csharp 7 on we pass the parameters and return types (for tuple return style methods)
+            in_parameters = filter(lambda x: 'out ' not in x , parameters)
             out_parameters = filter(lambda x: 'out ' in x , parameters)
-            return ret_parameters, map(lambda x: re.sub(r'out ', '', x) , out_parameters)
+            return ', '.join(in_parameters), ', '.join(map(lambda x: re.sub(r'out ', '', x) , out_parameters))
 
     def get_csharp_return_element(self, high_level=False):
         elements = self.get_elements(direction='out', high_level=high_level)
