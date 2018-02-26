@@ -36,37 +36,40 @@ class CSharpDevice(common.Device):
         return self.get_category().camel + self.get_name().camel
 
 class CSharpPacket(common.Packet):
-    def get_csharp_parameters(self, context='signature', high_level=False, callback_wrapper=False, csharp7=False):
+    def get_csharp_parameters(self, context='signature', high_level=False, callback_wrapper=False):
         parameters = []
-        out_count = len(self.get_elements(direction='out', high_level=high_level))
 
-        for element in self.get_elements(high_level=high_level):
-            if element.get_direction() == 'out' and self.get_type() == 'function':
-                if out_count == 1:
-                    continue
+        for element in self.get_elements(direction='in', high_level=high_level):
+            if self.get_type() == 'function':
+                if context == 'call':
+                    csharp_type = ''
+                else: # signature
+                    csharp_type = element.get_csharp_type() + ' '
+
+                if high_level and callback_wrapper and element.get_level() == 'high' and element.get_role() == 'stream_data':
+                    name = '({0})highLevelCallback.data'.format(element.get_csharp_type())
                 else:
-                    out = 'out '
-            else:
-                out = ''
+                    name = element.get_name().headless
 
-            if context == 'call':
-                csharp_type = ''
-            else: # signature
-                csharp_type = element.get_csharp_type() + ' '
+                parameters.append(''.join([csharp_type, name]))
 
-            if high_level and callback_wrapper and element.get_level() == 'high' and element.get_role() == 'stream_data':
-                name = '({0})highLevelCallback.data'.format(element.get_csharp_type())
-            else:
-                name = element.get_name().headless
+        return ', '.join(parameters)
 
-            parameters.append(''.join([out, csharp_type, name]))
+    def get_csharp_return_parameters(self, high_level=False)
+        parameters=[]
+        elements = self.get_elements(direction='out', high_level=high_level)
 
-        if not csharp7: # pre csharp7 we return standard out parameters
-            return ', '.join(parameters)
-        else: # csharp 7 on we pass the parameters and return types (for tuple return style methods)
-            in_parameters = filter(lambda x: 'out ' not in x , parameters)
-            out_parameters = filter(lambda x: 'out ' in x , parameters)
-            return ', '.join(in_parameters), ', '.join(map(lambda x: re.sub(r'out ', '', x) , out_parameters))
+        if len(elements) == 0:
+            return 'void'
+        elif len(elements) == 1:
+            return elements[0].get_csharp_type() + ' '
+
+        for element in elements:
+            parameter_type = element.get_csharp_type()
+            name = element.get_name().camel
+            parameters.append(''.join([parameter_type, name]))
+
+        return '(' + ', '.join(ret_parameters) + ')'
 
     def get_csharp_return_element(self, high_level=False):
         elements = self.get_elements(direction='out', high_level=high_level)
@@ -77,20 +80,9 @@ class CSharpPacket(common.Packet):
             return None
 
     def get_csharp_method_signature(self, print_full_name=False, is_doc=False, high_level=False):
-        ret_parameters = []
         sig_format = "public {4}{0} {1}{2}({3})"
-        ret_count = len(self.get_elements(direction='out', high_level=high_level))
-        params = self.get_csharp_parameters(high_level=high_level, csharp7=True)[0]
-        return_type = 'void'
-
-        if ret_count == 1:
-            return_type = self.get_elements(direction='out', high_level=high_level)[0].get_csharp_type()
-        elif ret_count > 1:
-            for element in self.get_elements(direction='out', high_level=high_level):
-                parameter_type = element.get_csharp_type() + ' '
-                name = element.get_name().camel
-                ret_parameters.append(''.join([parameter_type, name]))
-            return_type = '(' + ', '.join(ret_parameters) + ')'
+        params = self.get_csharp_parameters(high_level=high_level)
+        return_type = get_csharp_return_parameters(high_level=high_level)
 
         class_prefix = ''
 
