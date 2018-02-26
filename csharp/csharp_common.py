@@ -55,7 +55,7 @@ class CSharpPacket(common.Packet):
 
         return ', '.join(parameters)
 
-    def get_csharp_return_parameters(self, high_level=False)
+    def get_csharp_return_parameters(self, high_level=False):
         parameters=[]
         elements = self.get_elements(direction='out', high_level=high_level)
 
