@@ -82,7 +82,7 @@ class CSharpPacket(common.Packet):
     def get_csharp_method_signature(self, print_full_name=False, is_doc=False, high_level=False):
         sig_format = "public {4}{0} {1}{2}({3})"
         params = self.get_csharp_parameters(high_level=high_level)
-        return_type = get_csharp_return_parameters(high_level=high_level)
+        return_type = self.get_csharp_return_parameters(high_level=high_level)
 
         class_prefix = ''
 
