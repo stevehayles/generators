@@ -80,7 +80,7 @@ class CSharpPacket(common.Packet):
         ret_parameters = []
         sig_format = "public {4}{0} {1}{2}({3})"
         ret_count = len(self.get_elements(direction='out', high_level=high_level))
-        params = self.get_csharp_parameters(high_level=high_level, csharp7=True)
+        params = self.get_csharp_parameters(high_level=high_level, csharp7=True)[0]
         return_type = 'void'
 
         if ret_count == 1:
