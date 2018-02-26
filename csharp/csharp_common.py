@@ -40,7 +40,7 @@ class CSharpPacket(common.Packet):
         out_count = len(self.get_elements(direction='out', high_level=high_level))
 
         for element in self.get_elements(high_level=high_level):
-             if element.get_direction() == 'out' and self.get_type() == 'function':
+            if element.get_direction() == 'out' and self.get_type() == 'function':
                 if out_count == 1 or exclude_out:
                     continue
                 else:
