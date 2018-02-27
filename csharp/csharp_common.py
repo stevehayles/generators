@@ -57,7 +57,7 @@ class CSharpPacket(common.Packet):
 
         return ', '.join(parameters)
 
-    def get_csharp_return_parameters(self, high_level=False, camel_case=False):
+    def get_csharp_return_parameters(self, high_level=False, camel_case=False, exclude_type=False):
         parameters=[]
         elements = self.get_elements(direction='out', high_level=high_level)
 
@@ -67,7 +67,7 @@ class CSharpPacket(common.Packet):
             return elements[0].get_csharp_type()
 
         for element in elements:
-            parameter_type = element.get_csharp_type() + ' '
+            parameter_type = '' if exclude_type else element.get_csharp_type() + ' '
             name = element.get_name().camel if camel_case else element.get_name().headless
             parameters.append(''.join([parameter_type, name]))
 
