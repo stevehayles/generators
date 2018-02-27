@@ -748,7 +748,7 @@ namespace Tinkerforge
 
 			lock (streamLock)
 			{{{extra_default}
-				({return_parameters}) = {function_name}LowLevel({parameters});
+				{return_parameters} = {function_name}LowLevel({parameters});
 
 				{chunk_offset_check}{stream_name_headless}OutOfSync = {stream_name_headless}ChunkOffset != 0;{chunk_offset_check_end}
 
@@ -762,7 +762,7 @@ namespace Tinkerforge
 
 					while ({stream_name_headless}CurrentLength < {stream_name_headless}Length)
 					{{
-                        ({return_parameters}) = {function_name}LowLevel({parameters});
+                        {return_parameters} = {function_name}LowLevel({parameters});
 
 						{stream_name_headless}OutOfSync = {stream_name_headless}ChunkOffset != {stream_name_headless}CurrentLength;
 
@@ -782,7 +782,7 @@ namespace Tinkerforge
 					// discard remaining stream to bring it back in-sync
 					while ({stream_name_headless}ChunkOffset + {chunk_cardinality} < {stream_name_headless}Length)
 					{{
-                        ({return_parameters}) = {function_name}LowLevel({parameters});
+                        {return_parameters} = {function_name}LowLevel({parameters});
 					}}
 
 					throw new StreamOutOfSyncException("{stream_name_space} is out-of-sync");
@@ -805,7 +805,7 @@ namespace Tinkerforge
 			{stream_length_type} {stream_name_headless}Length;
 			{chunk_data_type} {stream_name_headless}Data = {chunk_data_new};
 
-            ({return_parameters}) = {function_name}LowLevel({parameters});
+            {return_parameters} = {function_name}LowLevel({parameters});
 
 			{stream_name_headless} = {stream_data_new};
 

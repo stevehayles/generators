@@ -71,7 +71,7 @@ class CSharpPacket(common.Packet):
             name = element.get_name().camel if camel_case else element.get_name().headless
             parameters.append(''.join([parameter_type, name]))
 
-        return ', '.join(parameters)
+        return '(' + ', '.join(parameters) + ')'
 
     def get_csharp_return_element(self, high_level=False):
         elements = self.get_elements(direction='out', high_level=high_level)
@@ -84,7 +84,7 @@ class CSharpPacket(common.Packet):
     def get_csharp_method_signature(self, print_full_name=False, is_doc=False, high_level=False):
         sig_format = "public {4}{0} {1}{2}({3})"
         params = self.get_csharp_parameters(high_level=high_level)
-        return_type = '(' + self.get_csharp_return_parameters(high_level=high_level, camel_case=True) + ')'
+        return_type = self.get_csharp_return_parameters(high_level=high_level, camel_case=True)
 
         class_prefix = ''
 
