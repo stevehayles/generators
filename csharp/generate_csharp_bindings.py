@@ -712,7 +712,7 @@ namespace Tinkerforge
 
             # exlude if in device list but allow 'GetIdentityAsync'
             if (not any(self.get_csharp_class_name() in s for s in exclude_device_list) or 
-                    packet.get_name().upper == 'GetIdentityAsync'):
+                    packet.get_name().camel == 'GetIdentity'):
                 methods += async_template.format(packet.get_csharp_async_method_signature(),
                                        size,
                                        name_upper,
