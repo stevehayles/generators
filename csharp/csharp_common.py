@@ -93,6 +93,33 @@ class CSharpPacket(common.Packet):
 
         return sig_format.format(return_type, class_prefix, self.get_name(skip=skip).camel, params, override)
 
+    def get_csharp_async_method_signature(self, print_full_name=False, is_doc=False, high_level=False):
+        sig_format = "public {3}async {0} {1}{2}()"
+        ret_count = len(self.get_elements(direction='out', high_level=high_level))
+        ret_params = []
+        return_type = 'Task'
+
+        if ret_count == 1:
+            return_type = 'Task<' + self.get_elements(direction='out', high_level=high_level)[0].get_csharp_type() + '>'
+        elif ret_count > 1:
+            for element in self.get_elements(direction='out', high_level=high_level):
+                ret_params.append(element.get_csharp_type() + ' ' + element.get_name().camel)
+            return_type = 'Task<(' + ', '.join(ret_params) + ')>'
+
+        class_prefix = ''
+
+        if print_full_name:
+            class_prefix = self.get_device().get_csharp_class_name() + '::'
+
+        override = ''
+
+        if not is_doc and self.has_prototype_in_device():
+            override = 'override '
+
+        skip = -2 if high_level and self.has_high_level() else 0
+
+        return sig_format.format(return_type, class_prefix, self.get_name(skip=skip).camel, override)
+
 csharp_types = {
     'int8':   'short',
     'uint8':  'byte',

@@ -585,6 +585,135 @@ namespace Tinkerforge
                                        method_tail,
                                        doc)
 
+        # async normal and low-level
+        async_template = """
+		/// <summary>
+		///  Async version of {5}
+		/// </summary>
+		{0}
+		{{
+			byte[] request = CreateRequestPacket({1}, FUNCTION_{2});
+{3}
+{4}
+		}}
+"""
+
+        async_template_noresponse = """			await SendRequestAsync(request);
+"""
+
+        async_template_response = """			byte[] response = await SendRequestAsync(request);
+{0}
+{1}"""
+
+        for packet in self.get_packets('function'):
+            ret_count = len(packet.get_elements(direction='out'))
+            size = str(packet.get_request_size())
+            name_upper = packet.get_name().upper
+            doc = packet.get_csharp_formatted_doc()
+
+            write_convs = ''
+            write_conv = '\t\t\tLEConverter.To(({2}){0}, {1}, request);\n'
+            write_conv_length = '\t\t\tLEConverter.To(({3}){0}, {1}, {2}, request);\n'
+            _write_conv_length = """			{0}[] {1} = new {0}[{2}];
+			for (int i = 0; i < {2}; ++i) {{
+				{1}[i] = ({0}){3}[i];
+			}}
+			LEConverter.To({1}, {4}, {2}, request);\n"""
+            write_conv_bool_array = """			byte[] {0} = new byte[{1}];
+			for (int i = 0; i < {2}; i++) {{
+				if ({3}[i]) {{
+					{0}[i / 8] |= (byte)(1 << (i % 8));
+				}}
+			}}
+			LEConverter.To((byte[]){0}, {4}, {1}, request);
+"""
+
+            pos = 8
+
+            for element in packet.get_elements(direction='in'):
+                wname = element.get_name().headless
+                csharp_type = element.get_csharp_le_converter_type()
+
+                if element.get_cardinality() > 1:
+                    if element.get_type() == 'bool':
+                        write_convs += write_conv_bool_array.format(wname + 'Bits',
+                                                                    int(math.ceil(element.get_cardinality() / 8.0)),
+                                                                    element.get_cardinality(),
+                                                                    wname,
+                                                                    pos)
+                    else:
+                        if element.get_csharp_le_converter_type() != element.get_csharp_type():
+                            cs_le_type = element.get_csharp_le_converter_type().replace('[', '')
+                            cs_le_type = cs_le_type.replace(']', '')
+                            write_convs += _write_conv_length.format(cs_le_type,
+                                                                     '_' + wname,
+                                                                     element.get_cardinality(),
+                                                                     wname,
+                                                                     pos)
+                        else:
+                            write_convs += write_conv_length.format(wname,
+                                                                    pos,
+                                                                    element.get_cardinality(),
+                                                                    csharp_type)
+                else:
+                    write_convs += write_conv.format(wname, pos, csharp_type)
+
+                pos += element.get_size()
+
+            method_tail = ''
+            read_convs = ''
+            async_return = ''
+            async_returns = []
+            read_conv = '\n\t\t\tvar {0} = LEConverter.{1}({2}, response{3});'
+            read_conv_bool_array = """\n			byte[] {0} = new byte[{1}];
+			{4} = new bool[{3}];
+			var {0} = LEConverter.ByteArrayFrom({2}, response, {1});
+			for (int i = 0; i < {3}; i++) {{
+				{4}[i] = ({0}[i / 8] & (1 << (i % 8))) != 0;
+			}}"""
+
+            pos = 8
+
+            for element in packet.get_elements(direction='out'):
+                aname = element.get_name().headless
+                from_method = element.get_csharp_le_converter_from_method()
+
+                if element.get_cardinality() > 1:
+                    length = ', ' + str(element.get_cardinality())
+                else:
+                    length = ''
+
+                if ret_count == 1:
+                    read_convs = '\n\t\t\treturn LEConverter.{0}({1}, response{2});'.format(from_method, pos, length)
+                else:
+                    if element.get_cardinality() > 1 and element.get_type() == 'bool':
+                        read_convs += read_conv_bool_array.format(aname + 'Bits',
+                                                                  int(math.ceil(element.get_cardinality() / 8.0)),
+                                                                  pos,
+                                                                  element.get_cardinality(),
+                                                                  aname)
+                    else:
+                        read_convs += read_conv.format(aname, from_method, pos, length)
+
+                    async_returns.append(element.get_name().headless)
+
+                pos += element.get_size()
+
+            if ret_count > 1:
+                async_return = '\n\t\t\treturn (' + ', '.join(async_returns) + ');'
+
+            if ret_count > 0:
+                method_tail = async_template_response.format(read_convs, async_return)
+            else:
+                method_tail = async_template_noresponse
+
+            methods += async_template.format(packet.get_csharp_async_method_signature(),
+                                       size,
+                                       name_upper,
+                                       write_convs,
+                                       method_tail,
+                                       doc)
+
         # high-level
         template_stream_in = """
 		/// <summary>
