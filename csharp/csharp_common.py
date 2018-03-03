@@ -94,7 +94,7 @@ class CSharpPacket(common.Packet):
         return sig_format.format(return_type, class_prefix, self.get_name(skip=skip).camel, params, override)
 
     def get_csharp_async_method_signature(self, print_full_name=False, is_doc=False, high_level=False):
-        sig_format = "public {3}async {0} {1}{2}()"
+        sig_format = "public {3}async {0} {1}{2}Async()"
         ret_count = len(self.get_elements(direction='out', high_level=high_level))
         ret_params = []
         return_type = 'Task'
