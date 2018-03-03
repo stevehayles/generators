@@ -96,9 +96,15 @@ class CSharpPacket(common.Packet):
     def get_csharp_async_method_signature(self, print_full_name=False, is_doc=False, high_level=False):
         sig_format = "public {4}async {0} {1}{2}Async({3})"
         ret_count = len(self.get_elements(direction='out', high_level=high_level))
-        params = self.get_csharp_parameters(high_level=high_level)
+        parameters = []
         ret_params = []
         return_type = 'Task'
+        params = ''
+
+        for element in self.get_elements(direction='in', high_level=high_level):
+            parameters.append(element.get_csharp_type() + ' ' + element.get_name().headless)
+
+        params = ', '.join(parameters)
 
         if ret_count == 1:
             return_type = 'Task<' + self.get_elements(direction='out', high_level=high_level)[0].get_csharp_type() + '>'
