@@ -94,8 +94,9 @@ class CSharpPacket(common.Packet):
         return sig_format.format(return_type, class_prefix, self.get_name(skip=skip).camel, params, override)
 
     def get_csharp_async_method_signature(self, print_full_name=False, is_doc=False, high_level=False):
-        sig_format = "public {3}async {0} {1}{2}Async()"
+        sig_format = "public {4}async {0} {1}{2}Async({3})"
         ret_count = len(self.get_elements(direction='out', high_level=high_level))
+        params = self.get_csharp_parameters(high_level=high_level)
         ret_params = []
         return_type = 'Task'
 
@@ -118,7 +119,7 @@ class CSharpPacket(common.Packet):
 
         skip = -2 if high_level and self.has_high_level() else 0
 
-        return sig_format.format(return_type, class_prefix, self.get_name(skip=skip).camel, override)
+        return sig_format.format(return_type, class_prefix, self.get_name(skip=skip).camel, params, override)
 
 csharp_types = {
     'int8':   'short',
