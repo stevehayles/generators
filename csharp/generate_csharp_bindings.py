@@ -710,7 +710,8 @@ namespace Tinkerforge
 
             exclude_device_list = ['BrickRED', 'SomeOtherDevice']
 
-            if not any(self.get_csharp_class_name() in s for s in exclude_device_list): #exlude if in list
+            if not any(self.get_csharp_class_name() in s for s in exclude_device_list) or  # exlude if in device list 
+                        packet.get_name().upper == 'GetIdentityAsync':                     # but allow 'GetIdentityAsync'
                 methods += async_template.format(packet.get_csharp_async_method_signature(),
                                        size,
                                        name_upper,
