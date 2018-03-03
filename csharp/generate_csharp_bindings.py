@@ -125,6 +125,7 @@ class CSharpBindingsDevice(csharp_common.CSharpDevice):
     def get_csharp_import(self):
         template = """{0}
 using System;
+using System.Threading.Tasks;
 
 namespace Tinkerforge
 {{"""
