@@ -596,10 +596,10 @@ namespace Tinkerforge
 		}}
 """
 
-        async_template_noresponse = """			await SendRequestAsync(request, token);
+        async_template_noresponse = """			await SendRequestAsync(request, token).ConfigureAwait(false);
 """
 
-        async_template_response = """			byte[] response = await SendRequestAsync(request, token);
+        async_template_response = """			byte[] response = await SendRequestAsync(request, token).ConfigureAwait(false);
 {0}{1}"""
 
         for packet in self.get_packets('function'):
