@@ -586,7 +586,7 @@ namespace Tinkerforge
         # async normal and low-level
         async_template = """
 		/// <summary>
-		///  Async version of {5}
+		///  {5}
 		/// </summary>
 		{0}
 		{{
@@ -606,7 +606,8 @@ namespace Tinkerforge
             ret_count = len(packet.get_elements(direction='out'))
             size = str(packet.get_request_size())
             name_upper = packet.get_name().upper
-            doc = packet.get_csharp_formatted_doc()
+            doc_text = packet.get_csharp_formatted_doc()
+            doc = 'Asynchronously ' + doc_text[:1].lower() + doc_text[1:]
 
             write_convs = ''
             write_conv = '\t\t\tLEConverter.To(({2}){0}, {1}, request);\n'
