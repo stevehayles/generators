@@ -125,6 +125,7 @@ class CSharpBindingsDevice(csharp_common.CSharpDevice):
     def get_csharp_import(self):
         template = """{0}
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Tinkerforge
@@ -595,12 +596,11 @@ namespace Tinkerforge
 		}}
 """
 
-        async_template_noresponse = """			await SendRequestAsync(request);
+        async_template_noresponse = """			await SendRequestAsync(request, token);
 """
 
-        async_template_response = """			byte[] response = await SendRequestAsync(request);
-{0}
-{1}"""
+        async_template_response = """			byte[] response = await SendRequestAsync(request, token);
+{0}{1}"""
 
         for packet in self.get_packets('function'):
             ret_count = len(packet.get_elements(direction='out'))
@@ -697,7 +697,7 @@ namespace Tinkerforge
                 pos += element.get_size()
 
             if ret_count > 1:
-                async_return = '\n\t\t\treturn (' + ', '.join(async_returns) + ');'
+                async_return = '\n\n\t\t\treturn (' + ', '.join(async_returns) + ');'
 
             if ret_count > 0:
                 method_tail = async_template_response.format(read_convs, async_return)

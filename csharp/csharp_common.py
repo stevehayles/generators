@@ -104,6 +104,7 @@ class CSharpPacket(common.Packet):
         for element in self.get_elements(direction='in', high_level=high_level):
             parameters.append(element.get_csharp_type() + ' ' + element.get_name().headless)
 
+        parameters.append('CancellationToken token = default(CancellationToken)')
         params = ', '.join(parameters)
 
         if ret_count == 1:
