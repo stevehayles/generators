@@ -323,20 +323,14 @@ public class {0} extends Device {{
         return listeners
 
     def get_java_response_expected(self):
-        response_expected = ''
-        template = "\t\tresponseExpected[IPConnection.unsignedByte(FUNCTION_{0})] = {1}\n"
+        result = []
+        template = '\t\tresponseExpected[IPConnection.unsignedByte(FUNCTION_{name})] = RESPONSE_EXPECTED_FLAG_{flag};\n'
 
         for packet in self.get_packets('function'):
-            if len(packet.get_elements(direction='out')) > 0:
-                flag = 'RESPONSE_EXPECTED_FLAG_ALWAYS_TRUE;'
-            elif packet.get_doc_type() == 'ccf' or packet.get_high_level('stream_in') != None:
-                flag = 'RESPONSE_EXPECTED_FLAG_TRUE;'
-            else:
-                flag = 'RESPONSE_EXPECTED_FLAG_FALSE;'
+            result.append(template.format(name=packet.get_name().upper,
+                                          flag=packet.get_response_expected().upper()))
 
-            response_expected += template.format(packet.get_name().upper, flag)
-
-        return response_expected
+        return ''.join(result)
 
     def get_java_callback_listener_definitions(self):
         listeners = ''
@@ -702,6 +696,8 @@ public class {0} extends Device {{
                         type_ = 'String'
                     else:
                         value = "'{0}'".format(constant.get_value())
+                elif constant_group.get_type() == 'bool':
+                    value = str(constant.get_value()).lower()
                 else:
                     if type_ == 'int':
                         cast = '' # no need to cast int, its the default type for number literals

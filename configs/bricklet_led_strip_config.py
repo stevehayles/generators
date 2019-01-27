@@ -20,7 +20,7 @@ com = {
     },
     'released': True,
     'documented': True,
-    'discontinued': False,
+    'discontinued': True, # replaced by LED Strip Bricklet 2.0
     'packets': [],
     'examples': []
 }
@@ -393,7 +393,6 @@ Gibt den aktuell genutzten Typ des Chips zurück, wie von
 """
 }]
 })
-
 
 com['packets'].append({
 'type': 'function',

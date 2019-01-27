@@ -31,7 +31,7 @@ The SPITF protocol can be used with a dynamic baudrate. If the dynamic baudrate 
 enabled, the Brick will try to adapt the baudrate for the communication
 between Bricks and Bricklets according to the amount of data that is transferred.
 
-The baudrate will be increased exponetially if lots of data is send/receieved and
+The baudrate will be increased exponentially if lots of data is send/received and
 decreased linearly if little data is send/received.
 
 This lowers the baudrate in applications where little data is transferred (e.g.
@@ -42,7 +42,7 @@ In cases where some data has to transferred as fast as possible every few second
 (e.g. RS485 Bricklet with a high baudrate but small payload) you may want to turn
 the dynamic baudrate off to get the highest possible performance.
 
-The maximum value of the baudrate can be set per port with the function 
+The maximum value of the baudrate can be set per port with the function
 :func:`Set SPITFP Baudrate`. If the dynamic baudrate is disabled, the baudrate
 as set by :func:`Set SPITFP Baudrate` will be used statically.
 
@@ -57,7 +57,7 @@ Baudrate aktiviert ist, versucht der Brick die Baudrate anhand des Datenaufkomme
 zwischen Brick und Bricklet anzupassen.
 
 Die Baudrate wird exponentiell erhöht wenn viele Daten gesendet/empfangen werden
-und linear verringert wenn wenig daten gesendet/empfangen werden.
+und linear verringert wenn wenig Daten gesendet/empfangen werden.
 
 Diese Vorgehensweise verringert die Baudrate in Anwendungen wo nur wenig Daten
 ausgetauscht werden müssen (z.B. eine Wetterstation) und erhöht die Robustheit.
@@ -69,7 +69,7 @@ sollen (z.B. RS485 Bricklet mit hoher Baudrate aber kleinem Payload) kann die
 dynamische Baudrate zum maximieren der Performance ausgestellt werden.
 
 Die maximale Baudrate kann pro Port mit der Funktion :func:`Set SPITFP Baudrate`.
-gesetzt werden. Falls die dynamsiche Baudrate nicht aktiviert ist, wird die Baudrate
+gesetzt werden. Falls die dynamische Baudrate nicht aktiviert ist, wird die Baudrate
 wie von :func:`Set SPITFP Baudrate` gesetzt statisch verwendet.
 
 Die minimale dynamische Baudrate hat einen Wertebereich von 400000 bis 2000000 Baud.
@@ -180,7 +180,7 @@ baudrate.
 If the dynamic baudrate feature is enabled, the baudrate set by this
 function corresponds to the maximum baudrate (see :func:`Set SPITFP Baudrate Config`).
 
-Regulatory testing is done with the default baudrate. If CE compatability
+Regulatory testing is done with the default baudrate. If CE compatibility
 or similar is necessary in you applications we recommend to not change
 the baudrate.
 
@@ -264,7 +264,7 @@ The errors are divided into
 
 * ACK checksum errors,
 * message checksum errors,
-* frameing errors and
+* framing errors and
 * overflow errors.
 
 The errors counts are for errors that occur on the Brick side. All

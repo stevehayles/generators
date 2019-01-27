@@ -25,6 +25,7 @@ Boston, MA 02111-1307, USA.
 
 import sys
 import os
+import re
 
 sys.path.append(os.path.split(os.getcwd())[0])
 import common
@@ -33,12 +34,14 @@ global_line_prefix = ''
 
 class CTypeMixin(object):
     def get_c_type(self):
-        type = self.get_type().split(':')[0]
+        type_ = self.get_type().split(':')[0]
 
-        if 'int' in type:
-            type += '_t'
+        if type_ == 'string':
+            type_ = 'char'
+        elif 'int' in type_:
+            type_ += '_t'
 
-        return type
+        return type_
 
 class CPrintfFormatMixin(object):
     def get_c_printf_defines(self):
@@ -194,26 +197,34 @@ int main(void) {{
                                sources='\n' + '\n'.join(sources).replace('\n\r', '').lstrip('\r'),
                                cleanups=common.wrap_non_empty('\n', '\n'.join(cleanups).replace('\n\r', '').lstrip('\r').rstrip('\n'), ''))
 
-class CExampleArgument(common.ExampleArgument):
+class CExampleArgument(common.ExampleArgument, CTypeMixin):
     def get_c_source(self):
         type_ = self.get_type()
+
+        def helper(value):
+            if type_ == 'bool':
+                if value:
+                    return 'true'
+                else:
+                    return 'false'
+            elif type_ == 'char':
+                return "'{0}'".format(value)
+            elif type_ == 'string':
+                return '"{0}"'.format(value)
+            elif ':bitmask:' in type_:
+                return common.make_c_like_bitmask(value)
+            elif type_.endswith(':constant'):
+                return self.get_value_constant(value).get_c_source()
+            else:
+                return str(value)
+
         value = self.get_value()
 
-        if type_ == 'bool':
-            if value:
-                return 'true'
-            else:
-                return 'false'
-        elif type_ == 'char':
-            return "'{0}'".format(value)
-        elif type_ == 'string':
-            return '"{0}"'.format(value)
-        elif ':bitmask:' in type_:
-            return common.make_c_like_bitmask(value)
-        elif type_.endswith(':constant'):
-            return self.get_value_constant().get_c_source()
-        else:
-            return str(value)
+        if isinstance(value, list):
+            # FIXME: this fails in G++ with "error: taking address of temporary array"
+            return '({0}[]){{{1}}}'.format(self.get_c_type(), ', '.join([helper(item) for item in value]))
+
+        return helper(value)
 
 class CExampleArgumentsMixin(object):
     def get_c_arguments(self):
@@ -250,31 +261,54 @@ class CExampleParameter(common.ExampleParameter, CTypeMixin, CPrintfFormatMixin)
         return result
 
     def get_c_printfs(self):
-        # FIXME: the result type can indicate a bitmask, but there is no easy way in C to format an
-        #        integer in base-2, that doesn't require open-coding it with several lines of code.
-        #        there is "char *itoa(int value, int base)" (see http://www.strudel.org.uk/itoa/)
-        #        but it's not in the standard C library and it's not reentrant. so just print the
-        #        integer in base-10 the normal way
-        template = '\tprintf("{label}: {printf_format}{unit}\\n", {printf_prefix}{name}{index}{divisor}{printf_suffix});{comment}'
+        if self.get_type().split(':')[-1] == 'constant':
+            if self.get_label_name() == None:
+                return []
+                
+            # FIXME: need to handle multiple labels
+            assert self.get_label_count() == 1
 
-        if self.get_label_name() == None:
-            return []
+            template = '{else_}if({name} == {constant_name}) {{\n{global_line_prefix}\t\tprintf("{label}: {constant_title}\\n");{comment}\n\t}}'
+            constant_group = self.get_constant_group()
+            result = []
 
-        if self.get_cardinality() < 0:
-            return [] # FIXME: streaming
+            for constant in constant_group.get_constants():
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              else_='\belse ' if len(result) > 0 else global_line_prefix + '\t',
+                                              name=self.get_name().under,
+                                              label=self.get_label_name().replace('%', '%%'),
+                                              constant_name=constant.get_c_source(),
+                                              constant_title=constant.get_name().space,
+                                              comment=self.get_formatted_comment(' // {0}')))
 
-        result = []
+            result = ['\r' + '\n'.join(result).replace('\n\b', ' ') + '\r']
+        else:
+            # FIXME: the result type can indicate a bitmask, but there is no easy way in C to format an
+            #        integer in base-2, that doesn't require open-coding it with several lines of code.
+            #        there is "char *itoa(int value, int base)" (see http://www.strudel.org.uk/itoa/)
+            #        but it's not in the standard C library and it's not reentrant. so just print the
+            #        integer in base-10 the normal way
+            template = '{global_line_prefix}\tprintf("{label}: {printf_format}{unit}\\n", {printf_prefix}{name}{index}{divisor}{printf_suffix});{comment}'
 
-        for index in range(self.get_label_count()):
-            result.append(template.format(name=self.get_name().under,
-                                          label=self.get_label_name(index=index).replace('%', '%%'),
-                                          index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
-                                          divisor=self.get_formatted_divisor('/{0}'),
-                                          printf_format=self.get_c_printf_format(),
-                                          printf_prefix=self.get_c_printf_prefix(),
-                                          printf_suffix=self.get_c_printf_suffix(),
-                                          unit=self.get_formatted_unit_name(' {0}').replace('%', '%%'),
-                                          comment=self.get_formatted_comment(' // {0}')))
+            if self.get_label_name() == None:
+                return []
+
+            if self.get_cardinality() < 0:
+                return [] # FIXME: streaming
+
+            result = []
+
+            for index in range(self.get_label_count()):
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              name=self.get_name().under,
+                                              label=self.get_label_name(index=index).replace('%', '%%'),
+                                              index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
+                                              divisor=self.get_formatted_divisor('/{0}'),
+                                              printf_format=self.get_c_printf_format(),
+                                              printf_prefix=self.get_c_printf_prefix(),
+                                              printf_suffix=self.get_c_printf_suffix(),
+                                              unit=self.get_formatted_unit_name(' {0}').replace('%', '%%'),
+                                              comment=self.get_formatted_comment(' // {0}')))
 
         return result
 
@@ -307,36 +341,56 @@ class CExampleResult(common.ExampleResult, CTypeMixin, CPrintfFormatMixin):
         return template.format(name=name)
 
     def get_c_printfs(self):
-        # FIXME: the result type can indicate a bitmask, but there is no easy way in C to format an
-        #        integer in base-2, that doesn't require open-coding it with several lines of code.
-        #        there is "char *itoa(int value, int base)" (see http://www.strudel.org.uk/itoa/)
-        #        but it's not in the standard C library and it's not reentrant. so just print the
-        #        integer in base-10 the normal way
-        template = '\tprintf("{label}: {printf_format}{unit}\\n", {printf_prefix}{name}{index}{divisor}{printf_suffix});{comment}'
+        if self.get_type().split(':')[-1] == 'constant':
+            # FIXME: need to handle multiple labels
+            assert self.get_label_count() == 1
 
-        if self.get_label_name() == None:
-            return []
+            template = '{else_}if({name} == {constant_name}) {{\n{global_line_prefix}\t\tprintf("{label}: {constant_title}\\n");{comment}\n\t}}'
+            constant_group = self.get_constant_group()
+            result = []
 
-        if self.get_cardinality() < 0:
-            return [] # FIXME: streaming
+            for constant in constant_group.get_constants():
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              else_='\belse ' if len(result) > 0 else global_line_prefix + '\t',
+                                              name=self.get_name().under,
+                                              label=self.get_label_name().replace('%', '%%'),
+                                              constant_name=constant.get_c_source(),
+                                              constant_title=constant.get_name().space,
+                                              comment=self.get_formatted_comment(' // {0}')))
 
-        name = self.get_name().under
+            result = ['\r' + '\n'.join(result).replace('\n\b', ' ') + '\r']
+        else:
+            # FIXME: the result type can indicate a bitmask, but there is no easy way in C to format an
+            #        integer in base-2, that doesn't require open-coding it with several lines of code.
+            #        there is "char *itoa(int value, int base)" (see http://www.strudel.org.uk/itoa/)
+            #        but it's not in the standard C library and it's not reentrant. so just print the
+            #        integer in base-10 the normal way
+            template = '{global_line_prefix}\tprintf("{label}: {printf_format}{unit}\\n", {printf_prefix}{name}{index}{divisor}{printf_suffix});{comment}'
 
-        if name == self.get_device().get_initial_name():
-            name += '_'
+            if self.get_label_name() == None:
+                return []
 
-        result = []
+            if self.get_cardinality() < 0:
+                return [] # FIXME: streaming
 
-        for index in range(self.get_label_count()):
-            result.append(template.format(name=name,
-                                          label=self.get_label_name(index=index).replace('%', '%%'),
-                                          index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
-                                          divisor=self.get_formatted_divisor('/{0}'),
-                                          printf_format=self.get_c_printf_format(),
-                                          printf_prefix=self.get_c_printf_prefix(),
-                                          printf_suffix=self.get_c_printf_suffix(),
-                                          unit=self.get_formatted_unit_name(' {0}').replace('%', '%%'),
-                                          comment=self.get_formatted_comment(' // {0}')))
+            name = self.get_name().under
+
+            if name == self.get_device().get_initial_name():
+                name += '_'
+
+            result = []
+
+            for index in range(self.get_label_count()):
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              name=name,
+                                              label=self.get_label_name(index=index).replace('%', '%%'),
+                                              index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
+                                              divisor=self.get_formatted_divisor('/{0}'),
+                                              printf_format=self.get_c_printf_format(),
+                                              printf_prefix=self.get_c_printf_prefix(),
+                                              printf_suffix=self.get_c_printf_suffix(),
+                                              unit=self.get_formatted_unit_name(' {0}').replace('%', '%%'),
+                                              comment=self.get_formatted_comment(' // {0}')))
 
         return result
 
@@ -361,12 +415,12 @@ class CExampleGetterFunction(common.ExampleGetterFunction, CExampleArgumentsMixi
         return None
 
     def get_c_source(self):
-        template = r"""	// Get current {function_name_comment}
-{variable_declarations};
-	if({device_name_under}_{function_name_under}(&{device_name_initial}{arguments}{variable_references}) < 0) {{
-		fprintf(stderr, "Could not get {function_name_comment}, probably timeout\n");
-		return 1;
-	}}
+        template = r"""{global_line_prefix}	// Get current {function_name_comment}
+{global_line_prefix}{variable_declarations};
+{global_line_prefix}	if({device_name_under}_{function_name_under}(&{device_name_initial}{arguments}{variable_references}) < 0) {{
+{global_line_prefix}		fprintf(stderr, "Could not get {function_name_comment}, probably timeout\n");
+{global_line_prefix}		return 1;
+{global_line_prefix}	}}
 
 {printfs}
 """
@@ -399,20 +453,21 @@ class CExampleGetterFunction(common.ExampleGetterFunction, CExampleArgumentsMixi
             variable_declarations.append('{0} {1}'.format(merged_variable_declaration[0],
                                                           ',<BP>'.join(merged_variable_declaration[1])))
 
-        print merged_variable_declarations[0][0]
         variable_declarations = common.break_string('\t' + ';<BP>'.join(variable_declarations),
                                                     merged_variable_declarations[0][0] + ' ')
+        variable_declarations = re.sub(';\n\t([ ]+)', ';\n\t', variable_declarations, flags=re.MULTILINE)
 
         while None in printfs:
             printfs.remove(None)
 
-        result = template.format(device_name_under=self.get_device().get_name().under,
+        result = template.format(global_line_prefix=global_line_prefix,
+                                 device_name_under=self.get_device().get_name().under,
                                  device_name_initial=self.get_device().get_initial_name(),
                                  function_name_comment=self.get_comment_name(),
                                  function_name_under=self.get_name().under,
                                  variable_declarations=variable_declarations,
                                  variable_references=',<BP>' + ',<BP>'.join(variable_references),
-                                 printfs='\n'.join(printfs),
+                                 printfs='\n'.join(printfs).replace('\r\n\r', '\n\n').strip('\r').replace('\r', '\n'),
                                  arguments=common.wrap_non_empty(',<BP>', ',<BP>'.join(self.get_c_arguments()), ''))
 
         return common.break_string(result, '_{}('.format(self.get_name().under))
@@ -508,7 +563,7 @@ class CExampleCallbackFunction(common.ExampleCallbackFunction):
                  template2.format(function_name_under=self.get_name().under,
                                   parameters=common.wrap_non_empty('', ',<BP>'.join(parameters), ',<BP>'),
                                   unuseds=unuseds,
-                                  printfs='\n'.join(printfs),
+                                  printfs='\n'.join(printfs).replace('\r\n\r', '\n\n').strip('\r').replace('\r', '\n'),
                                   extra_message=extra_message)
 
         return common.break_string(result, 'cb_{}('.format(self.get_name().under))
@@ -586,12 +641,12 @@ class CExampleCallbackThresholdFunction(common.ExampleCallbackThresholdFunction,
 
     def get_c_source(self):
         template = r"""	// Configure threshold for {function_name_comment} "{option_comment}"
-	{device_name_under}_set_{function_name_under}_callback_threshold(&{device_name_initial}{arguments}, '{option_char}', {mininum_maximums});
+	{device_name_under}_set_{function_name_under}_callback_threshold(&{device_name_initial}{arguments}, '{option_char}', {minimum_maximums});
 """
-        mininum_maximums = []
+        minimum_maximums = []
 
-        for mininum_maximum in self.get_minimum_maximums():
-            mininum_maximums.append(mininum_maximum.get_c_source())
+        for minimum_maximum in self.get_minimum_maximums():
+            minimum_maximums.append(minimum_maximum.get_c_source())
 
         return template.format(device_name_under=self.get_device().get_name().under,
                                device_name_initial=self.get_device().get_initial_name(),
@@ -600,7 +655,7 @@ class CExampleCallbackThresholdFunction(common.ExampleCallbackThresholdFunction,
                                arguments=common.wrap_non_empty(', ', ', '.join(self.get_c_arguments()), ''),
                                option_char=self.get_option_char(),
                                option_comment=self.get_option_comment(),
-                               mininum_maximums=', '.join(mininum_maximums))
+                               minimum_maximums=', '.join(minimum_maximums))
 
 class CExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurationFunction, CExampleArgumentsMixin):
     def get_c_defines(self):
@@ -614,14 +669,14 @@ class CExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurationF
 
     def get_c_source(self):
         templateA = r"""	// Set period for {function_name_comment} callback to {period_sec_short} ({period_msec}ms)
-	{device_name_under}_set_{function_name_under}_callback_configuration(&{device_name_initial}{arguments}, {period_msec}, false);
+	{device_name_under}_set_{function_name_under}_callback_configuration(&{device_name_initial}{arguments}, {period_msec}{value_has_to_change});
 """
         templateB = r"""	// Set period for {function_name_comment} callback to {period_sec_short} ({period_msec}ms) without a threshold
-	{device_name_under}_set_{function_name_under}_callback_configuration(&{device_name_initial}{arguments}, {period_msec}, false, '{option_char}', {mininum_maximums});
+	{device_name_under}_set_{function_name_under}_callback_configuration(&{device_name_initial}{arguments}, {period_msec}{value_has_to_change}, '{option_char}', {minimum_maximums});
 """
         templateC = r"""	// Configure threshold for {function_name_comment} "{option_comment}"
 	// with a debounce period of {period_sec_short} ({period_msec}ms)
-	{device_name_under}_set_{function_name_under}_callback_configuration(&{device_name_initial}{arguments}, {period_msec}, false, '{option_char}', {mininum_maximums});
+	{device_name_under}_set_{function_name_under}_callback_configuration(&{device_name_initial}{arguments}, {period_msec}{value_has_to_change}, '{option_char}', {minimum_maximums});
 """
 
         if self.get_option_char() == None:
@@ -631,12 +686,12 @@ class CExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurationF
         else:
             template = templateC
 
-        mininum_maximums = []
+        minimum_maximums = []
 
         period_msec, period_sec_short, period_sec_long = self.get_formatted_period()
 
-        for mininum_maximum in self.get_minimum_maximums():
-            mininum_maximums.append(mininum_maximum.get_c_source())
+        for minimum_maximum in self.get_minimum_maximums():
+            minimum_maximums.append(minimum_maximum.get_c_source())
 
         return template.format(device_name_under=self.get_device().get_name().under,
                                device_name_initial=self.get_device().get_initial_name(),
@@ -645,9 +700,10 @@ class CExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurationF
                                arguments=common.wrap_non_empty(', ', ', '.join(self.get_c_arguments()), ''),
                                period_msec=period_msec,
                                period_sec_short=period_sec_short,
+                               value_has_to_change=common.wrap_non_empty(', ', self.get_value_has_to_change('true', 'false', ''), ''),
                                option_char=self.get_option_char(),
                                option_comment=self.get_option_comment(),
-                               mininum_maximums=', '.join(mininum_maximums))
+                               minimum_maximums=', '.join(minimum_maximums))
 
 class CExampleSpecialFunction(common.ExampleSpecialFunction):
     def get_c_defines(self):

@@ -2,7 +2,7 @@
  * Copyright (C) <<<YEAR>>> <<<NAME>>> <<<<EMAIL>>>>
  *
  * config_custom_bootstrapper.h: XMC bootstrapper configurations for
- *                               <<<DEVICE_NAME_READABLE>>> Bricklet
+ *                               <<<DEVICE_NAME_READABLE>>>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,7 +29,6 @@
 #define BOOTSTRAPPER_USIC_CHANNEL   USIC0_CH0
 #define BOOTSTRAPPER_PAGE_SIZE      256
 #define BOOTSTRAPPER_FLASH_START    0x10001000
-#define BOOTSTRAPPER_FLASH_SIZE     (16*1024)
 
 #define BOOTSTRAPPER_USIC           XMC_UART0_CH0
 #define BOOTSTRAPPER_RX_PIN         P0_14

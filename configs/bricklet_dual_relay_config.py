@@ -20,7 +20,7 @@ com = {
     },
     'released': True,
     'documented': True,
-    'discontinued': False,
+    'discontinued': False, # selling off remaining stock, replaced by Industrial Dual Relay Bricklet
     'packets': [],
     'examples': []
 }

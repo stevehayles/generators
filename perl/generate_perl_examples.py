@@ -28,14 +28,22 @@ import os
 
 sys.path.append(os.path.split(os.getcwd())[0])
 import common
+import perl_common
 
 global_line_prefix = ''
 
 class PerlConstant(common.Constant):
-    def get_perl_source(self):
-        template = '${device_name}->{constant_group_name}_{constant_name}'
+    def get_perl_source(self, callback=False):
+        templateA = 'Tinkerforge::{device_class}->{constant_group_name}_{constant_name}'
+        templateB = '${device_name}->{constant_group_name}_{constant_name}'
 
-        return template.format(device_name=self.get_device().get_initial_name(),
+        if callback:
+            template = templateA
+        else:
+            template = templateB
+
+        return template.format(device_class=self.get_device().get_perl_class_name(),
+                               device_name=self.get_device().get_initial_name(),
                                constant_group_name=self.get_constant_group().get_name().upper,
                                constant_name=self.get_name().upper)
 
@@ -43,6 +51,7 @@ class PerlExample(common.Example):
     def get_perl_source(self):
         template = r"""#!/usr/bin/perl{incomplete}{description}
 
+use strict;
 use Tinkerforge::IPConnection;
 use Tinkerforge::{device_category}{device_name_camel};
 
@@ -109,23 +118,30 @@ $ipcon->disconnect();
 class PerlExampleArgument(common.ExampleArgument):
     def get_perl_source(self):
         type_ = self.get_type()
+
+        def helper(value):
+            if type_ == 'bool':
+                if value:
+                    return '1'
+                else:
+                    return '0'
+            elif type_ == 'char':
+                return "'{0}'".format(value)
+            elif type_ == 'string':
+                return '"{0}"'.format(value)
+            elif ':bitmask:' in type_:
+                return common.make_c_like_bitmask(value)
+            elif type_.endswith(':constant'):
+                return self.get_value_constant(value).get_perl_source()
+            else:
+                return str(value)
+
         value = self.get_value()
 
-        if type_ == 'bool':
-            if value:
-                return '1'
-            else:
-                return '0'
-        elif type_ == 'char':
-            return "'{0}'".format(value)
-        elif type_ == 'string':
-            return '"{0}"'.format(value)
-        elif ':bitmask:' in type_:
-            return common.make_c_like_bitmask(value)
-        elif type_.endswith(':constant'):
-            return self.get_value_constant().get_perl_source()
-        else:
-            return str(value)
+        if isinstance(value, list):
+            return '[{0}]'.format(', '.join([helper(item) for item in value]))
+
+        return helper(value)
 
 class PerlExampleArgumentsMixin(object):
     def get_perl_arguments(self):
@@ -138,45 +154,68 @@ class PerlExampleParameter(common.ExampleParameter):
         return template.format(name=self.get_name().under)
 
     def get_perl_prints(self):
-        templateA = '    print "{label}: " . {sprintf_prefix}{index_prefix}${name}{index_suffix}{divisor}{sprintf_suffix} . "{unit}\\n";{comment}'
-        templateB = '    print "{label}: ${name}{unit}\\n";{comment}'
+        if self.get_type().split(':')[-1] == 'constant':
+            if self.get_label_name() == None:
+                return []
+                
+            # FIXME: need to handle multiple labels
+            assert self.get_label_count() == 1
 
-        if self.get_label_name() == None:
-            return []
+            template = '{global_line_prefix}    {else_}if (${name} == {constant_name})\n{global_line_prefix}    {{\n{global_line_prefix}        print "{label}: {constant_title}\\n";{comment}\n{global_line_prefix}    }}'
+            constant_group = self.get_constant_group()
+            result = []
 
-        if self.get_cardinality() < 0:
-            return [] # FIXME: streaming
+            for constant in constant_group.get_constants():
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              else_='els' if len(result) > 0 else '',
+                                              name=self.get_name().under,
+                                              label=self.get_label_name(),
+                                              constant_name=constant.get_perl_source(callback=True),
+                                              constant_title=constant.get_name().space,
+                                              comment=self.get_formatted_comment(' # {0}')))
 
-        type_ = self.get_type()
-        divisor = self.get_formatted_divisor('/{0}')
-        sprintf_prefix = ''
-        sprintf_suffix = ''
-        index_prefix = ''
-
-        if ':bitmask:' in type_:
-            template = templateA
-            sprintf_prefix = "sprintf('%0{0}b', ".format(int(type_.split(':')[2]))
-            sprintf_suffix = ')'
-        elif len(divisor) > 0 or self.get_label_count() > 1:
-            template = templateA
-
-            if self.get_label_count() > 1:
-                index_prefix = '@{'
+            result = ['\r' + '\n'.join(result) + '\r']
         else:
-            template = templateB
+            templateA = '{global_line_prefix}    print "{label}: " . {sprintf_prefix}{index_prefix}${name}{index_suffix}{divisor}{sprintf_suffix} . "{unit}\\n";{comment}'
+            templateB = '{global_line_prefix}    print "{label}: ${name}{unit}\\n";{comment}'
 
-        result = []
+            if self.get_label_name() == None:
+                return []
 
-        for index in range(self.get_label_count()):
-            result.append(template.format(name=self.get_name().under,
-                                          label=self.get_label_name(index=index),
-                                          index_prefix=index_prefix,
-                                          index_suffix='}}[{0}]'.format(index) if self.get_label_count() > 1 else '',
-                                          divisor=divisor,
-                                          unit=self.get_formatted_unit_name(' {0}'),
-                                          sprintf_prefix=sprintf_prefix,
-                                          sprintf_suffix=sprintf_suffix,
-                                          comment=self.get_formatted_comment(' # {0}')))
+            if self.get_cardinality() < 0:
+                return [] # FIXME: streaming
+
+            type_ = self.get_type()
+            divisor = self.get_formatted_divisor('/{0}')
+            sprintf_prefix = ''
+            sprintf_suffix = ''
+            index_prefix = ''
+
+            if ':bitmask:' in type_:
+                template = templateA
+                sprintf_prefix = "sprintf('%0{0}b', ".format(int(type_.split(':')[2]))
+                sprintf_suffix = ')'
+            elif len(divisor) > 0 or self.get_label_count() > 1:
+                template = templateA
+
+                if self.get_label_count() > 1:
+                    index_prefix = '@{'
+            else:
+                template = templateB
+
+            result = []
+
+            for index in range(self.get_label_count()):
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              name=self.get_name().under,
+                                              label=self.get_label_name(index=index),
+                                              index_prefix=index_prefix,
+                                              index_suffix='}}[{0}]'.format(index) if self.get_label_count() > 1 else '',
+                                              divisor=divisor,
+                                              unit=self.get_formatted_unit_name(' {0}'),
+                                              sprintf_prefix=sprintf_prefix,
+                                              sprintf_suffix=sprintf_suffix,
+                                              comment=self.get_formatted_comment(' # {0}')))
 
         return result
 
@@ -191,50 +230,75 @@ class PerlExampleResult(common.ExampleResult):
         return template.format(name=name)
 
     def get_perl_prints(self):
-        templateA = 'print "{label}: " . {sprintf_prefix}{index_prefix}${name}{index_suffix}{divisor}{sprintf_suffix} . "{unit}\\n";{comment}'
-        templateB = 'print "{label}: ${name}{unit}\\n";{comment}'
+        if self.get_type().split(':')[-1] == 'constant':
+            # FIXME: need to handle multiple labels
+            assert self.get_label_count() == 1
 
-        if self.get_label_name() == None:
-            return []
+            template = '{global_line_prefix}{else_}if (${name} == {constant_name})\n{global_line_prefix}{{\n{global_line_prefix}    print "{label}: {constant_title}\\n";{comment}\n{global_line_prefix}}}'
+            constant_group = self.get_constant_group()
+            name = self.get_name().under
 
-        if self.get_cardinality() < 0:
-            return [] # FIXME: streaming
+            if name == self.get_device().get_initial_name():
+                name += '_'
 
-        name = self.get_name().under
+            result = []
 
-        if name == self.get_device().get_initial_name():
-            name += '_'
+            for constant in constant_group.get_constants():
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              else_='els' if len(result) > 0 else '',
+                                              name=name,
+                                              label=self.get_label_name(),
+                                              constant_name=constant.get_perl_source(),
+                                              constant_title=constant.get_name().space,
+                                              comment=self.get_formatted_comment(' # {0}')))
 
-        type_ = self.get_type()
-        divisor = self.get_formatted_divisor('/{0}')
-        sprintf_prefix = ''
-        sprintf_suffix = ''
-        index_prefix = ''
-
-        if ':bitmask:' in type_:
-            template = templateA
-            sprintf_prefix = "sprintf('%0{0}b', ".format(int(type_.split(':')[2]))
-            sprintf_suffix = ')'
-        elif len(divisor) > 0 or self.get_label_count() > 1:
-            template = templateA
-
-            if self.get_label_count() > 1:
-                index_prefix = '@{'
+            result = ['\r' + '\n'.join(result) + '\r']
         else:
-            template = templateB
+            templateA = '{global_line_prefix}print "{label}: " . {sprintf_prefix}{index_prefix}${name}{index_suffix}{divisor}{sprintf_suffix} . "{unit}\\n";{comment}'
+            templateB = '{global_line_prefix}print "{label}: ${name}{unit}\\n";{comment}'
 
-        result = []
+            if self.get_label_name() == None:
+                return []
 
-        for index in range(self.get_label_count()):
-            result.append(template.format(name=name,
-                                          label=self.get_label_name(index=index),
-                                          index_prefix=index_prefix,
-                                          index_suffix='}}[{0}]'.format(index) if self.get_label_count() > 1 else '',
-                                          divisor=divisor,
-                                          unit=self.get_formatted_unit_name(' {0}'),
-                                          sprintf_prefix=sprintf_prefix,
-                                          sprintf_suffix=sprintf_suffix,
-                                          comment=self.get_formatted_comment(' # {0}')))
+            if self.get_cardinality() < 0:
+                return [] # FIXME: streaming
+
+            name = self.get_name().under
+
+            if name == self.get_device().get_initial_name():
+                name += '_'
+
+            type_ = self.get_type()
+            divisor = self.get_formatted_divisor('/{0}')
+            sprintf_prefix = ''
+            sprintf_suffix = ''
+            index_prefix = ''
+
+            if ':bitmask:' in type_:
+                template = templateA
+                sprintf_prefix = "sprintf('%0{0}b', ".format(int(type_.split(':')[2]))
+                sprintf_suffix = ')'
+            elif len(divisor) > 0 or self.get_label_count() > 1:
+                template = templateA
+
+                if self.get_label_count() > 1:
+                    index_prefix = '@{'
+            else:
+                template = templateB
+
+            result = []
+
+            for index in range(self.get_label_count()):
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              name=name,
+                                              label=self.get_label_name(index=index),
+                                              index_prefix=index_prefix,
+                                              index_suffix='}}[{0}]'.format(index) if self.get_label_count() > 1 else '',
+                                              divisor=divisor,
+                                              unit=self.get_formatted_unit_name(' {0}'),
+                                              sprintf_prefix=sprintf_prefix,
+                                              sprintf_suffix=sprintf_suffix,
+                                              comment=self.get_formatted_comment(' # {0}')))
 
         return result
 
@@ -243,8 +307,8 @@ class PerlExampleGetterFunction(common.ExampleGetterFunction, PerlExampleArgumen
         return None
 
     def get_perl_source(self):
-        template = r"""# Get current {function_name_comment}
-{variables} = ${device_name}->{function_name_under}({arguments});
+        template = r"""{global_line_prefix}# Get current {function_name_comment}
+{global_line_prefix}{variables} = ${device_name}->{function_name_under}({arguments});
 {prints}
 """
         variables = []
@@ -263,13 +327,14 @@ class PerlExampleGetterFunction(common.ExampleGetterFunction, PerlExampleArgumen
             prints.remove(None)
 
         if len(prints) > 1:
-            prints.insert(0, '')
+            prints.insert(0, '\b')
 
-        return template.format(device_name=self.get_device().get_initial_name(),
+        return template.format(global_line_prefix=global_line_prefix,
+                               device_name=self.get_device().get_initial_name(),
                                function_name_under=self.get_name().under,
                                function_name_comment=self.get_comment_name(),
                                variables=variables,
-                               prints='\n'.join(prints),
+                               prints='\n'.join(prints).replace('\b\n\r', '\n').replace('\b', '').replace('\r\n\r', '\n\n').rstrip('\r').replace('\r', '\n'),
                                arguments=', '.join(self.get_perl_arguments()))
 
 class PerlExampleSetterFunction(common.ExampleSetterFunction, PerlExampleArgumentsMixin):
@@ -329,7 +394,7 @@ class PerlExampleCallbackFunction(common.ExampleCallbackFunction):
                                   override_comment=override_comment) + \
                  template2.format(function_name_under=self.get_name().under,
                                   parameters=common.wrap_non_empty('    my (', ',<BP>'.join(parameters), ') = @_;\n\n'),
-                                  prints='\n'.join(prints),
+                                  prints='\n'.join(prints).replace('\r\n\r', '\n\n').strip('\r').replace('\r', '\n'),
                                   extra_message=extra_message)
 
         return common.break_string(result, 'my (')
@@ -391,12 +456,12 @@ class PerlExampleCallbackThresholdFunction(common.ExampleCallbackThresholdFuncti
 
     def get_perl_source(self):
         template = r"""# Configure threshold for {function_name_comment} "{option_comment}"
-${device_name}->set_{function_name_under}_callback_threshold({arguments}'{option_char}', {mininum_maximums});
+${device_name}->set_{function_name_under}_callback_threshold({arguments}'{option_char}', {minimum_maximums});
 """
-        mininum_maximums = []
+        minimum_maximums = []
 
-        for mininum_maximum in self.get_minimum_maximums():
-            mininum_maximums.append(mininum_maximum.get_perl_source())
+        for minimum_maximum in self.get_minimum_maximums():
+            minimum_maximums.append(minimum_maximum.get_perl_source())
 
         return template.format(device_name=self.get_device().get_initial_name(),
                                function_name_under=self.get_name().under,
@@ -404,7 +469,7 @@ ${device_name}->set_{function_name_under}_callback_threshold({arguments}'{option
                                arguments=common.wrap_non_empty('', ', '.join(self.get_perl_arguments()), ', '),
                                option_char=self.get_option_char(),
                                option_comment=self.get_option_comment(),
-                               mininum_maximums=', '.join(mininum_maximums))
+                               minimum_maximums=', '.join(minimum_maximums))
 
 class PerlExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurationFunction, PerlExampleArgumentsMixin):
     def get_perl_subroutine(self):
@@ -412,14 +477,14 @@ class PerlExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurati
 
     def get_perl_source(self):
         templateA = r"""# Set period for {function_name_comment} callback to {period_sec_short} ({period_msec}ms)
-${device_name}->set_{function_name_under}_callback_configuration({arguments}{period_msec}, 0);
+${device_name}->set_{function_name_under}_callback_configuration({arguments}{period_msec}{value_has_to_change});
 """
         templateB = r"""# Set period for {function_name_comment} callback to {period_sec_short} ({period_msec}ms) without a threshold
-${device_name}->set_{function_name_under}_callback_configuration({arguments}{period_msec}, 0, '{option_char}', {mininum_maximums});
+${device_name}->set_{function_name_under}_callback_configuration({arguments}{period_msec}{value_has_to_change}, '{option_char}', {minimum_maximums});
 """
         templateC = r"""# Configure threshold for {function_name_comment} "{option_comment}"
 # with a debounce period of {period_sec_short} ({period_msec}ms)
-${device_name}->set_{function_name_under}_callback_configuration({arguments}{period_msec}, 0, '{option_char}', {mininum_maximums});
+${device_name}->set_{function_name_under}_callback_configuration({arguments}{period_msec}{value_has_to_change}, '{option_char}', {minimum_maximums});
 """
 
         if self.get_option_char() == None:
@@ -431,10 +496,10 @@ ${device_name}->set_{function_name_under}_callback_configuration({arguments}{per
 
         period_msec, period_sec_short, period_sec_long = self.get_formatted_period()
 
-        mininum_maximums = []
+        minimum_maximums = []
 
-        for mininum_maximum in self.get_minimum_maximums():
-            mininum_maximums.append(mininum_maximum.get_perl_source())
+        for minimum_maximum in self.get_minimum_maximums():
+            minimum_maximums.append(minimum_maximum.get_perl_source())
 
         return template.format(device_name=self.get_device().get_initial_name(),
                                function_name_under=self.get_name().under,
@@ -443,9 +508,10 @@ ${device_name}->set_{function_name_under}_callback_configuration({arguments}{per
                                period_msec=period_msec,
                                period_sec_short=period_sec_short,
                                period_sec_long=period_sec_long,
+                               value_has_to_change=common.wrap_non_empty(', ', self.get_value_has_to_change('1', '0', ''), ''),
                                option_char=self.get_option_char(),
                                option_comment=self.get_option_comment(),
-                               mininum_maximums=', '.join(mininum_maximums))
+                               minimum_maximums=', '.join(minimum_maximums))
 
 class PerlExampleSpecialFunction(common.ExampleSpecialFunction):
     def get_perl_subroutine(self):
@@ -468,6 +534,7 @@ ${device_name}->set_debounce_period({period_msec});
                                    period_msec=period_msec,
                                    period_sec=period_sec)
         elif type_ == 'sleep':
+            # FIXME: use Time::HiRes::sleep instead
             templateA = '{comment1}{global_line_prefix}sleep({duration});{comment2}\n'
             templateB = '{comment1}{global_line_prefix}select(undef, undef, undef, {duration});{comment2}\n'
             duration = self.get_sleep_duration()
@@ -502,6 +569,9 @@ class PerlExamplesGenerator(common.ExamplesGenerator):
 
     def get_constant_class(self):
         return PerlConstant
+
+    def get_device_class(self):
+        return perl_common.PerlDevice
 
     def get_example_class(self):
         return PerlExample

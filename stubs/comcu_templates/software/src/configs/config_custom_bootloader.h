@@ -2,7 +2,7 @@
  * Copyright (C) <<<YEAR>>> <<<NAME>>> <<<<EMAIL>>>>
  *
  * config_custom_bootloader.h: Bootloader configurations for
- *                             <<<DEVICE_NAME_READABLE>>> Bricklet
+ *                             <<<DEVICE_NAME_READABLE>>>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,6 +38,8 @@
 
 #define BOOTLOADER_FLASH_EEPROM_SIZE   (4*256)
 #define BOOTLOADER_FLASH_SIZE          (16*1024 - BOOTLOADER_FLASH_EEPROM_SIZE)
+
+#define BOOTLOADER_FIX_POINTER_END
 
 // --- SPITFP ---
 #define SPITFP_USIC_CHANNEL         USIC0_CH0

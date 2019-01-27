@@ -140,23 +140,30 @@ End Module
 class VBNETExampleArgument(common.ExampleArgument):
     def get_vbnet_source(self):
         type_ = self.get_type()
+
+        def helper(value):
+            if type_ == 'bool':
+                if value:
+                    return 'True'
+                else:
+                    return 'False'
+            elif type_ == 'char':
+                return '"{0}"C'.format(value)
+            elif type_ == 'string':
+                return '"{0}"'.format(value)
+            elif ':bitmask:' in type_:
+                return common.make_c_like_bitmask(value, combine='({0}) or ({1})')
+            elif type_.endswith(':constant'):
+                return self.get_value_constant(value).get_vbnet_source()
+            else:
+                return str(value)
+
         value = self.get_value()
 
-        if type_ == 'bool':
-            if value:
-                return 'True'
-            else:
-                return 'False'
-        elif type_ == 'char':
-            return '"{0}"C'.format(value)
-        elif type_ == 'string':
-            return '"{0}"'.format(value)
-        elif ':bitmask:' in type_:
-            return common.make_c_like_bitmask(value, combine='({0}) or ({1})')
-        elif type_.endswith(':constant'):
-            return self.get_value_constant().get_vbnet_source()
-        else:
-            return str(value)
+        if isinstance(value, list):
+            return 'new {0}(){{{1}}}'.format(get_vbnet_type(self.get_type().split(':')[0]), ', '.join([helper(item) for item in value]))
+
+        return helper(value)
 
 class VBNETExampleArgumentsMixin(object):
     def get_vbnet_arguments(self):
@@ -176,43 +183,71 @@ class VBNETExampleParameter(common.ExampleParameter):
                                name=self.get_name().headless)
 
     def get_vbnet_write_lines(self):
-        template = '        Console.WriteLine("{label}: " + {to_string_prefix}{name}{index}{divisor}{to_string_suffix}{unit}){comment}'
+        if self.get_type().split(':')[-1] == 'constant':
+            if self.get_label_name() == None:
+                return []
 
-        if self.get_label_name() == None:
-            return []
+            # FIXME: need to handle multiple labels
+            assert self.get_label_count() == 1
 
-        if self.get_cardinality() < 0:
-            return [] # FIXME: streaming
+            template = '{global_line_prefix}        {else_}If {name} = {constant_name} Then\n{global_line_prefix}            Console.WriteLine("{label}: {constant_title}"){comment}'
+            constant_group = self.get_constant_group()
+            name = self.get_name().headless
 
-        type_ = self.get_type()
-        divisor = self.get_formatted_divisor('/{0}')
+            if name == self.get_device().get_initial_name():
+                name += '_'
 
-        # FIXME: Convert.ToString() doesn't support leading zeros. therefore,
-        #        the result is not padded to the requested number of digits
-        if ':bitmask:' in self.get_type():
-            to_string_prefix = 'Convert.ToString('
-            to_string_suffix = ', 2)'
-        elif type_ in ['char', 'string']:
-            to_string_prefix = ''
-            to_string_suffix = ''
-        elif len(divisor) > 0:
-            to_string_prefix = '('
-            to_string_suffix = ').ToString()'
+            result = []
+
+            for constant in constant_group.get_constants():
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              else_='Else ' if len(result) > 0 else '',
+                                              name=name,
+                                              label=self.get_label_name(),
+                                              constant_name=constant.get_vbnet_source(),
+                                              constant_title=constant.get_name().space,
+                                              comment=self.get_formatted_comment(" ' {0}")))
+
+            result = ['\r' + '\n'.join(result) + '\n        End If\r']
         else:
-            to_string_prefix = ''
-            to_string_suffix = '.ToString()'
+            template = '{global_line_prefix}        Console.WriteLine("{label}: " + {to_string_prefix}{name}{index}{divisor}{to_string_suffix}{unit}){comment}'
 
-        result = []
+            if self.get_label_name() == None:
+                return []
 
-        for index in range(self.get_label_count()):
-            result.append(template.format(name=self.get_name().headless,
-                                          label=self.get_label_name(index=index),
-                                          index='({0})'.format(index) if self.get_label_count() > 1 else '',
-                                          to_string_prefix=to_string_prefix,
-                                          to_string_suffix=to_string_suffix,
-                                          divisor=divisor,
-                                          unit=self.get_formatted_unit_name(' + " {0}"'),
-                                          comment=self.get_formatted_comment(" ' {0}")))
+            if self.get_cardinality() < 0:
+                return [] # FIXME: streaming
+
+            type_ = self.get_type()
+            divisor = self.get_formatted_divisor('/{0}')
+
+            # FIXME: Convert.ToString() doesn't support leading zeros. therefore,
+            #        the result is not padded to the requested number of digits
+            if ':bitmask:' in self.get_type():
+                to_string_prefix = 'Convert.ToString('
+                to_string_suffix = ', 2)'
+            elif type_ in ['char', 'string']:
+                to_string_prefix = ''
+                to_string_suffix = ''
+            elif len(divisor) > 0:
+                to_string_prefix = '('
+                to_string_suffix = ').ToString()'
+            else:
+                to_string_prefix = ''
+                to_string_suffix = '.ToString()'
+
+            result = []
+
+            for index in range(self.get_label_count()):
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              name=self.get_name().headless,
+                                              label=self.get_label_name(index=index),
+                                              index='({0})'.format(index) if self.get_label_count() > 1 else '',
+                                              to_string_prefix=to_string_prefix,
+                                              to_string_suffix=to_string_suffix,
+                                              divisor=divisor,
+                                              unit=self.get_formatted_unit_name(' + " {0}"'),
+                                              comment=self.get_formatted_comment(" ' {0}")))
 
         return result
 
@@ -224,7 +259,12 @@ class VBNETExampleResult(common.ExampleResult):
         if name == self.get_device().get_initial_name():
             name += '_'
 
-        return get_vbnet_type(self.get_type().split(':')[0]), name
+        type_ = get_vbnet_type(self.get_type().split(':')[0])
+
+        if self.get_cardinality() > 1 and type_ != 'String':
+            type_ += '()'
+
+        return type_, name
 
     def get_vbnet_variable_reference(self):
         name = self.get_name().headless
@@ -235,48 +275,73 @@ class VBNETExampleResult(common.ExampleResult):
         return name
 
     def get_vbnet_write_lines(self):
-        template = '        Console.WriteLine("{label}: " + {to_string_prefix}{name}{index}{divisor}{to_string_suffix}{unit}){comment}'
+        if self.get_type().split(':')[-1] == 'constant':
+            # FIXME: need to handle multiple labels
+            assert self.get_label_count() == 1
 
-        if self.get_label_name() == None:
-            return []
+            template = '{global_line_prefix}        {else_}If {name} = {constant_name} Then\n{global_line_prefix}            Console.WriteLine("{label}: {constant_title}"){comment}'
+            constant_group = self.get_constant_group()
+            name = self.get_name().headless
 
-        if self.get_cardinality() < 0:
-            return [] # FIXME: streaming
+            if name == self.get_device().get_initial_name():
+                name += '_'
 
-        name = self.get_name().headless
+            result = []
 
-        if name == self.get_device().get_initial_name():
-            name += '_'
+            for constant in constant_group.get_constants():
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              else_='Else ' if len(result) > 0 else '',
+                                              name=name,
+                                              label=self.get_label_name(),
+                                              constant_name=constant.get_vbnet_source(),
+                                              constant_title=constant.get_name().space,
+                                              comment=self.get_formatted_comment(" ' {0}")))
 
-        type_ = self.get_type()
-        divisor = self.get_formatted_divisor('/{0}')
-
-        # FIXME: Convert.ToString() doesn't support leading zeros. therefore,
-        #        the result is not padded to the requested number of digits
-        if ':bitmask:' in type_:
-            to_string_prefix = 'Convert.ToString('
-            to_string_suffix = ', 2)'
-        elif type_ in ['char', 'string']:
-            to_string_prefix = ''
-            to_string_suffix = ''
-        elif len(divisor) > 0:
-            to_string_prefix = '('
-            to_string_suffix = ').ToString()'
+            result = ['\r' + '\n'.join(result) + '\n        End If\r']
         else:
-            to_string_prefix = ''
-            to_string_suffix = '.ToString()'
+            template = '{global_line_prefix}        Console.WriteLine("{label}: " + {to_string_prefix}{name}{index}{divisor}{to_string_suffix}{unit}){comment}'
 
-        result = []
+            if self.get_label_name() == None:
+                return []
 
-        for index in range(self.get_label_count()):
-            result.append(template.format(name=name,
-                                          label=self.get_label_name(index=index),
-                                          index='({0})'.format(index) if self.get_label_count() > 1 else '',
-                                          to_string_prefix=to_string_prefix,
-                                          to_string_suffix=to_string_suffix,
-                                          divisor=divisor,
-                                          unit=self.get_formatted_unit_name(' + " {0}"'),
-                                          comment=self.get_formatted_comment(" ' {0}")))
+            if self.get_cardinality() < 0:
+                return [] # FIXME: streaming
+
+            name = self.get_name().headless
+
+            if name == self.get_device().get_initial_name():
+                name += '_'
+
+            type_ = self.get_type()
+            divisor = self.get_formatted_divisor('/{0}')
+
+            # FIXME: Convert.ToString() doesn't support leading zeros. therefore,
+            #        the result is not padded to the requested number of digits
+            if ':bitmask:' in type_:
+                to_string_prefix = 'Convert.ToString('
+                to_string_suffix = ', 2)'
+            elif type_ in ['char', 'string']:
+                to_string_prefix = ''
+                to_string_suffix = ''
+            elif len(divisor) > 0:
+                to_string_prefix = '('
+                to_string_suffix = ').ToString()'
+            else:
+                to_string_prefix = ''
+                to_string_suffix = '.ToString()'
+
+            result = []
+
+            for index in range(self.get_label_count()):
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              name=name,
+                                              label=self.get_label_name(index=index),
+                                              index='({0})'.format(index) if self.get_label_count() > 1 else '',
+                                              to_string_prefix=to_string_prefix,
+                                              to_string_suffix=to_string_suffix,
+                                              divisor=divisor,
+                                              unit=self.get_formatted_unit_name(' + " {0}"'),
+                                              comment=self.get_formatted_comment(" ' {0}")))
 
         return result
 
@@ -288,14 +353,14 @@ class VBNETExampleGetterFunction(common.ExampleGetterFunction, VBNETExampleArgum
         return None
 
     def get_vbnet_source(self):
-        templateA = r"""        ' Get current {function_name_comment}
-{variable_declarations} = {device_name}.{function_name_camel}({arguments})
+        templateA = r"""{global_line_prefix}        ' Get current {function_name_comment}
+{global_line_prefix}{variable_declarations} = {device_name}.{function_name_camel}({arguments})
 {write_lines}
 """
-        templateB = r"""        ' Get current {function_name_comment}
-{variable_declarations}
+        templateB = r"""{global_line_prefix}        ' Get current {function_name_comment}
+{global_line_prefix}{variable_declarations}
 
-        {device_name}.{function_name_camel}({arguments})
+{global_line_prefix}        {device_name}.{function_name_camel}({arguments})
 {write_lines}
 """
         variable_declarations = []
@@ -336,19 +401,20 @@ class VBNETExampleGetterFunction(common.ExampleGetterFunction, VBNETExampleArgum
             write_lines.remove(None)
 
         if len(write_lines) > 1:
-            write_lines.insert(0, '')
+            write_lines.insert(0, '\b')
 
         arguments = self.get_vbnet_arguments()
 
         if len(variable_references) > 1:
             arguments += variable_references
 
-        result = template.format(device_name=self.get_device().get_initial_name(),
+        result = template.format(global_line_prefix=global_line_prefix,
+                                 device_name=self.get_device().get_initial_name(),
                                  function_name_camel=self.get_name().camel,
                                  function_name_headless=self.get_name().headless,
                                  function_name_comment=self.get_comment_name(),
                                  variable_declarations='\n'.join(variable_declarations),
-                                 write_lines='\n'.join(write_lines),
+                                 write_lines='\n'.join(write_lines).replace('\b\n\r', '\n').replace('\b', '').replace('\r\n\r', '\n\n').rstrip('\r').replace('\r', '\n'),
                                  arguments=',<BP>'.join(arguments))
 
         return common.break_string(result, '.{}('.format(self.get_name().camel), continuation=' _')
@@ -416,7 +482,7 @@ class VBNETExampleCallbackFunction(common.ExampleCallbackFunction):
                                   device_name=self.get_device().get_name().camel,
                                   function_name_camel=self.get_name().camel,
                                   parameters=common.wrap_non_empty(',<BP>', ',<BP>'.join(parameters), ''),
-                                  write_lines='\n'.join(write_lines),
+                                  write_lines='\n'.join(write_lines).replace('\r\n\r', '\n\n').strip('\r').replace('\r', '\n'),
                                   extra_message=extra_message)
 
         return common.break_string(result, '{}CB('.format(self.get_name().camel), continuation=' _')
@@ -483,20 +549,20 @@ class VBNETExampleCallbackThresholdFunction(common.ExampleCallbackThresholdFunct
 
     def get_vbnet_source(self):
         template = r"""        ' Configure threshold for {function_name_comment} "{option_comment}"
-        {device_name}.Set{function_name_camel}CallbackThreshold({arguments}"{option_char}"C, {mininum_maximums})
+        {device_name}.Set{function_name_camel}CallbackThreshold({arguments}"{option_char}"C, {minimum_maximums})
 """
-        mininum_maximums = []
+        minimum_maximums = []
 
-        for mininum_maximum in self.get_minimum_maximums():
-            mininum_maximums.append(mininum_maximum.get_vbnet_source())
+        for minimum_maximum in self.get_minimum_maximums():
+            minimum_maximums.append(minimum_maximum.get_vbnet_source())
 
         return template.format(device_name=self.get_device().get_initial_name(),
                                function_name_camel=self.get_name().camel,
-                               function_name_comment=self.get_name().under,
+                               function_name_comment=self.get_comment_name(),
                                arguments=common.wrap_non_empty('', ', '.join(self.get_vbnet_arguments()), ', '),
                                option_char=self.get_option_char(),
                                option_comment=self.get_option_comment(),
-                               mininum_maximums=', '.join(mininum_maximums))
+                               minimum_maximums=', '.join(minimum_maximums))
 
 class VBNETExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurationFunction, VBNETExampleArgumentsMixin):
     def get_vbnet_imports(self):
@@ -507,14 +573,14 @@ class VBNETExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurat
 
     def get_vbnet_source(self):
         templateA = r"""        ' Set period for {function_name_comment} callback to {period_sec_short} ({period_msec}ms)
-        {device_name}.Set{function_name_camel}CallbackConfiguration({arguments}{period_msec}, False)
+        {device_name}.Set{function_name_camel}CallbackConfiguration({arguments}{period_msec}{value_has_to_change})
 """
         templateB = r"""        ' Set period for {function_name_comment} callback to {period_sec_short} ({period_msec}ms) without a threshold
-        {device_name}.Set{function_name_camel}CallbackConfiguration({arguments}{period_msec}, False, "{option_char}"C, {mininum_maximums})
+        {device_name}.Set{function_name_camel}CallbackConfiguration({arguments}{period_msec}{value_has_to_change}, "{option_char}"C, {minimum_maximums})
 """
         templateC = r"""        ' Configure threshold for {function_name_comment} "{option_comment}"
         ' with a debounce period of {period_sec_short} ({period_msec}ms)
-        {device_name}.Set{function_name_camel}CallbackConfiguration({arguments}{period_msec}, False, "{option_char}"C, {mininum_maximums})
+        {device_name}.Set{function_name_camel}CallbackConfiguration({arguments}{period_msec}{value_has_to_change}, "{option_char}"C, {minimum_maximums})
 """
 
         if self.get_option_char() == None:
@@ -526,21 +592,22 @@ class VBNETExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurat
 
         period_msec, period_sec_short, period_sec_long = self.get_formatted_period()
 
-        mininum_maximums = []
+        minimum_maximums = []
 
-        for mininum_maximum in self.get_minimum_maximums():
-            mininum_maximums.append(mininum_maximum.get_vbnet_source())
+        for minimum_maximum in self.get_minimum_maximums():
+            minimum_maximums.append(minimum_maximum.get_vbnet_source())
 
         return template.format(device_name=self.get_device().get_initial_name(),
                                function_name_camel=self.get_name().camel,
-                               function_name_comment=self.get_name().under,
+                               function_name_comment=self.get_comment_name(),
                                arguments=common.wrap_non_empty('', ', '.join(self.get_vbnet_arguments()), ', '),
                                period_msec=period_msec,
                                period_sec_short=period_sec_short,
                                period_sec_long=period_sec_long,
+                               value_has_to_change=common.wrap_non_empty(', ', self.get_value_has_to_change('True', 'False', ''), ''),
                                option_char=self.get_option_char(),
                                option_comment=self.get_option_comment(),
-                               mininum_maximums=', '.join(mininum_maximums))
+                               minimum_maximums=', '.join(minimum_maximums))
 
 class VBNETExampleSpecialFunction(common.ExampleSpecialFunction):
     def get_vbnet_imports(self):

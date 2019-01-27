@@ -11,6 +11,7 @@ from commonconstants import THRESHOLD_OPTION_CONSTANTS
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
     'api_version': [2, 0, 1],
+    'api_version_extra': 1, # +1 for "Break API to fix threshold min/max type mismatch [59d13f6]"
     'category': 'Bricklet',
     'device_identifier': 25,
     'name': 'Distance IR',
@@ -22,7 +23,7 @@ com = {
     },
     'released': True,
     'documented': True,
-    'discontinued': False,
+    'discontinued': False, # selling remaining stock, replaced by Distance IR Bricklet 2.0
     'packets': [],
     'examples': []
 }

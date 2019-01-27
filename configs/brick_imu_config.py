@@ -8,7 +8,7 @@
 
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
-    'api_version': [2, 0, 1],
+    'api_version': [2, 0, 4],
     'category': 'Brick',
     'device_identifier': 16,
     'name': 'IMU',
@@ -20,7 +20,7 @@ com = {
     },
     'released': True,
     'documented': True,
-    'discontinued': True,
+    'discontinued': True, # replaced by IMU Brick 2.0
     'packets': [],
     'examples': []
 }

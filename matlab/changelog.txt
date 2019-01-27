@@ -24,7 +24,7 @@
 
 2015-11-17: 2.0.6 (158f00f)
 - Add missing constant for 19200 baud to RS232 Bricklet API
-- Add error callback to RS232 Bricklet API
+- Add Error listener to RS232 Bricklet API
 - Add setBreakCondition method to RS232 Bricklet API
 - Add unlimited illuminance range constant to Ambient Light Bricklet 2.0 API
 - Break API to fix threshold min/max type mismatch in Ambient Light, Analog In
@@ -73,12 +73,40 @@
 - Add SPITFP configuration and diagnostics methods to all Brick APIs to
   configure and debug the communication between Bricks and Co-MCU Bricklets
 - Remove unused getCurrentConsumption method from Slient Stepper Brick API
-- Add workaround for the callback problem in Octave >= 3.8
+- Add workaround for the listener problem in Octave >= 3.8
 
 2017-11-20: 2.0.15 (f235e3f)
 - Add support for DMX, Humidity 2.0, Motorized Linear Poti, RGB LED Button, RGB
   LED Matrix and Thermal Imaging Bricklet
-- Add get/setSBASConfig functions to GPS Bricklet 2.0 API
+- Add get/setSBASConfig methods to GPS Bricklet 2.0 API
 
-2017-11-24: 2.0.16 (<unknown>)
+2017-11-24: 2.0.16 (4317433)
 - Use correct chunk-offset while reconstructing output streams
+
+2018-02-28: 2.0.17 (da741b9)
+- Add support for Analog In 3.0, Remote Switch 2.0, Motion Detector 2.0, NFC,
+  Rotary Encoder 2.0, Solid State 2.0, Temperature IR 2.0 and Outdoor Weather
+  Bricklet
+
+2018-06-08: 2.0.18 (8fb62e4)
+- Add support for CAN 2.0, Industrial Counter, Industrial Digital In 4 2.0,
+  Industrial Dual Relay, Industrial Quad Relay 2.0, IO-4 2.0, LED Strip 2.0,
+  Load Cell 2.0, Particulate Matter, PTC 2.0, Real-Time Clock 2.0, RS232 2.0,
+  Sound Pressure Level, Thermocouple 2.0 and Voltage/Current 2.0 Bricklet
+- Add get/setMaximumTimeout methods to NFC Bricklet API
+- Add isSensorConnected method and SensorConnected listener to PTC Bricklet API
+- Break Humidity 2.0, Rotary Encoder 2.0 and Temperature IR 2.0 Bricklet API to
+  fix types for callback threshold min/max configuration
+
+2018-09-28: 2.0.19 (f7c65f7)
+- Add support for Air Quality, Analog Out 3.0, Barometer 2.0, Distance IR 2.0,
+  Dual Button 2.0, Industrial Analog Out 2.0, Industrial Digital Out 4 2.0,
+  Industrial Dual 0-20mA 2.0, Industrial Dual Analog In 2.0, IO-16 2.0, Isolator,
+  LCD 128x64, OLED 128x64 2.0, One Wire, Temperature 2.0 and UV Light 2.0 Bricklet
+
+2018-10-05: 2.0.20 (e3c6f36)
+- Break API to fix moving-average-length type in Distance IR Bricklet 2.0 API
+
+2018-11-28: 2.0.21 (<unknown>)
+- Add get/setSamplesPerSecond functions to Humidity Bricklet 2.0 API
+- Add button, slider, graph and tab functions to LCD 128x64 Bricklet API

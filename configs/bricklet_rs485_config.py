@@ -343,8 +343,8 @@ com['packets'].append({
 'doc': ['af', {
 'en':
 """
-Sets the communication LED configuration. By default the LED shows
-communication traffic, it flickers once for every 10 received data packets.
+Sets the communication LED configuration. By default the LED shows RS485
+communication traffic by flickering.
 
 You can also turn the LED permanently on/off or show a heartbeat.
 
@@ -353,8 +353,7 @@ If the Bricklet is in bootloader mode, the LED is off.
 'de':
 """
 Setzt die Konfiguration der Kommunikations-LED. Standardmäßig zeigt
-die LED die Kommunikationsdatenmenge an. Sie blinkt einmal auf pro 10 empfangenen
-Datenpaketen zwischen Brick und Bricklet.
+die LED die RS485 Kommunikation durch Aufblinken an.
 
 Die LED kann auch permanent an/aus gestellt werden oder einen Herzschlag anzeigen.
 
@@ -455,8 +454,8 @@ is 1024 byte (1kb) for both.
 
 The current buffer content is lost if this function is called.
 
-The send buffer holds data that is given by :func:`Write` and
-can not be written yet. The receive buffer holds data that is
+The send buffer holds data that was given by :func:`Write` and
+could not be written yet. The receive buffer holds data that is
 received through RS485 but could not yet be send to the
 user, either by :func:`Read` or through :cb:`Read` callback.
 
@@ -1922,7 +1921,7 @@ com['examples'].append({
 'name': 'Modbus Master',
 'functions': [('setter', 'Set Mode', [('uint8:constant', 1)], 'Set operating mode to Modbus RTU master', None),
               ('setter', 'Set Modbus Configuration', [('uint8', 1), ('uint32', 1000)], 'Modbus specific configuration:\n- slave address = 1 (unused in master mode)\n- master request timeout = 1000ms', None),
-              ('callback', ('Modbus Master Write Single Register Response', 'Modbus master write single register response'), [(('Request ID', 'Request ID'), 'uint8', 1, None, None, None), (('Exception Code', 'Exception Code'), 'int8', 1, None, None, None)], None, None),
+              ('callback', ('Modbus Master Write Single Register Response', 'Modbus master write single register response'), [(('Request ID', 'Request ID'), 'uint8', 1, None, None, None), (('Exception Code', 'Exception Code'), 'int8:constant', 1, None, None, None)], None, None),
               ('setter', 'Modbus Master Write Single Register', [('uint8', 17), ('uint32', 42), ('uint16', 65535)], 'Write 65535 to register 42 of slave 17', None)],
 'incomplete': True # because of special callback logic and missing return value handling of the write call
 })

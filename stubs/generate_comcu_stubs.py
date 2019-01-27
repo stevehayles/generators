@@ -28,6 +28,7 @@ import sys
 import os
 import datetime
 import shutil
+import math
 from sets import Set
 
 sys.path.append(os.path.split(os.getcwd())[0])
@@ -37,7 +38,6 @@ import c.c_common as c_common
 class CoMCUStubDevice(common.Device):
     def get_h_constants(self):
         constant_format = '#define {device_name}_{constant_group_name}_{constant_name} {constant_value}'
-        char_format="'{0}'"
         constants = []
 
         for i, constant_group in enumerate(self.get_constant_groups()):
@@ -46,7 +46,9 @@ class CoMCUStubDevice(common.Device):
 
             for constant in constant_group.get_constants():
                 if constant_group.get_type() == 'char':
-                    value = char_format.format(constant.get_value())
+                    value = "'{0}'".format(constant.get_value())
+                elif constant_group.get_type() == 'bool':
+                    value = str(constant.get_value()).lower()
                 else:
                     value = str(constant.get_value())
 
@@ -85,11 +87,15 @@ class CoMCUStubDevice(common.Device):
                 if packet.get_type() == 'callback':
                     struct_body = ''
                     for element in packet.get_elements():
-                        c_type = element.get_c_type(False)
-                        if element.get_cardinality() > 1:
+                        c_type = element.get_c_type('default')
+                        cardinality = element.get_cardinality()
+                        if cardinality > 1:
+                            if c_type == 'bool':
+                                c_type = 'uint8_t'
+                                cardinality = int(math.ceil(cardinality/8.0))
                             struct_body += '\t{0} {1}[{2}];\n'.format(c_type,
                                                                       element.get_name().under,
-                                                                      element.get_cardinality());
+                                                                      cardinality);
                         else:
                             struct_body += '\t{0} {1};\n'.format(c_type, element.get_name().under)
 
@@ -99,12 +105,16 @@ class CoMCUStubDevice(common.Device):
                 struct_body = ''
 
                 for element in packet.get_elements(direction='in'):
-                    c_type = element.get_c_type(False)
+                    c_type = element.get_c_type('default')
 
-                    if element.get_cardinality() > 1:
+                    cardinality = element.get_cardinality()
+                    if cardinality > 1:
+                        if c_type == 'bool':
+                            c_type = 'uint8_t'
+                            cardinality = int(math.ceil(cardinality/8.0))
                         struct_body += '\t{0} {1}[{2}];\n'.format(c_type,
                                                                   element.get_name().under,
-                                                                  element.get_cardinality());
+                                                                  cardinality);
                     else:
                         struct_body += '\t{0} {1};\n'.format(c_type, element.get_name().under)
 
@@ -116,12 +126,17 @@ class CoMCUStubDevice(common.Device):
                 struct_body = ''
 
                 for element in packet.get_elements(direction='out'):
-                    c_type = element.get_c_type(False)
+                    c_type = element.get_c_type('default')
 
-                    if element.get_cardinality() > 1:
+                    cardinality = element.get_cardinality()
+                    if cardinality > 1:
+                        if c_type == 'bool':
+                            c_type = 'uint8_t'
+                            cardinality = int(math.ceil(cardinality/8.0))
+
                         struct_body += '\t{0} {1}[{2}];\n'.format(c_type,
                                                                   element.get_name().under,
-                                                                  element.get_cardinality());
+                                                                  cardinality);
                     else:
                         struct_body += '\t{0} {1};\n'.format(c_type, element.get_name().under)
 
@@ -177,13 +192,15 @@ class CoMCUStubDevice(common.Device):
     def get_c_cases(self):
         case =  '\t\tcase FID_{0}: return {1}(message);'
         case_with_response = '\t\tcase FID_{0}: return {1}(message, response);'
-        case_cv =  '\t\tcase FID_{0}: return {1}(message, &callback_value_{2});'
-        case_cv_with_response = '\t\tcase FID_{0}: return {1}(message, response, &callback_value_{2});'
+        case_cv =  '\t\tcase FID_{0}: return {1}_{2}(message, &callback_value_{3});'
+        case_cv_with_response = '\t\tcase FID_{0}: return {1}_{2}(message, response, &callback_value_{3});'
         cases = []
 
         for packet in self.get_packets('function'):
             if packet.get_function_id() < 200:
                 if packet.is_part_of_callback_value():
+                    c_type = packet.get_elements()[-1].get_c_type('default')
+
                     if not 'corresponding_getter' in packet.raw_data:
                         callback_value_function_name = 'get_callback_value'
                     elif packet.raw_data['name'].startswith('Get '):
@@ -192,9 +209,9 @@ class CoMCUStubDevice(common.Device):
                         callback_value_function_name = 'set_callback_value_callback_configuration'
 
                     if len(packet.get_elements(direction='out')) == 0:
-                        cases.append(case_cv.format(packet.get_name().upper, callback_value_function_name, packet.get_callback_value_name()))
+                        cases.append(case_cv.format(packet.get_name().upper, callback_value_function_name, c_type, packet.get_callback_value_name()))
                     else:
-                        cases.append(case_cv_with_response.format(packet.get_name().upper, callback_value_function_name, packet.get_callback_value_name()))
+                        cases.append(case_cv_with_response.format(packet.get_name().upper, callback_value_function_name, c_type, packet.get_callback_value_name()))
                 else:
                     if len(packet.get_elements(direction='out')) == 0:
                         cases.append(case.format(packet.get_name().upper, packet.get_name().under))
@@ -253,14 +270,15 @@ bool handle_{0}_callback(void) {{
 
         callback_cv = """
 bool handle_{0}_callback(void) {{
-\treturn handle_callback_value_callback(&callback_value_{1}, FID_CALLBACK_{2});
+\treturn handle_callback_value_callback_{1}(&callback_value_{2}, FID_CALLBACK_{3});
 }}"""
 
         callbacks = []
         for packet in self.get_packets('callback'):
             if packet.get_function_id() < 200:
                 if packet.is_part_of_callback_value():
-                    callbacks.append(callback_cv.format(packet.get_name().under, packet.get_callback_value_name(), packet.get_name().upper))
+                    c_type = packet.get_elements()[-1].get_c_type('default')
+                    callbacks.append(callback_cv.format(packet.get_name().under, c_type, packet.get_callback_value_name(), packet.get_name().upper))
                 else:
                     callbacks.append(callback.format(packet.get_name().under, packet.get_name().camel, packet.get_name().upper))
 
@@ -270,7 +288,8 @@ bool handle_{0}_callback(void) {{
         callback_values = Set()
         for packet in self.get_packets('function'):
             if packet.get_function_id() < 200 and packet.is_part_of_callback_value():
-                callback_values.add(packet.get_callback_value_name())
+                c_type = packet.get_elements()[-1].get_c_type('default')
+                callback_values.add((c_type, packet.get_callback_value_name()))
 
         if len(callback_values) == 0:
             return ''
@@ -281,7 +300,7 @@ bool handle_{0}_callback(void) {{
 """
         cv_declaration = ''
         for callback_value in callback_values:
-            cv_declaration += 'CallbackValue callback_value_{0};\n'.format(callback_value)
+            cv_declaration += 'CallbackValue_{0} callback_value_{1};\n'.format(*callback_value)
 
         return cv.format(cv_declaration)
 
@@ -289,7 +308,8 @@ bool handle_{0}_callback(void) {{
         callback_values = Set()
         for packet in self.get_packets('function'):
             if packet.get_function_id() < 200 and packet.is_part_of_callback_value():
-                callback_values.add(packet.get_callback_value_name())
+                c_type = packet.get_elements()[-1].get_c_type('default')
+                callback_values.add((c_type, packet.get_callback_value_name()))
 
         if len(callback_values) == 0:
             return ''
@@ -299,7 +319,7 @@ bool handle_{0}_callback(void) {{
 """
         cv_declaration = ''
         for callback_value in callback_values:
-            cv_declaration += '\tcallback_value_init(&callback_value_{0}, NULL);;\n'.format(callback_value)
+            cv_declaration += '\tcallback_value_init_{0}(&callback_value_{1}, NULL);;\n'.format(*callback_value)
 
         return cv.format(cv_declaration)
 
@@ -425,6 +445,7 @@ void communication_init(void);
         folder_src = os.path.join(self.get_root_dir(), 'comcu_templates')
         shutil.copytree(os.path.join(folder_src, 'software'), os.path.join(folder_dst, 'software'))
         shutil.copy(os.path.join(folder_src, '.gitignore'), os.path.join(folder_dst))
+        shutil.copy(os.path.join(folder_src, 'README.rst'), os.path.join(folder_dst))
 
         if os.path.isdir(os.path.join(folder_src, 'hardware')):
             shutil.copytree(os.path.join(folder_src, 'hardware'),  os.path.join(folder_dst, 'hardware'))
@@ -437,19 +458,23 @@ void communication_init(void);
             os.mkdir(os.path.join(folder_dst, 'datasheets'))
 
     # FIXME: use specialize_template instead
-    def fill_templates(self, folder, device_name_dash, device_name, device_identifier, year, name, email, callback_value):
+    def fill_templates(self, folder, device_name_dash, device_name_display, device_identifier, year, name, email, callback_value_define):
         for dname, dirs, files in os.walk(folder):
             for fname in files:
                 fpath = os.path.join(dname, fname)
                 with open(fpath, "r") as f:
                     s = f.read()
+
+                device_name_display_readme = device_name_display + '\n' + '='*len(device_name_display)
+
                 s = s.replace("""<<<DEVICE_NAME_DASH>>>""", device_name_dash)
-                s = s.replace("""<<<DEVICE_NAME_READABLE>>>""", device_name)
+                s = s.replace("""<<<DEVICE_NAME_READABLE>>>""", device_name_display)
+                s = s.replace("""<<<DEVICE_NAME_READABLE_README>>>""", device_name_display_readme)
                 s = s.replace("""<<<DEVICE_IDENTIFIER>>>""", str(device_identifier))
                 s = s.replace("""<<<YEAR>>>""", str(year))
                 s = s.replace("""<<<NAME>>>""", name)
                 s = s.replace("""<<<EMAIL>>>""", email)
-                s = s.replace("""<<<CMAKE_SOURCE_CALLBACK_VALUE>>>""", callback_value)
+                s = s.replace("""<<<CALLBACK_VALUE_DEFINE>>>""", callback_value_define)
                 with open(fpath, "w") as f:
                     f.write(s)
 
@@ -470,13 +495,20 @@ void communication_init(void);
         year = datetime.datetime.now().year
         name = device.get_author().split("<")[0].rstrip()             #author syntax: Firstname Lastname <email>
         email = device.get_author().split("<")[1].replace(">","")
-        callback_value = ''
+        callback_value_define = ''
 
         if device.has_callback_value():
-            callback_value = """\t"${PROJECT_SOURCE_DIR}/src/bricklib2/utility/callback_value.c"\n"""
+            c_type = 'FIXME'
+            for packet in device.get_packets('function'):
+                if packet.get_function_id() < 200:
+                    if packet.is_part_of_callback_value():
+                        c_type = packet.get_elements()[-1].get_c_type('default')
+                        break
+
+            callback_value_define = """\n#define CALLBACK_VALUE_TYPE CALLBACK_VALUE_TYPE_{0}\n""".format(c_type.replace('_t', '').upper())
 
         self.copy_templates_to(folder)
-        self.fill_templates(folder, device_name_dash, device.get_name().space, device.get_device_identifier(), year, name, email, callback_value)
+        self.fill_templates(folder, device_name_dash, device.get_long_display_name(), device.get_device_identifier(), year, name, email, callback_value_define)
 
         h_constants = device.get_h_constants()
         h_defines = device.get_h_defines()

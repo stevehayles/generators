@@ -35,7 +35,7 @@ import c.c_common as c_common
 
 class DocStubGenerator(common.Generator):
     template_en = """
-:DISABLED_shoplink: ../../../shop/bricklets/{4}.html
+:DISABLED_shoplink: ../../../shop/{6}s/{4}.html
 
 .. include:: {3}.substitutions
    :start-after: >>>substitutions
@@ -44,7 +44,7 @@ class DocStubGenerator(common.Generator):
 .. _{1}:
 
 {0}
-{6}
+{7}
 
 .. note::
   This Bricklet is currently work-in-progress!
@@ -108,7 +108,7 @@ Resources
 .. _{1}_test:
 
 Test your {0}
-----------{7}
+----------{8}
 
 |test_intro|
 
@@ -117,11 +117,12 @@ Test your {0}
 |test_tab|
 If everything went as expected ... TBD.
 
-.. image:: /Images/Bricklets/bricklet_{2}_brickv.jpg
-   :scale: 100 %
-   :alt: {0} in Brick Viewer
-   :align: center
-   :target: ../../_images/Bricklets/bricklet_{2}_brickv.jpg
+..
+	.. image:: /Images/Bricklets/bricklet_{2}_brickv.jpg
+	   :scale: 100 %
+	   :alt: {0} in Brick Viewer
+	   :align: center
+	   :target: ../../_images/Bricklets/bricklet_{2}_brickv.jpg
 
 |test_pi_ref|
 
@@ -165,7 +166,7 @@ See :ref:`Programming Interface <programming_interface>` for a detailed descript
 """
 
     template_de = """
-:DISABLED_shoplink: ../../../shop/bricklets/{4}.html
+:DISABLED_shoplink: ../../../shop/{6}s/{4}.html
 
 .. include:: {3}.substitutions
    :start-after: >>>substitutions
@@ -174,7 +175,7 @@ See :ref:`Programming Interface <programming_interface>` for a detailed descript
 .. _{1}:
 
 {0}
-{6}
+{7}
 
 .. note::
   Dieses Bricklet befindet sich aktuell noch in der Entwicklung!
@@ -247,11 +248,12 @@ Erster Test
 |test_tab|
 Wenn alles wie erwartet funktioniert ... TBD.
 
-.. image:: /Images/Bricklets/bricklet_{2}_brickv.jpg
-   :scale: 100 %
-   :alt: {0} im Brick Viewer
-   :align: center
-   :target: ../../_images/Bricklets/bricklet_{2}_brickv.jpg
+..
+	.. image:: /Images/Bricklets/bricklet_{2}_brickv.jpg
+	   :scale: 100 %
+	   :alt: {0} im Brick Viewer
+	   :align: center
+	   :target: ../../_images/Bricklets/bricklet_{2}_brickv.jpg
 
 |test_pi_ref|
 
@@ -342,13 +344,18 @@ Beschreibung.
         format3 = device.get_name().space.replace(' ', '_')
         format4 = device.get_name().dash + '-' + device.get_category().dash
         format5 = device.get_name().dash
-        filename = format3 + '.rst'
+        filename = format3.replace('Real_Time_Clock', 'RealTime_Clock')
+
+        if device.get_category().space == 'Brick':
+            filename += '_Brick.rst'
+        else:
+            filename += '.rst'
 
         with open(os.path.join(folder, 'en', device.get_category().camel + 's', filename), 'w') as doc:
-            doc.write(self.template_en.format(format0, format1, format2, format3, format4, format5, '='*len(format0), '-'*len(format0)))
+            doc.write(self.template_en.format(format0, format1, format2, format3, format4, format5, device.get_category().under, '='*len(format0), '-'*len(format0)))
 
         with open(os.path.join(folder, 'de', device.get_category().camel + 's', filename), 'w') as doc:
-            doc.write(self.template_de.format(format0, format1, format2, format3, format4, format5, '='*len(format0)))
+            doc.write(self.template_de.format(format0, format1, format2, format3, format4, format5, device.get_category().under, '='*len(format0)))
 
 def generate(root_dir):
     common.generate(root_dir, 'en', DocStubGenerator)

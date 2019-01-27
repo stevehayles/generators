@@ -4,7 +4,7 @@
 # with or without modification, are permitted. See the Creative
 # Commons Zero (CC0 1.0) License for more details.
 
-# Load Cell Bricklet communication config
+# Load Cell Bricklet 2.0 communication config
 
 from commonconstants import THRESHOLD_OPTION_CONSTANTS
 from commonconstants import add_callback_value_function
@@ -22,8 +22,8 @@ com = {
         'de': 'Misst Gewicht mit einer Wägezelle'
     },
     'comcu': True,
-    'released': False,
-    'documented': False,
+    'released': True,
+    'documented': True,
     'discontinued': False,
     'packets': [],
     'examples': []
@@ -41,8 +41,8 @@ Gibt das aktuell gemessene Gewicht in Gramm zurück.
 }
 
 add_callback_value_function(
-    packets   = com['packets'], 
-    name      = 'Get Weight', 
+    packets   = com['packets'],
+    name      = 'Get Weight',
     data_name = 'Weight',
     data_type = 'int32',
     doc       = weight_doc
@@ -101,38 +101,43 @@ Gibt die Länge des gleitenden Mittelwerts zurück, wie von
 
 com['packets'].append({
 'type': 'function',
-'name': 'Set LED Configuration',
-'elements': [('Enable', 'bool', 1, 'in')],
+'name': 'Set Info LED Config',
+'elements': [('Config', 'uint8', 1, 'in', ('Info LED Config', [('Off', 0),
+                                                               ('On', 1),
+                                                               ('Show Heartbeat', 2)]))],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
 """
-Enables/disables the LED.
+Configures the info LED to be either turned off, turned on, or blink in
+heartbeat mode.
 """,
 'de':
 """
-Aktiviert/deaktiviert die LED.
+Konfiguriert die Info-LED. Die LED kann ausgeschaltet, eingeschaltet oder
+im Herzschlagmodus betrieben werden.
 """
 }]
 })
 
 com['packets'].append({
 'type': 'function',
-'name': 'Get LED Configuration',
-'elements': [('Enable', 'bool', 1, 'out')],
+'name': 'Get Info LED Config',
+'elements': [('Config', 'uint8', 1, 'out', ('Info LED Config', [('Off', 0),
+                                                                ('On', 1),
+                                                                ('Show Heartbeat', 2)]))],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
 """
-Returns the LED configuration as set by :func:`Set LED Configuration`
+Returns the LED configuration as set by :func:`Set Info LED Config`
 """,
 'de':
 """
-Gibt die LED-Konfiguration zurück, wie von :func:`Set LED Configuration` gesetzt.
+Gibt die LED-Konfiguration zurück, wie von :func:`Set Info LED Config` gesetzt.
 """
 }]
 })
-
 
 com['packets'].append({
 'type': 'function',
@@ -142,7 +147,7 @@ com['packets'].append({
 'doc': ['af', {
 'en':
 """
-To calibrate your Load Cell Bricklet you have to
+To calibrate your Load Cell Bricklet 2.0 you have to
 
 * empty the scale and call this function with 0 and
 * add a known weight to the scale and call this function with the weight in
@@ -156,11 +161,11 @@ to call this function in your source code.
 """,
 'de':
 """
-Zum Kalibrieren des Load Cell Bricklet müssen die folgenden zwei
+Zum Kalibrieren des Load Cell Bricklet 2.0 müssen die folgenden zwei
 Schritte durchgeführt werden:
 
 * Die Waage leeren und die Funktion mit 0 aufrufen.
-* Eine bekanntes gewicht auf die Waage legen und die Funktion mit dem
+* Eine bekanntes Gewicht auf die Waage legen und die Funktion mit dem
   Gewicht in Gramm aufrufen.
 
 Die Kalibrierung wird auf dem Flash des Bricklets gespeichert und muss
@@ -225,7 +230,7 @@ erzeugt mehr Störungen. Zusätzlich ist es möglich einen gleitenden
 Mittelwert auf die Werte anzuwenden (siehe :func:`Set Moving Average`).
 
 Der Gain kann zwischen 128x, 64x und 32x konfiguriert werden. Er
-respräsentiert einenen Messbereich von ±20mV, ±40mV und ±80mV
+repräsentiert einen Messbereich von ±20mV, ±40mV und ±80mV
 respektive. Das Load Cell Bricklet nutzt eine
 Erregerspannung (Excitation Voltage) von 5V und die meisten Wägezellen
 haben eine Ausgabe von 2mV/V. Dies bedeutet, der Spannungsbereich ist
@@ -259,3 +264,19 @@ Gibt die Konfiguration zurück, wie von :func:`Set Configuration` gesetzt.
 }]
 })
 
+com['examples'].append({
+'name': 'Simple',
+'functions': [('getter', ('Get Weight', 'weight'), [(('Weight', 'Weight'), 'int32', 1, None, 'g', None)], [])]
+})
+
+com['examples'].append({
+'name': 'Callback',
+'functions': [('callback', ('Weight', 'weight'), [(('Weight', 'Weight'), 'int32', 1, None, 'g', None)], None, None),
+              ('callback_configuration', ('Weight', 'weight'), [], 1000, False, 'x', [(0, 0)])]
+})
+
+com['examples'].append({
+'name': 'Threshold',
+'functions': [('callback', ('Weight', 'weight'), [(('Weight', 'Weight'), 'int32', 1, None, 'g', None)], None, None),
+              ('callback_configuration', ('Weight', 'weight'), [], 1000, False, '>', [(200, 0)])]
+})

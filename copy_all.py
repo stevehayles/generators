@@ -60,7 +60,7 @@ bindings = []
 
 for d in os.listdir(path):
     if os.path.isdir(d):
-        if not d in ('configs', 'json', 'stubs', '.git', '__pycache__'):
+        if not d in ('configs', 'json', 'stubs', '.git', '__pycache__', '.vscode'):
             bindings.append(d)
 
 bindings = sorted(bindings)
@@ -82,14 +82,19 @@ if socket.gethostname() != 'tinkerforge.com':
 
         path_binding = os.path.join(path, 'python')
         src_file_path = os.path.join(path_binding, 'bindings')
+        files = [f for f in os.listdir(src_file_path) if f.endswith('.py')]
 
-        for f in os.listdir(src_file_path):
-            if f.endswith('.py'):
-                src_file = os.path.join(src_file_path, f)
+        files.remove('device_factory.py')
 
-                if files_are_not_the_same(src_file, tool_path):
-                    shutil.copy(src_file, tool_path)
-                    print(' * {0}'.format(f))
+        if tool_name != 'flash-test':
+            files.remove('device_factory_all.py')
+
+        for f in files:
+            src_file = os.path.join(src_file_path, f)
+
+            if files_are_not_the_same(src_file, tool_path):
+                shutil.copy(src_file, tool_path)
+                print(' * {0}'.format(f))
 
 doc_copy = [('_Brick_', 'Bricks'),
             ('_Bricklet_', 'Bricklets'),
@@ -108,6 +113,9 @@ for lang in ['en', 'de']:
             os.makedirs(dest_dir)
 
     for binding in bindings:
+        if binding == 'tvpl':
+            continue
+
         path_binding = os.path.join(path, binding)
         src_file_path = os.path.join(path_binding, 'doc', lang)
 
@@ -207,7 +215,7 @@ if socket.gethostname() == 'tinkerforge.com':
             device = '_'.join(git.split('-')[:-1])
         else:
             category = 'accessories'
-            device = git.split('-', '_')
+            device = git.replace('-', '_')
 
         target_dir = os.path.join('/srv/web/com.tinkerforge.download/downloads/3d', category, device)
 

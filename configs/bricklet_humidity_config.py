@@ -11,6 +11,7 @@ from commonconstants import THRESHOLD_OPTION_CONSTANTS
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
     'api_version': [2, 0, 1],
+    'api_version_extra': 1, # +1 for "Break API to fix threshold min/max type mismatch [59d13f6]"
     'category': 'Bricklet',
     'device_identifier': 27,
     'name': 'Humidity',
@@ -22,7 +23,7 @@ com = {
     },
     'released': True,
     'documented': True,
-    'discontinued': True,
+    'discontinued': True, # replaced by Humidity Bricklet 2.0
     'packets': [],
     'examples': []
 }
@@ -508,6 +509,6 @@ com['examples'].append({
 com['examples'].append({
 'name': 'Threshold',
 'functions': [('debounce_period', 10000),
-              ('callback', ('Humidity Reached', 'humidity reached'), [(('Humidity', 'Humidity'), 'uint16', 1, 10.0, '%RH', None)], None, 'Recommended humiditiy for human comfort is 30 to 60 %RH.'),
+              ('callback', ('Humidity Reached', 'humidity reached'), [(('Humidity', 'Humidity'), 'uint16', 1, 10.0, '%RH', None)], None, 'Recommended humidity for human comfort is 30 to 60 %RH.'),
               ('callback_threshold', ('Humidity', 'humidity'), [], 'o', [(30, 60)])]
 })

@@ -146,8 +146,8 @@ class PHPDocDevice(php_common.PHPDevice):
             'en': """
 .. php:function:: void {1}::registerCallback(int $callback_id, callable $callback, mixed $user_data = NULL)
 
- Registriert die ``$function`` für die gegebene ``$callback_id``. Die optionalen
- ``$user_data`` werden der Funktion als letztes Parameter mit übergeben.
+ Registers the given ``$function`` with the given ``$callback_id``. The optional
+ ``$user_data`` will be passed as the last parameter to the function.
 
  The available callback IDs with corresponding function signatures are listed
  :ref:`below <{0}_php_callbacks>`.
@@ -365,7 +365,7 @@ class PHPDocPacket(php_common.PHPPacket):
         if self.get_name().space == 'Set Response Expected':
             text += common.format_function_id_constants(prefix, self.get_device())
         else:
-            text += common.format_constants(prefix, self)
+            text += common.format_constants(prefix, self, bool_format_func=lambda value: str(value).lower())
 
         text += common.format_since_firmware(self.get_device(), self)
 

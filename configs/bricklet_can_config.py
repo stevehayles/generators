@@ -20,7 +20,7 @@ com = {
     },
     'released': True,
     'documented': True,
-    'discontinued': False,
+    'discontinued': False, # selling remaining stock, replaced by CAN Bricklet 2.0
     'packets': [],
     'examples': []
 }
@@ -136,7 +136,7 @@ gesetzt und die anderen Rückgabewerte beinhalte ungültige Werte.
 Der ``identifier`` Rückgabewerte folgt dem für :func:`Write Frame` beschriebenen
 Format.
 
-Für Remote-Frames beinhalte der ``data`` Rückgabewerte immer gültigen Werte.
+Für Remote-Frames beinhalte der ``data`` Rückgabewerte immer ungültigen Werte.
 
 Mittels eines einstellbaren Lesefilters kann festgelegt werden, welche Frames
 vom CAN-Transceiver überhaupt empfangen und im Lese-Buffer abgelegt werden
@@ -234,7 +234,7 @@ The baud rate can be configured in steps between 10 and 1000 kbit/s.
 
 The CAN transceiver has three different modes:
 
-* Normal: Reads from and writes and to the CAN bus and performs active bus
+* Normal: Reads from and writes to the CAN bus and performs active bus
   error detection and acknowledgement.
 * Loopback: All reads and writes are performed internally. The transceiver
   is disconnected from the actual CAN bus.
@@ -619,7 +619,7 @@ Dieser Callback kann durch :func:`Enable Frame Read Callback` aktiviert werden.
 com['examples'].append({
 'name': 'Loopback',
 'functions': [('setter', 'Set Configuration', [('uint8:constant', 7), ('uint8:constant', 1), ('int32', 0)], 'Configure transceiver for loopback mode', None),
-              ('callback', ('Frame Read', 'frame read'), [(('Frame Type', 'Frame Type'), 'uint8', 1, None, None, None), (('Identifier', 'Identifier'), 'uint32', 1, None, None, None), (('Data', 'Data'), 'uint8', 8, None, None, None), (('Length', 'Length'), 'uint8', 1, None, None, None)], None, None),
+              ('callback', ('Frame Read', 'frame read'), [(('Frame Type', 'Frame Type'), 'uint8:constant', 1, None, None, None), (('Identifier', 'Identifier'), 'uint32', 1, None, None, None), (('Data', 'Data'), 'uint8', 8, None, None, None), (('Length', 'Length'), 'uint8', 1, None, None, None)], None, None),
               ('setter', 'Enable Frame Read Callback', [], 'Enable frame read callback', None)],
 'cleanups': [('setter', 'Disable Frame Read Callback', [], None, None)],
 'incomplete': True # because of callback with array parameter
