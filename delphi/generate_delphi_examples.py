@@ -188,21 +188,28 @@ end.
 class DelphiExampleArgument(common.ExampleArgument):
     def get_delphi_source(self):
         type_ = self.get_type()
+
+        def helper(value):
+            if type_ == 'bool':
+                if value:
+                    return 'true'
+                else:
+                    return 'false'
+            elif type_ in ['char', 'string']:
+                return "'{0}'".format(value)
+            elif ':bitmask:' in type_:
+                return common.make_c_like_bitmask(value, shift='{0} shl {1}', combine='({0}) or ({1})')
+            elif type_.endswith(':constant'):
+                return self.get_value_constant(value).get_delphi_source()
+            else:
+                return str(value)
+
         value = self.get_value()
 
-        if type_ == 'bool':
-            if value:
-                return 'true'
-            else:
-                return 'false'
-        elif type_ in ['char', 'string']:
-            return "'{0}'".format(value)
-        elif ':bitmask:' in type_:
-            return common.make_c_like_bitmask(value, shift='{0} shl {1}', combine='({0}) or ({1})')
-        elif type_.endswith(':constant'):
-            return self.get_value_constant().get_delphi_source()
-        else:
-            return str(value)
+        if isinstance(value, list):
+            return '[{0}]'.format(', '.join([helper(item) for item in value]))
+
+        return helper(value)
 
 class DelphiExampleArgumentsMixin(object):
     def get_delphi_arguments(self):
@@ -232,32 +239,60 @@ class DelphiExampleParameter(common.ExampleParameter, DelphiPrintfFormatMixin):
                                name=name)
 
     def get_delphi_write_lns(self):
-        # FIXME: the parameter type can indicate a bitmask, but there is no easy way in Delphi
-        #        to format an integer in base-2, that doesn't require open-coding it with several
-        #        lines of code. so just print the integer in base-10 the normal way
-        template = "  WriteLn(Format('{label}: {printf_format}{unit}', [{name}{index}{divisor}]));{comment}"
+        if self.get_type().split(':')[-1] == 'constant':
+            if self.get_label_name() == None:
+                return []
+                
+            # FIXME: need to handle multiple labels
+            assert self.get_label_count() == 1
 
-        if self.get_label_name() == None:
-            return []
+            template = "{global_line_prefix}  {else_}if ({name} = {constant_name}) then begin\n{global_line_prefix}    WriteLn('{label}: {constant_title}');{comment}\n{global_line_prefix}  end"
+            constant_group = self.get_constant_group()
+            result = []
 
-        if self.get_cardinality() < 0:
-            return [] # FIXME: streaming
+            name = self.get_name().headless
 
-        name = self.get_name().headless
+            if name == self.get_device().get_initial_name():
+                name += '_'
 
-        if name == self.get_device().get_initial_name():
-            name += '_'
+            for constant in constant_group.get_constants():
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              else_='else ' if len(result) > 0 else '',
+                                              name=name,
+                                              label=self.get_label_name().replace('%', '%%'),
+                                              constant_name=constant.get_delphi_source(),
+                                              constant_title=constant.get_name().space,
+                                              comment=self.get_formatted_comment(' {{ {0} }}')))
 
-        result = []
+            result = ['\r' + '\n'.join(result) + ';' + '\r']
+        else:
+            # FIXME: the parameter type can indicate a bitmask, but there is no easy way in Delphi
+            #        to format an integer in base-2, that doesn't require open-coding it with several
+            #        lines of code. so just print the integer in base-10 the normal way
+            template = "{global_line_prefix}  WriteLn(Format('{label}: {printf_format}{unit}', [{name}{index}{divisor}]));{comment}"
 
-        for index in range(self.get_label_count()):
-            result.append(template.format(name=name,
-                                          label=self.get_label_name(index=index).replace('%', '%%'),
-                                          index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
-                                          divisor=self.get_formatted_divisor('/{0}'),
-                                          printf_format=self.get_delphi_printf_format(),
-                                          unit=self.get_formatted_unit_name(' {0}').replace('%', '%%'),
-                                          comment=self.get_formatted_comment(' {{ {0} }}')))
+            if self.get_label_name() == None:
+                return []
+
+            if self.get_cardinality() < 0:
+                return [] # FIXME: streaming
+
+            name = self.get_name().headless
+
+            if name == self.get_device().get_initial_name():
+                name += '_'
+
+            result = []
+
+            for index in range(self.get_label_count()):
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              name=name,
+                                              label=self.get_label_name(index=index).replace('%', '%%'),
+                                              index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
+                                              divisor=self.get_formatted_divisor('/{0}'),
+                                              printf_format=self.get_delphi_printf_format(),
+                                              unit=self.get_formatted_unit_name(' {0}').replace('%', '%%'),
+                                              comment=self.get_formatted_comment(' {{ {0} }}')))
 
         return result
 
@@ -267,7 +302,7 @@ class DelphiExampleResult(common.ExampleResult, DelphiPrintfFormatMixin):
         templateB = 'TArray0To{array_end}Of{type1}'
         templateC = 'TArrayOf{type1}'
 
-        if self.get_cardinality() == 1:
+        if self.get_cardinality() == 1 or self.get_type().split(':')[0] == 'string':
             template = templateA
         elif self.get_cardinality() > 1:
             template = templateB
@@ -292,32 +327,57 @@ class DelphiExampleResult(common.ExampleResult, DelphiPrintfFormatMixin):
         return name
 
     def get_delphi_write_lns(self):
-        # FIXME: the result type can indicate a bitmask, but there is no easy way in Delphi
-        #        to format an integer in base-2, that doesn't require open-coding it with several
-        #        lines of code. so just print the integer in base-10 the normal way
-        template = "  WriteLn(Format('{label}: {printf_format}{unit}', [{name}{index}{divisor}]));{comment}"
+        if self.get_type().split(':')[-1] == 'constant':
+            # FIXME: need to handle multiple labels
+            assert self.get_label_count() == 1
 
-        if self.get_label_name() == None:
-            return []
+            template = "{global_line_prefix}  {else_}if ({name} = {constant_name}) then begin\n{global_line_prefix}    WriteLn('{label}: {constant_title}');{comment}\n{global_line_prefix}  end"
+            constant_group = self.get_constant_group()
+            result = []
 
-        if self.get_cardinality() < 0:
-            return [] # FIXME: streaming
+            name = self.get_name().headless
 
-        name = self.get_name().headless
+            if name == self.get_device().get_initial_name():
+                name += '_'
 
-        if name == self.get_device().get_initial_name():
-            name += '_'
+            for constant in constant_group.get_constants():
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              else_='else ' if len(result) > 0 else '',
+                                              name=name,
+                                              label=self.get_label_name().replace('%', '%%'),
+                                              constant_name=constant.get_delphi_source(),
+                                              constant_title=constant.get_name().space,
+                                              comment=self.get_formatted_comment(' {{ {0} }}')))
 
-        result = []
+            result = ['\r' + '\n'.join(result) + ';' + '\r']
+        else:
+            # FIXME: the result type can indicate a bitmask, but there is no easy way in Delphi
+            #        to format an integer in base-2, that doesn't require open-coding it with several
+            #        lines of code. so just print the integer in base-10 the normal way
+            template = "{global_line_prefix}  WriteLn(Format('{label}: {printf_format}{unit}', [{name}{index}{divisor}]));{comment}"
 
-        for index in range(self.get_label_count()):
-            result.append(template.format(name=name,
-                                          label=self.get_label_name(index=index).replace('%', '%%'),
-                                          index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
-                                          divisor=self.get_formatted_divisor('/{0}'),
-                                          printf_format=self.get_delphi_printf_format(),
-                                          unit=self.get_formatted_unit_name(' {0}').replace('%', '%%'),
-                                          comment=self.get_formatted_comment(' {{ {0} }}')))
+            if self.get_label_name() == None:
+                return []
+
+            if self.get_cardinality() < 0:
+                return [] # FIXME: streaming
+
+            name = self.get_name().headless
+
+            if name == self.get_device().get_initial_name():
+                name += '_'
+
+            result = []
+
+            for index in range(self.get_label_count()):
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              name=name,
+                                              label=self.get_label_name(index=index).replace('%', '%%'),
+                                              index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
+                                              divisor=self.get_formatted_divisor('/{0}'),
+                                              printf_format=self.get_delphi_printf_format(),
+                                              unit=self.get_formatted_unit_name(' {0}').replace('%', '%%'),
+                                              comment=self.get_formatted_comment(' {{ {0} }}')))
 
         return result
 
@@ -337,12 +397,12 @@ class DelphiExampleGetterFunction(common.ExampleGetterFunction, DelphiPrintfForm
         return variable_declarations
 
     def get_delphi_source(self):
-        templateA = r"""  {{ Get current {function_name_comment} }}
-  {variable_names} := {device_name}.{function_name_camel}{arguments};
+        templateA = r"""{global_line_prefix}  {{ Get current {function_name_comment} }}
+{global_line_prefix}  {variable_names} := {device_name}.{function_name_camel}{arguments};
 {write_lns}
 """
-        templateB = r"""  {{ Get current {function_name_comment} }}
-  {device_name}.{function_name_camel}{arguments};
+        templateB = r"""{global_line_prefix}  {{ Get current {function_name_comment} }}
+{global_line_prefix}  {device_name}.{function_name_camel}{arguments};
 {write_lns}
 """
         variable_names = []
@@ -361,7 +421,7 @@ class DelphiExampleGetterFunction(common.ExampleGetterFunction, DelphiPrintfForm
             write_lns.remove(None)
 
         if len(write_lns) > 1:
-            write_lns.insert(0, '')
+            write_lns.insert(0, '\b')
 
         arguments = self.get_delphi_arguments()
 
@@ -369,11 +429,12 @@ class DelphiExampleGetterFunction(common.ExampleGetterFunction, DelphiPrintfForm
             arguments += variable_names
             variable_names = []
 
-        result = template.format(device_name=self.get_device().get_initial_name(),
+        result = template.format(global_line_prefix=global_line_prefix,
+                                 device_name=self.get_device().get_initial_name(),
                                  function_name_camel=self.get_name().camel,
                                  function_name_comment=self.get_comment_name(),
                                  variable_names=''.join(variable_names),
-                                 write_lns='\n'.join(write_lns),
+                                 write_lns='\n'.join(write_lns).replace('\b\n\r', '\n').replace('\b', '').replace('\r\n\r', '\n\n').rstrip('\r').replace('\r', '\n'),
                                  arguments=common.wrap_non_empty('(', ',<BP>'.join(arguments), ')'))
 
         return common.break_string(result, '.{0}('.format(self.get_name().camel))
@@ -456,7 +517,7 @@ end;
                                   device_name=self.get_device().get_name().camel,
                                   function_name_camel=self.get_name().camel,
                                   parameters=common.wrap_non_empty(';<BP>', ';<BP>'.join(parameters), ''),
-                                  write_lns='\n'.join(write_lns),
+                                  write_lns='\n'.join(write_lns).replace('\r\n\r', '\n\n').strip('\r').replace('\r', '\n'),
                                   extra_message=extra_message)
 
         return common.break_string(result, '{}CB('.format(self.get_name().camel))
@@ -529,12 +590,12 @@ class DelphiExampleCallbackThresholdFunction(common.ExampleCallbackThresholdFunc
 
     def get_delphi_source(self):
         template = r"""  {{ Configure threshold for {function_name_comment} "{option_comment}" }}
-  {device_name}.Set{function_name_camel}CallbackThreshold({arguments}'{option_char}', {mininum_maximums});
+  {device_name}.Set{function_name_camel}CallbackThreshold({arguments}'{option_char}', {minimum_maximums});
 """
-        mininum_maximums = []
+        minimum_maximums = []
 
-        for mininum_maximum in self.get_minimum_maximums():
-            mininum_maximums.append(mininum_maximum.get_delphi_source())
+        for minimum_maximum in self.get_minimum_maximums():
+            minimum_maximums.append(minimum_maximum.get_delphi_source())
 
         return template.format(device_name=self.get_device().get_initial_name(),
                                function_name_camel=self.get_name().camel,
@@ -542,7 +603,7 @@ class DelphiExampleCallbackThresholdFunction(common.ExampleCallbackThresholdFunc
                                arguments=common.wrap_non_empty('', ', '.join(self.get_delphi_arguments()), ', '),
                                option_char=self.get_option_char(),
                                option_comment=self.get_option_comment(),
-                               mininum_maximums=', '.join(mininum_maximums))
+                               minimum_maximums=', '.join(minimum_maximums))
 
 class DelphiExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurationFunction, DelphiPrintfFormatMixin, DelphiExampleArgumentsMixin):
     def get_delphi_prototype(self):
@@ -556,14 +617,14 @@ class DelphiExampleCallbackConfigurationFunction(common.ExampleCallbackConfigura
 
     def get_delphi_source(self):
         templateA = r"""  {{ Set period for {function_name_comment} callback to {period_sec_short} ({period_msec}ms) }}
-  {device_name}.Set{function_name_camel}CallbackConfiguration({arguments}{period_msec}, false);
+  {device_name}.Set{function_name_camel}CallbackConfiguration({arguments}{period_msec}{value_has_to_change});
 """
         templateB = r"""  {{ Set period for {function_name_comment} callback to {period_sec_short} ({period_msec}ms) without a threshold }}
-  {device_name}.Set{function_name_camel}CallbackConfiguration({arguments}{period_msec}, false, '{option_char}', {mininum_maximums});
+  {device_name}.Set{function_name_camel}CallbackConfiguration({arguments}{period_msec}{value_has_to_change}, '{option_char}', {minimum_maximums});
 """
         templateC = r"""  {{ Configure threshold for {function_name_comment} "{option_comment}"
     with a debounce period of {period_sec_short} ({period_msec}ms) }}
-  {device_name}.Set{function_name_camel}CallbackConfiguration({arguments}{period_msec}, false, '{option_char}', {mininum_maximums});
+  {device_name}.Set{function_name_camel}CallbackConfiguration({arguments}{period_msec}{value_has_to_change}, '{option_char}', {minimum_maximums});
 """
 
         if self.get_option_char() == None:
@@ -575,10 +636,10 @@ class DelphiExampleCallbackConfigurationFunction(common.ExampleCallbackConfigura
 
         period_msec, period_sec_short, period_sec_long = self.get_formatted_period()
 
-        mininum_maximums = []
+        minimum_maximums = []
 
-        for mininum_maximum in self.get_minimum_maximums():
-            mininum_maximums.append(mininum_maximum.get_delphi_source())
+        for minimum_maximum in self.get_minimum_maximums():
+            minimum_maximums.append(minimum_maximum.get_delphi_source())
 
         return template.format(device_name=self.get_device().get_initial_name(),
                                function_name_camel=self.get_name().camel,
@@ -587,9 +648,10 @@ class DelphiExampleCallbackConfigurationFunction(common.ExampleCallbackConfigura
                                period_msec=period_msec,
                                period_sec_short=period_sec_short,
                                period_sec_long=period_sec_long,
+                               value_has_to_change=common.wrap_non_empty(', ', self.get_value_has_to_change('true', 'false', ''), ''),
                                option_char=self.get_option_char(),
                                option_comment=self.get_option_comment(),
-                               mininum_maximums=', '.join(mininum_maximums))
+                               minimum_maximums=', '.join(minimum_maximums))
 
 class DelphiExampleSpecialFunction(common.ExampleSpecialFunction):
     def get_delphi_prototype(self):

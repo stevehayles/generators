@@ -107,7 +107,9 @@ uses
     def get_delphi_constants(self):
         constant_format = '  {device_name}_{constant_group_name_upper}_{constant_name_upper} = {constant_value};\n'
 
-        return self.get_formatted_constants(constant_format, device_name=self.get_category().upper + '_' + self.get_name().upper) + '\n'
+        return self.get_formatted_constants(constant_format,
+                                            bool_format_func=lambda value: str(value).lower(),
+                                            device_name=self.get_category().upper + '_' + self.get_name().upper) + '\n'
 
     def get_delphi_callback_id_definitions(self):
         callback_ids = ''
@@ -170,19 +172,19 @@ uses
             for element in packet.get_elements(direction='out'):
                 role = element.get_role()
 
-                if not role:
+                if role == None:
                     continue
 
                 if role.endswith('length'):
                     callback_state_length_delphi_type = element.get_delphi_type()[0]
 
                 if role.endswith('data'):
-                    callback_state_data_delphi_type = element.get_delphi_type()[0]
+                    callback_state_data_delphi_type = element.get_delphi_type()[1]
 
                     if stream_out.get_fixed_length():
                         callback_state_length_delphi_type = self.get_fixed_stream_length_type(abs(stream_out.get_data_element().get_cardinality()))
 
-            arrays += '  T{0}HighLevelCallbackState = record data: array of {1}; length: {2}; end;\n' \
+            arrays += '  T{0}HighLevelCallbackState = record data: TArrayOf{1}; length: {2}; end;\n' \
                       .format(packet.get_name(skip=-2).camel,
                               callback_state_data_delphi_type,
                               callback_state_length_delphi_type)
@@ -197,7 +199,7 @@ uses
         template = '  {0}Notify{1} = procedure(sender: {0}{2}) of object;\n'
 
         for packet in self.get_packets('callback'):
-            params = common.wrap_non_empty('; ', '; '.join(packet.get_delphi_parameters(False)), '')
+            params = common.wrap_non_empty('; ', '; '.join(packet.get_delphi_parameters('signature')), '')
             prototypes += template.format(self.get_delphi_class_name(),
                                           packet.get_name().camel,
                                           params)
@@ -288,8 +290,8 @@ uses
             output_count = len(packet.get_elements(direction='out'))
             name = packet.get_name().camel
             doc = packet.get_delphi_formatted_doc()
-            ret_type = packet.get_delphi_return_type(False)
-            params = common.wrap_non_empty('(', '; '.join(packet.get_delphi_parameters(False)), ')')
+            ret_type = packet.get_delphi_return_type('signature')
+            params = common.wrap_non_empty('(', '; '.join(packet.get_delphi_parameters('signature')), ')')
 
             if packet.has_prototype_in_device():
                 modifier = 'override'
@@ -418,27 +420,21 @@ begin
 """
         stream_mutex = ''
         response_expected = ''
-        high_level_callback_state = ''
 
         for packet in self.get_packets('function'):
             if packet.has_high_level():
                 stream_mutex = '  streamMutex := TCriticalSection.Create;\n\n'
 
-            if len(packet.get_elements(direction='out')) > 0:
-                flag = 'DEVICE_RESPONSE_EXPECTED_ALWAYS_TRUE'
-            elif packet.get_doc_type() == 'ccf' or packet.get_high_level('stream_in') != None:
-                flag = 'DEVICE_RESPONSE_EXPECTED_TRUE'
-            else:
-                flag = 'DEVICE_RESPONSE_EXPECTED_FALSE'
-
-            response_expected += '  responseExpected[{0}_{1}_FUNCTION_{2}] := {3};\n' \
+            response_expected += '  responseExpected[{0}_{1}_FUNCTION_{2}] := DEVICE_RESPONSE_EXPECTED_{3};\n' \
                                  .format(self.get_category().upper,
                                          self.get_name().upper,
                                          packet.get_name().upper,
-                                         flag)
+                                         packet.get_response_expected().upper())
 
         if len(response_expected) > 0:
             response_expected += '\n'
+
+        high_level_callback_state = ''
 
         for packet in self.get_packets('callback'):
             if not packet.has_high_level():
@@ -564,22 +560,15 @@ begin
         cls = self.get_delphi_class_name()
 
         for packet in self.get_packets('function'):
-            output_count = 0
             name = packet.get_name().camel
-            ret_type = packet.get_delphi_return_type(False)
+            ret_type = packet.get_delphi_return_type('signature')
             out_count = len(packet.get_elements(direction='out'))
-            params = common.wrap_non_empty('(', '; '.join(packet.get_delphi_parameters(False)), ')')
+            params = common.wrap_non_empty('(', '; '.join(packet.get_delphi_parameters('signature')), ')')
             function_id = '{0}_{1}_FUNCTION_{2}'.format(self.get_category().upper,
                                                         self.get_name().upper,
                                                         packet.get_name().upper)
 
-            for e in packet.get_elements():
-                if e.get_direction() != 'out':
-                    continue
-
-                output_count += 1
-
-            if output_count == 1:
+            if out_count == 1:
                 method = function.format(cls, name, params, ret_type)
             else:
                 method = procedure.format(cls, name, params)
@@ -617,6 +606,12 @@ begin
             offset = 8
 
             for element in packet.get_elements(direction='in'):
+                if element.get_cardinality() > 1 and element.get_type() != 'string' and element.get_level() != 'low':
+                    method += "  if (Length({0}) <> {2}) then raise EInvalidParameterException.Create('{1} has to be exactly {2} items long');\n" \
+                              .format(element.get_name().headless,
+                                      element.get_name().space.rstrip('_'),
+                                      element.get_cardinality())
+
                 if element.get_cardinality() > 1 and element.get_type() != 'string' and element.get_type() != 'bool':
                     prefix = 'for i := 0 to Length({0}) - 1 do '.format(element.get_name().headless)
                     method += '  {0}LEConvert{1}To({2}[i], {3} + (i * {4}), request);\n'.format(prefix,
@@ -673,7 +668,7 @@ begin
                                                            str(int(math.ceil(element.get_cardinality() / 8.0) - 1)),
                                                            offset,
                                                            element.get_cardinality() - 1,
-                                                           element.get_name().headless)
+                                                           result)
                 elif element.get_type() == 'string':
                     method += '  {0} := LEConvertStringFrom({1}, {2}, response);\n'.format(result,
                                                                                            offset,
@@ -721,7 +716,7 @@ begin
         if ({stream_name_headless}ChunkLength > {chunk_cardinality}) then {stream_name_headless}ChunkLength := {chunk_cardinality};
 
         FillChar({stream_name_headless}ChunkData[0], SizeOf({chunk_data_type}) * {chunk_cardinality}, 0);
-        Move({stream_name_headless}[Low({stream_name_headless}) + {stream_name_headless}ChunkOffset], {stream_name_headless}ChunkData[0], SizeOf({chunk_data_type}) * {stream_name_headless}ChunkLength);{ll_function_call}
+        Move({stream_name_headless}[{stream_name_headless}ChunkOffset], {stream_name_headless}ChunkData[0], SizeOf({chunk_data_type}) * {stream_name_headless}ChunkLength);{ll_function_call}
         Inc({stream_name_headless}ChunkOffset, {chunk_cardinality});{ll_function_written_inc}
       end;
     finally
@@ -755,7 +750,7 @@ begin
       end;
 
       FillChar({stream_name_headless}ChunkData[0], SizeOf({chunk_data_type}) * {chunk_cardinality}, 0);
-      Move({stream_name_headless}[Low({stream_name_headless}) + {stream_name_headless}ChunkOffset], {stream_name_headless}ChunkData[0], SizeOf({chunk_data_type}) * {stream_name_headless}ChunkLength);{ll_function_call}
+      Move({stream_name_headless}[{stream_name_headless}ChunkOffset], {stream_name_headless}ChunkData[0], SizeOf({chunk_data_type}) * {stream_name_headless}ChunkLength);{ll_function_call}
       Inc({stream_name_headless}ChunkOffset, {chunk_cardinality});{ll_function_written_inc}
     end;
   finally
@@ -790,7 +785,7 @@ begin
         if ({stream_name_headless}ChunkLength > {chunk_cardinality}) then {stream_name_headless}ChunkLength := {chunk_cardinality};
 
         FillChar({stream_name_headless}ChunkData[0], SizeOf({chunk_data_type}) * {chunk_cardinality}, 0);
-        Move({stream_name_headless}[Low({stream_name_headless}) + {stream_name_headless}ChunkOffset], {stream_name_headless}ChunkData[0], SizeOf({chunk_data_type}) * {stream_name_headless}ChunkLength);{ll_function_call}{ll_function_written_inc}
+        Move({stream_name_headless}[{stream_name_headless}ChunkOffset], {stream_name_headless}ChunkData[0], SizeOf({chunk_data_type}) * {stream_name_headless}ChunkLength);{ll_function_call}{ll_function_written_inc}
 
         if ({current_written_value_variable} < {chunk_cardinality}) then break; {{ Either last chunk or short write }}
 
@@ -815,7 +810,7 @@ begin{ll_function_call_init_written_variables}
   {stream_name_headless}Length := Length({stream_name_headless});
 
   FillChar({stream_name_headless}Data[0], SizeOf({chunk_data_type}) * {chunk_cardinality}, 0);
-  Move({stream_name_headless}[Low({stream_name_headless})], {stream_name_headless}Data[0], SizeOf({chunk_data_type}) * {stream_name_headless}Length);{ll_function_call}{ll_function_written_inc}
+  Move({stream_name_headless}[0], {stream_name_headless}Data[0], SizeOf({chunk_data_type}) * {stream_name_headless}Length);{ll_function_call}{ll_function_written_inc}
 end;
 
 """
@@ -832,7 +827,7 @@ begin{ll_function_call_init_written_variables}
   {stream_name_headless}Length := Length({stream_name_headless});
 
   FillChar({stream_name_headless}Data[0], SizeOf({chunk_data_type}) * {chunk_cardinality}, 0);
-  Move({stream_name_headless}[Low({stream_name_headless})], {stream_name_headless}Data[0], SizeOf({chunk_data_type}) * {stream_name_headless}Length);{ll_function_call}{ll_function_written_inc}
+  Move({stream_name_headless}[0], {stream_name_headless}Data[0], SizeOf({chunk_data_type}) * {stream_name_headless}Length);{ll_function_call}{ll_function_written_inc}
 end;
 
 """
@@ -863,7 +858,7 @@ begin{output_prepare}
     if ((not {stream_name_headless}OutOfSync) and ({stream_name_headless}Length > 0)) then begin
       {stream_name_headless}ChunkLength := {stream_name_headless}Length - {stream_name_headless}ChunkOffset;
       if ({stream_name_headless}ChunkLength > {chunk_cardinality}) then {stream_name_headless}ChunkLength := {chunk_cardinality};
-      Move({stream_name_headless}ChunkData, {stream_name_headless}[Low({stream_name_headless})], SizeOf({chunk_data_type}) * {stream_name_headless}ChunkLength);
+      Move({stream_name_headless}ChunkData, {stream_name_headless}[0], SizeOf({chunk_data_type}) * {stream_name_headless}ChunkLength);
       {stream_name_headless}CurrentLength := {stream_name_headless}ChunkLength;
 
       while ((not {stream_name_headless}OutOfSync) and ({stream_name_headless}CurrentLength < {stream_name_headless}Length)) do begin
@@ -871,7 +866,7 @@ begin{output_prepare}
         {stream_name_headless}OutOfSync := {stream_name_headless}ChunkOffset <> {stream_name_headless}CurrentLength;
         {stream_name_headless}ChunkLength := {stream_name_headless}Length - {stream_name_headless}ChunkOffset;
         if ({stream_name_headless}ChunkLength > {chunk_cardinality}) then {stream_name_headless}ChunkLength := {chunk_cardinality};
-        Move({stream_name_headless}ChunkData, {stream_name_headless}[Low({stream_name_headless}) + {stream_name_headless}CurrentLength], SizeOf({chunk_data_type}) * {stream_name_headless}ChunkLength);
+        Move({stream_name_headless}ChunkData, {stream_name_headless}[{stream_name_headless}CurrentLength], SizeOf({chunk_data_type}) * {stream_name_headless}ChunkLength);
         Inc({stream_name_headless}CurrentLength, {stream_name_headless}ChunkLength);
       end;
     end;
@@ -897,7 +892,7 @@ end;
 begin{output_prepare}
   {camel_name}LowLevel({parameters_low_level});
   SetLength({stream_name_headless}, {stream_name_headless}Length);
-  Move({stream_name_headless}Data, {stream_name_headless}[Low({stream_name_headless})], SizeOf({chunk_data_type}) * {stream_name_headless}Length);{output_finish}
+  Move({stream_name_headless}Data, {stream_name_headless}[0], SizeOf({chunk_data_type}) * {stream_name_headless}Length);{output_finish}
 end;
 
 """
@@ -1013,8 +1008,7 @@ end;
                                     accumulated_written_value_variable = 'result'
                                     ll_function_call_define_current_written_variables += \
                                         '\n  ' + current_written_value_variable + ': ' + e.get_delphi_type()[0] + ';'
-                                    ll_function_call_init_written_variables += \
-                                        '\n  ' + current_written_value_variable + ' := 0;\n  result := 0;'
+                                    ll_function_call_init_written_variables += '\n  result := 0;'
                             else:
                                 accumulated_written_value_variable = 'result'
                                 current_written_value_variable = 'result'
@@ -1030,7 +1024,7 @@ end;
                                     ll_function_call_define_current_written_variables += \
                                         '\n  ' + current_written_value_variable + ': ' + e.get_delphi_type()[0] + ';'
                                     ll_function_call_init_written_variables += \
-                                        '\n  ' + current_written_value_variable + ' := 0;\n  ' + accumulated_written_value_variable + ' := 0;'
+                                        '\n  ' + accumulated_written_value_variable + ' := 0;'
 
                 if len(e_params) > 0:
                     params = '(' + '; '.join(e_params) + ')'
@@ -1269,7 +1263,7 @@ end;
             variables = []
 
             if len(packet.get_elements(direction='out')) > 0:
-                variables += packet.get_delphi_parameters(False, with_modifiers=False)
+                variables += packet.get_delphi_parameters('variables')
 
             has_array = False
 
@@ -1306,9 +1300,9 @@ end;
             offset = 8
             parameter_names = []
 
-            wrapper_bool_array_fmt = '''    FillChar({0}[0], Length({0}) * SizeOf({0}[0]), 0);
-    for i := 0 to {1} do {0}[i] := LEConvertUInt8From({2} + (i * 1), packet);
-    for i := 0 to {3} do {4}[i] := (({0}[Floor(i / 8)] and (1 shl (i mod 8))) <> 0);
+            wrapper_bool_array_fmt = '''  FillChar({0}[0], Length({0}) * SizeOf({0}[0]), 0);
+  for i := 0 to {1} do {0}[i] := LEConvertUInt8From({2} + (i * 1), packet);
+  for i := 0 to {3} do {4}[i] := (({0}[Floor(i / 8)] and (1 shl (i mod 8))) <> 0);
 '''
 
             for element in packet.get_elements(direction='out'):
@@ -1544,7 +1538,7 @@ class DelphiBindingsElement(delphi_common.DelphiElement):
 
         # avoid keywords, check as lower because Delphi is caseless
         if name.lower in ['length', 'unit', 'type', 'message']:
-            name = delphi_common.DelphiElement.get_name(self, *args, suffix='2', **kwargs)
+            name = delphi_common.DelphiElement.get_name(self, *args, suffix='_', **kwargs)
 
         return name
 

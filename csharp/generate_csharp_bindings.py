@@ -245,6 +245,8 @@ namespace Tinkerforge
             for constant in constant_group.get_constants():
                 if constant_group.get_type() == 'char':
                     value = "'{0}'".format(constant.get_value())
+                elif constant_group.get_type() == 'bool':
+                    value = str(constant.get_value()).lower()
                 else:
                     value = str(constant.get_value())
 
@@ -287,21 +289,14 @@ namespace Tinkerforge
                                   *self.get_api_version())
 
     def get_csharp_response_expected(self):
-        response_expected = '\n'
-        template = "\t\t\tresponseExpected[FUNCTION_{0}] = {1}\n"
+        result = []
+        template = '\t\t\tresponseExpected[FUNCTION_{name}] = ResponseExpectedFlag.{flag};\n'
 
         for packet in self.get_packets('function'):
+            result.append(template.format(name=packet.get_name().upper,
+                                          flag=packet.get_response_expected().upper()))
 
-            if len(packet.get_elements(direction='out')) > 0:
-                flag = 'ResponseExpectedFlag.ALWAYS_TRUE;'
-            elif packet.get_doc_type() == 'ccf' or packet.get_high_level('stream_in') != None:
-                flag = 'ResponseExpectedFlag.TRUE;'
-            else:
-                flag = 'ResponseExpectedFlag.FALSE;'
-
-            response_expected += template.format(packet.get_name().upper, flag)
-
-        return response_expected + '\t\t}\n'
+        return '\n' + ''.join(result) + '\t\t}\n'
 
     def get_csharp_callbacks(self):
         callbacks = ''

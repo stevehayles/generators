@@ -1,7 +1,7 @@
 /* <<<DEVICE_NAME_DASH>>>-bricklet
  * Copyright (C) <<<YEAR>>> <<<NAME>>> <<<<EMAIL>>>>
  *
- * config.h: All configurations for <<<DEVICE_NAME_READABLE>>> Bricklet
+ * config.h: All configurations for <<<DEVICE_NAME_READABLE>>>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -34,7 +34,7 @@
 #define FIRMWARE_VERSION_MAJOR 2
 #define FIRMWARE_VERSION_MINOR 0
 #define FIRMWARE_VERSION_REVISION 0
-
+<<<CALLBACK_VALUE_DEFINE>>>
 #include "config_custom_bootloader.h"
 
 #endif

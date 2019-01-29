@@ -61,18 +61,19 @@ except ValueError:
             if len(packet.get_elements(direction='out')) < 2:
                 continue
 
-            name = packet.get_name().camel
-            name_tup = name
+            name = packet.get_name()
 
-            if name_tup.startswith('Get'):
-                name_tup = name_tup[3:]
+            if name.space.startswith('Get '):
+                name_tup = name.camel[3:]
+            else:
+                name_tup = name.camel
 
             params = []
 
             for element in packet.get_elements(direction='out'):
                 params.append("'{0}'".format(element.get_name().under))
 
-            tuples += template.format(name, name_tup, ", ".join(params))
+            tuples += template.format(name.camel, name_tup, ", ".join(params))
 
         for packet in self.get_packets('function'):
             if not packet.has_high_level():
@@ -81,18 +82,19 @@ except ValueError:
             if len(packet.get_elements(direction='out', high_level=True)) < 2:
                 continue
 
-            name = packet.get_name(skip=-2).camel
-            name_tup = name
+            name = packet.get_name(skip=-2)
 
-            if name_tup.startswith('Get'):
-                name_tup = name_tup[3:]
+            if name.space.startswith('Get '):
+                name_tup = name.camel[3:]
+            else:
+                name_tup = name.camel
 
             params = []
 
             for element in packet.get_elements(direction='out', high_level=True):
                 params.append("'{0}'".format(element.get_name().under))
 
-            tuples += template.format(name, name_tup, ", ".join(params))
+            tuples += template.format(name.camel, name_tup, ", ".join(params))
 
         return tuples
 
@@ -163,15 +165,9 @@ class {0}(Device):
         response_expected = ''
 
         for packet in self.get_packets('function'):
-            if len(packet.get_elements(direction='out')) > 0:
-                flag = 'RESPONSE_EXPECTED_ALWAYS_TRUE'
-            elif packet.get_doc_type() == 'ccf' or packet.get_high_level('stream_in') != None:
-                flag = 'RESPONSE_EXPECTED_TRUE'
-            else:
-                flag = 'RESPONSE_EXPECTED_FALSE'
-
-            response_expected += '        self.response_expected[{0}.FUNCTION_{1}] = {0}.{2}\n' \
-                                 .format(self.get_python_class_name(), packet.get_name().upper, flag)
+            response_expected += '        self.response_expected[{0}.FUNCTION_{1}] = {0}.RESPONSE_EXPECTED_{2}\n' \
+                                 .format(self.get_python_class_name(), packet.get_name().upper,
+                                         packet.get_response_expected().upper())
 
         return template.format(*self.get_api_version()) + common.wrap_non_empty('', response_expected, '\n')
 
@@ -641,7 +637,8 @@ class PythonBindingsGenerator(common.BindingsGenerator):
         return python_common.PythonElement
 
     def prepare(self):
-        self.device_factory_classes = []
+        self.device_factory_all_classes = []
+        self.device_factory_released_classes = []
 
         return common.BindingsGenerator.prepare(self)
 
@@ -651,8 +648,10 @@ class PythonBindingsGenerator(common.BindingsGenerator):
         with open(os.path.join(self.get_bindings_dir(), filename), 'w') as f:
             f.write(device.get_python_source())
 
+        self.device_factory_all_classes.append((device.get_python_import_name(), device.get_python_class_name()))
+
         if device.is_released():
-            self.device_factory_classes.append((device.get_python_import_name(), device.get_python_class_name()))
+            self.device_factory_released_classes.append((device.get_python_import_name(), device.get_python_class_name()))
             self.released_files.append(filename)
 
     def finish(self):
@@ -678,17 +677,19 @@ def get_device_display_name(device_identifier):
 def create_device(device_identifier, uid, ipcon):
     return get_device_class(device_identifier)(uid, ipcon)
 """
-        imports = []
-        classes = []
+        for filename, device_factory_classes in [('device_factory_all.py', self.device_factory_all_classes),
+                                                 ('device_factory.py', self.device_factory_released_classes)]:
+            imports = []
+            classes = []
 
-        for import_name, class_name in sorted(self.device_factory_classes):
-            imports.append(template_import.format(import_name, class_name))
-            classes.append('{0}.DEVICE_IDENTIFIER: {0},'.format(class_name))
+            for import_name, class_name in sorted(device_factory_classes):
+                imports.append(template_import.format(import_name, class_name))
+                classes.append('{0}.DEVICE_IDENTIFIER: {0},'.format(class_name))
 
-        with open(os.path.join(self.get_bindings_dir(), 'device_factory.py'), 'w') as f:
-            f.write(template.format(self.get_header_comment('hash'),
-                                    '\n'.join(imports),
-                                    '\n'.join(classes)))
+            with open(os.path.join(self.get_bindings_dir(), filename), 'w') as f:
+                f.write(template.format(self.get_header_comment('hash'),
+                                        '\n'.join(imports),
+                                        '\n'.join(classes)))
 
         return common.BindingsGenerator.finish(self)
 

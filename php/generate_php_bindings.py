@@ -145,7 +145,7 @@ class {0} extends Device
     def get_php_constants(self):
         constant_format = '    const {constant_group_name_upper}_{constant_name_upper} = {constant_value};\n'
 
-        return '\n' + self.get_formatted_constants(constant_format)
+        return '\n' + self.get_formatted_constants(constant_format, bool_format_func=lambda value: str(value).lower())
 
     def get_php_device_identifier(self):
         template = """
@@ -178,15 +178,8 @@ class {0} extends Device
         response_expected = ''
 
         for packet in self.get_packets('function'):
-            if len(packet.get_elements(direction='out')) > 0:
-                flag = 'RESPONSE_EXPECTED_ALWAYS_TRUE'
-            elif packet.get_doc_type() == 'ccf' or packet.get_high_level('stream_in') != None:
-                flag = 'RESPONSE_EXPECTED_TRUE'
-            else:
-                flag = 'RESPONSE_EXPECTED_FALSE'
-
-            response_expected += '        $this->response_expected[self::FUNCTION_{0}] = self::{1};\n' \
-                                 .format(packet.get_name().upper, flag)
+            response_expected += '        $this->response_expected[self::FUNCTION_{0}] = self::RESPONSE_EXPECTED_{1};\n' \
+                                 .format(packet.get_name().upper, packet.get_response_expected().upper())
 
         return template.format(*self.get_api_version()) + common.wrap_non_empty('\n', response_expected, '')
 

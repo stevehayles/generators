@@ -22,7 +22,7 @@ com = {
     },
     'released': True,
     'documented': True,
-    'discontinued': False,
+    'discontinued': True, # replaced by Voltage/Current Bricklet 2.0
     'packets': [],
     'examples': []
 }
@@ -422,7 +422,6 @@ gesetzt
 }]
 })
 
-
 com['packets'].append({
 'type': 'function',
 'name': 'Set Current Callback Threshold',
@@ -624,7 +623,6 @@ gesetzt.
 }]
 })
 
-
 com['packets'].append({
 'type': 'function',
 'name': 'Set Debounce Period',
@@ -768,7 +766,6 @@ letzten Auslösung geändert hat.
 """
 }]
 })
-
 
 com['packets'].append({
 'type': 'callback',

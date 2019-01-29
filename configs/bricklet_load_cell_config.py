@@ -22,7 +22,7 @@ com = {
     },
     'released': True,
     'documented': True,
-    'discontinued': False,
+    'discontinued': True, # replaced by Load Cell Bricklet 2.0
     'packets': [],
     'examples': []
 }
@@ -323,7 +323,6 @@ Gibt *true* zurück wenn die LED aktiviert ist, *false* sonst.
 }]
 })
 
-
 com['packets'].append({
 'type': 'function',
 'name': 'Calibrate',
@@ -350,7 +349,7 @@ Zum Kalibrieren des Load Cell Bricklet müssen die folgenden zwei
 Schritte durchgeführt werden:
 
 * Die Waage leeren und die Funktion mit 0 aufrufen.
-* Eine bekanntes gewicht auf die Waage legen und die Funktion mit dem
+* Eine bekanntes Gewicht auf die Waage legen und die Funktion mit dem
   Gewicht in Gramm aufrufen.
 
 Die Kalibrierung wird auf dem EEPROM des Bricklets gespeichert und muss
@@ -421,7 +420,7 @@ erzeugt mehr Störungen. Zusätzlich ist es möglich einen gleitenden
 Mittelwert auf die Werte anzuwenden (siehe :func:`Set Moving Average`).
 
 Der Gain kann zwischen 128x, 64x und 32x konfiguriert werden. Er
-respräsentiert einenen Messbereich von ±20mV, ±40mV und ±80mV
+repräsentiert einen Messbereich von ±20mV, ±40mV und ±80mV
 respektive. Das Load Cell Bricklet nutzt eine
 Erregerspannung (Excitation Voltage) von 5V und die meisten Wägezellen
 haben eine Ausgabe von 2mV/V. Dies bedeutet, der Spannungsbereich ist

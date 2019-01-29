@@ -98,27 +98,34 @@ class ShellExampleArgument(common.ExampleArgument):
             return None
 
     def get_shell_source(self):
-        constant = self.get_value_constant()
-
-        if constant != None:
-            return '{0}-{1}'.format(constant.get_constant_group().get_name().dash, constant.get_name().dash)
-
         type_ = self.get_type()
+
+        def helper(value):
+            constant = self.get_value_constant(value)
+
+            if constant != None:
+                return '{0}-{1}'.format(constant.get_constant_group().get_name().dash, constant.get_name().dash)
+
+            if type_ == 'bool':
+                if value:
+                    return 'true'
+                else:
+                    return 'false'
+            elif type_ == 'char':
+                return '{0}'.format(value)
+            elif type_ == 'string':
+                return '"{0}"'.format(value)
+            elif ':bitmask:' in type_:
+                return str(value)
+            else:
+                return str(value)
+
         value = self.get_value()
 
-        if type_ == 'bool':
-            if value:
-                return 'true'
-            else:
-                return 'false'
-        elif type_ == 'char':
-            return '{0}'.format(value)
-        elif type_ == 'string':
-            return '"{0}"'.format(value)
-        elif ':bitmask:' in type_:
-            return str(value)
-        else:
-            return str(value)
+        if isinstance(value, list):
+            return ','.join([helper(item) for item in value])
+
+        return helper(value)
 
 class ShellExampleArgumentsMixin(object):
     def get_shell_arguments(self):
@@ -146,11 +153,12 @@ class ShellExampleResult(common.ExampleResult):
 
 class ShellExampleGetterFunction(common.ExampleGetterFunction, ShellExampleArgumentsMixin):
     def get_shell_source(self):
-        template = r"""# Get current {function_name_comment}
-tinkerforge call {device_name}-{device_category} $uid {function_name_dash}{arguments}
+        template = r"""{global_line_prefix}# Get current {function_name_comment}
+{global_line_prefix}tinkerforge call {device_name}-{device_category} $uid {function_name_dash}{arguments}
 """
 
-        return template.format(device_name=self.get_device().get_name().dash,
+        return template.format(global_line_prefix=global_line_prefix,
+                               device_name=self.get_device().get_name().dash,
                                device_category=self.get_device().get_category().dash,
                                function_name_comment=self.get_comment_name(),
                                function_name_dash=self.get_name().dash,
@@ -256,12 +264,12 @@ class ShellExampleCallbackThresholdMinimumMaximum(common.ExampleCallbackThreshol
 class ShellExampleCallbackThresholdFunction(common.ExampleCallbackThresholdFunction, ShellExampleArgumentsMixin):
     def get_shell_source(self):
         template = r"""# Configure threshold for {function_name_comment} "{option_comment}"
-tinkerforge call {device_name}-{device_category} $uid set-{function_name_dash}-callback-threshold {arguments}{option_name_dash} {mininum_maximums}
+tinkerforge call {device_name}-{device_category} $uid set-{function_name_dash}-callback-threshold {arguments}{option_name_dash} {minimum_maximums}
 """
-        mininum_maximums = []
+        minimum_maximums = []
 
-        for mininum_maximum in self.get_minimum_maximums():
-            mininum_maximums.append(mininum_maximum.get_shell_source())
+        for minimum_maximum in self.get_minimum_maximums():
+            minimum_maximums.append(minimum_maximum.get_shell_source())
 
         option_name_dashs = {'o' : 'threshold-option-outside', '<': 'threshold-option-smaller', '>': 'threshold-option-greater'}
 
@@ -272,19 +280,19 @@ tinkerforge call {device_name}-{device_category} $uid set-{function_name_dash}-c
                                arguments=common.wrap_non_empty('', ' '.join(self.get_shell_arguments()), ' '),
                                option_name_dash=option_name_dashs[self.get_option_char()],
                                option_comment=self.get_option_comment(),
-                               mininum_maximums=' '.join(mininum_maximums))
+                               minimum_maximums=' '.join(minimum_maximums))
 
 class ShellExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurationFunction, ShellExampleArgumentsMixin):
     def get_shell_source(self):
         templateA = r"""# Set period for {function_name_comment} callback to {period_sec_short} ({period_msec}ms)
-tinkerforge call {device_name}-{device_category} $uid set-{function_name_dash}-callback-configuration {arguments}{period_msec} false
+tinkerforge call {device_name}-{device_category} $uid set-{function_name_dash}-callback-configuration {arguments}{period_msec}{value_has_to_change}
 """
         templateB = r"""# Set period for {function_name_comment} callback to {period_sec_short} ({period_msec}ms) without a threshold
-tinkerforge call {device_name}-{device_category} $uid set-{function_name_dash}-callback-configuration {arguments}{period_msec} false {option_name_dash} {mininum_maximums}
+tinkerforge call {device_name}-{device_category} $uid set-{function_name_dash}-callback-configuration {arguments}{period_msec}{value_has_to_change} {option_name_dash} {minimum_maximums}
 """
         templateC = r"""# Configure threshold for {function_name_comment} "{option_comment}"
 # with a debounce period of {period_sec_short} ({period_msec}ms)
-tinkerforge call {device_name}-{device_category} $uid set-{function_name_dash}-callback-configuration {arguments}{period_msec} false {option_name_dash} {mininum_maximums}
+tinkerforge call {device_name}-{device_category} $uid set-{function_name_dash}-callback-configuration {arguments}{period_msec}{value_has_to_change} {option_name_dash} {minimum_maximums}
 """
 
         if self.get_option_char() == None:
@@ -296,10 +304,10 @@ tinkerforge call {device_name}-{device_category} $uid set-{function_name_dash}-c
 
         period_msec, period_sec_short, period_sec_long = self.get_formatted_period()
 
-        mininum_maximums = []
+        minimum_maximums = []
 
-        for mininum_maximum in self.get_minimum_maximums():
-            mininum_maximums.append(mininum_maximum.get_shell_source())
+        for minimum_maximum in self.get_minimum_maximums():
+            minimum_maximums.append(minimum_maximum.get_shell_source())
 
         option_name_dashs = {None: '', 'x' : 'threshold-option-off', 'o' : 'threshold-option-outside', '<': 'threshold-option-smaller', '>': 'threshold-option-greater'}
 
@@ -311,9 +319,10 @@ tinkerforge call {device_name}-{device_category} $uid set-{function_name_dash}-c
                                period_msec=period_msec,
                                period_sec_short=period_sec_short,
                                period_sec_long=period_sec_long,
+                               value_has_to_change=common.wrap_non_empty(' ', self.get_value_has_to_change('true', 'false', ''), ''),
                                option_name_dash=option_name_dashs[self.get_option_char()],
                                option_comment=self.get_option_comment(),
-                               mininum_maximums=' '.join(mininum_maximums))
+                               minimum_maximums=' '.join(minimum_maximums))
 
 class ShellExampleSpecialFunction(common.ExampleSpecialFunction):
     def get_shell_defines(self):
@@ -425,6 +434,8 @@ class ShellExamplesGenerator(common.ExamplesGenerator):
 
         blacklist = [
             'led-strip-bricklet/callback',
+            'nfc-bricklet/emulate-ndef',
+            'nfc-bricklet/write-read-type2',
             'nfc-rfid-bricklet/write-read-type2'
         ]
 

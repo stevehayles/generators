@@ -10,18 +10,22 @@ THRESHOLD_OPTION_CONSTANTS = ('Threshold Option', [('Off', 'x'),
                                                    ('Smaller', '<'),
                                                    ('Greater', '>')])
 
-def add_callback_value_function(packets, name, data_name, data_type, doc, since_firmware = [1, 0, 0]):
+def add_callback_value_function(packets, name, data_name, data_type, doc,
+                                has_channels=False, since_firmware=[1, 0, 0]):
     name_get = name
     name_set = name.replace('Get ', 'Set ')
     name = name.replace('Get ', '')
 
     getter = {
-'type': 'function',
-'name': name_get,
-'elements': [(data_name, data_type, 1, 'out')],
-'since_firmware': since_firmware,
-'doc': ['bf', doc]
-}
+        'type': 'function',
+        'name': name_get,
+        'elements': [(data_name, data_type, 1, 'out')],
+        'since_firmware': since_firmware,
+        'doc': ['bf', doc]
+    }
+
+    if has_channels:
+        getter['elements'].insert(0, ('Channel', 'uint8', 1, 'in'))
 
     getter['doc'][1]['en'] += """
 
@@ -30,19 +34,25 @@ If you want to get the value periodically, it is recommended to use the
 with :func:`{1} Callback Configuration`.
 """.format(name, name_set)
 
+    getter['doc'][1]['de'] += """
+
+Wenn der Wert periodisch benötigt wird, kann auch der :cb:`{0}` Callback
+verwendet werden. Der Callback wird mit der Funktion
+:func:`{1} Callback Configuration` konfiguriert.
+""".format(name, name_set)
+
     callback_config_setter = {
-'type': 'function',
-'name': (name_set + ' Callback Configuration'),
-'corresponding_getter': name_get,
-'elements': [('Period', 'uint32', 1, 'in'),
-             ('Value Has To Change', 'bool', 1, 'in'),
-             ('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
-             ('Min', 'uint16', 1, 'in'),
-             ('Max', 'uint16', 1, 'in')],
-'since_firmware': since_firmware,
-'doc': ['ccf', {
-'en':
-"""
+        'type': 'function',
+        'name': (name_set + ' Callback Configuration'),
+        'corresponding_getter': name_get,
+        'elements': [('Period', 'uint32', 1, 'in'),
+                     ('Value Has To Change', 'bool', 1, 'in'),
+                     ('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+                     ('Min', data_type, 1, 'in'),
+                     ('Max', data_type, 1, 'in')],
+        'since_firmware': since_firmware,
+        'doc': ['ccf', {
+        'en': """
 The period in ms is the period with which the :cb:`{0}` callback is triggered
 periodically. A value of 0 turns the callback off.
 
@@ -65,17 +75,15 @@ The following options are possible:
 
  "'x'",    "Threshold is turned off"
  "'o'",    "Threshold is triggered when the value is *outside* the min and max values"
- "'i'",    "Threshold is triggered when the value is *inside* the min and max values"
+ "'i'",    "Threshold is triggered when the value is *inside* or equal to the min and max values"
  "'<'",    "Threshold is triggered when the value is smaller than the min value (max is ignored)"
  "'>'",    "Threshold is triggered when the value is greater than the min value (max is ignored)"
-
 
 If the option is set to 'x' (threshold turned off) the callback is triggered with the fixed period.
 
 The default value is (0, false, 'x', 0, 0).
 """.format(name),
-'de':
-"""
+        'de': """
 Die Periode in ms ist die Periode mit der der :cb:`{0}` Callback ausgelöst wird. Ein Wert von 0
 schaltet den Callback ab.
 
@@ -107,54 +115,59 @@ ausgelöst.
 
 Der Standardwert ist (0, false, 'x', 0, 0).
 """.format(name)
-}]
-}
+        }]
+    }
+
+    if has_channels:
+        callback_config_setter['elements'].insert(0, ('Channel', 'uint8', 1, 'in'))
 
     callback_config_getter = {
-'type': 'function',
-'name': (name_get + ' Callback Configuration'),
-'corresponding_getter': name_get,
-'elements': [('Period', 'uint32', 1, 'out'),
-             ('Value Has To Change', 'bool', 1, 'out'),
-             ('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
-             ('Min', 'uint16', 1, 'out'),
-             ('Max', 'uint16', 1, 'out')],
-'since_firmware': since_firmware,
-'doc': ['ccf', {
-'en':
-"""
+        'type': 'function',
+        'name': (name_get + ' Callback Configuration'),
+        'corresponding_getter': name_get,
+        'elements': [('Period', 'uint32', 1, 'out'),
+                     ('Value Has To Change', 'bool', 1, 'out'),
+                     ('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+                     ('Min', data_type, 1, 'out'),
+                     ('Max', data_type, 1, 'out')],
+        'since_firmware': since_firmware,
+        'doc': ['ccf', {
+        'en': """
 Returns the callback configuration as set by :func:`{0} Callback Configuration`.
 """.format(name_set),
-'de':
-"""
+        'de': """
 Gibt die Callback-Konfiguration zurück, wie mittels :func:`{0} Callback Configuration` gesetzt.
 """.format(name_set)
-}]
-}
+        }]
+    }
+
+    if has_channels:
+        callback_config_getter['elements'].insert(0, ('Channel', 'uint8', 1, 'in'))
 
     callback = {
-'type': 'callback',
-'name': name,
-'corresponding_getter': name_get,
-'elements': [(data_name, data_type, 1, 'out')],
-'since_firmware': since_firmware,
-'doc': ['c', {
-'en':
-"""
+        'type': 'callback',
+        'name': name,
+        'corresponding_getter': name_get,
+        'elements': [(data_name, data_type, 1, 'out')],
+        'since_firmware': since_firmware,
+        'doc': ['c', {
+        'en': """
 This callback is triggered periodically according to the configuration set by
-:func:`{0} Callback Configuration`. 
+:func:`{0} Callback Configuration`.
 
-The `parameter` is the same as :func:`{1}`.
+The :word:`parameter` is the same as :func:`{1}`.
 """.format(name_set, name_get),
-'de':
-"""
+        'de': """
 Dieser Callback wird periodisch ausgelöst abhängig von der mittels
 :func:`{0} Callback Configuration` gesetzten Konfiguration
 
-Der `parameter` ist der gleiche wie :func:`{1}`.
+Der :word:`parameter` ist der gleiche wie :func:`{1}`.
 """.format(name_set, name_get)
-}]
-}
+        }]
+    }
+
+    if has_channels:
+        callback['elements'].insert(0, ('Channel', 'uint8', 1, 'out'))
 
     packets.append(getter)
     packets.append(callback_config_setter)

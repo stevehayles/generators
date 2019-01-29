@@ -118,7 +118,7 @@ public class Example{example_name} {{
                                device_name_initial=self.get_device().get_initial_name(),
                                device_name_long_display=self.get_device().get_long_display_name(),
                                dummy_uid=self.get_dummy_uid(),
-                               imports=common.wrap_non_empty('\n', ''.join(unique_imports), ''),
+                               imports=common.wrap_non_empty('\n', '\n'.join(unique_imports), ''),
                                sources='\n' + '\n'.join(sources).replace('\n\r', '').lstrip('\r'),
                                cleanups=common.wrap_non_empty('\n', '\n'.join(cleanups).replace('\n\r', '').lstrip('\r').rstrip('\n'), ''),
                                constructor_break=constructor_break)
@@ -126,36 +126,43 @@ public class Example{example_name} {{
 class JavaExampleArgument(common.ExampleArgument):
     def get_java_source(self):
         type_ = self.get_type()
+
+        def helper(value):
+            if type_ == 'bool':
+                if value:
+                    return 'true'
+                else:
+                    return 'false'
+            elif type_ == 'char':
+                return "'{0}'".format(value)
+            elif type_ == 'string':
+                return '"{0}"'.format(value)
+            elif ':bitmask:' in type_:
+                value = common.make_c_like_bitmask(value)
+                cast = java_common.get_java_type(type_.split(':')[0], 1, legacy=self.get_device().has_java_legacy_types())
+
+                if cast in ['byte', 'short']:
+                    return '({0})({1})'.format(cast, value)
+                else:
+                    return value
+            elif type_.endswith(':constant'):
+                return self.get_value_constant(value).get_java_source()
+            else:
+                cast = java_common.get_java_type(type_, 1, legacy=self.get_device().has_java_legacy_types())
+
+                if cast in ['byte', 'short']:
+                    cast = '({0})'.format(cast)
+                else:
+                    cast = ''
+
+                return cast + str(value)
+
         value = self.get_value()
 
-        if type_ == 'bool':
-            if value:
-                return 'true'
-            else:
-                return 'false'
-        elif type_ == 'char':
-            return "'{0}'".format(value)
-        elif type_ == 'string':
-            return '"{0}"'.format(value)
-        elif ':bitmask:' in type_:
-            value = common.make_c_like_bitmask(value)
-            cast = java_common.get_java_type(type_.split(':')[0], 1, legacy=self.get_device().has_java_legacy_types())
+        if isinstance(value, list):
+            return 'new {0}[]{{{1}}}'.format(java_common.get_java_type(self.get_type().split(':')[0], 1, legacy=self.get_device().has_java_legacy_types()), ', '.join([helper(item) for item in value]))
 
-            if cast in ['byte', 'short']:
-                return '({0})({1})'.format(cast, value)
-            else:
-                return value
-        elif type_.endswith(':constant'):
-            return self.get_value_constant().get_java_source()
-        else:
-            cast = java_common.get_java_type(type_, 1, legacy=self.get_device().has_java_legacy_types())
-
-            if cast in ['byte', 'short']:
-                cast = '({0})'.format(cast)
-            else:
-                cast = ''
-
-            return cast + str(value)
+        return helper(value)
 
 class JavaExampleArgumentsMixin(object):
     def get_java_arguments(self):
@@ -175,34 +182,57 @@ class JavaExampleParameter(common.ExampleParameter):
                                name=self.get_name().headless)
 
     def get_java_printlns(self):
-        template = '\t\t\t\tSystem.out.println("{label}: " + {to_binary_prefix}{name}{index}{divisor}{to_binary_suffix}{unit});{comment}'
+        if self.get_type().split(':')[-1] == 'constant':
+            if self.get_label_name() == None:
+                return []
+                
+            # FIXME: need to handle multiple labels
+            assert self.get_label_count() == 1
 
-        if self.get_label_name() == None:
-            return []
+            template = '{else_}if({name} == {constant_name}) {{\n{global_line_prefix}\t\t\t\t\tSystem.out.println("{label}: {constant_title}");{comment}\n{global_line_prefix}\t\t\t\t}}'
+            constant_group = self.get_constant_group()
+            result = []
 
-        if self.get_cardinality() < 0:
-            return [] # FIXME: streaming
+            for constant in constant_group.get_constants():
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              else_='\belse ' if len(result) > 0 else global_line_prefix + '\t\t\t\t',
+                                              name=self.get_name().headless,
+                                              label=self.get_label_name(),
+                                              constant_name=constant.get_java_source(),
+                                              constant_title=constant.get_name().space,
+                                              comment=self.get_formatted_comment(' // {0}')))
 
-        # FIXME: Integer.toBinaryString() doesn't support leading zeros. therefore,
-        #        the result is not padded to the requested number of digits
-        if ':bitmask:' in self.get_type():
-            to_binary_prefix = 'Integer.toBinaryString('
-            to_binary_suffix = ')'
+            result = ['\r' + '\n'.join(result).replace('\n\b', ' ') + '\r']
         else:
-            to_binary_prefix = ''
-            to_binary_suffix = ''
+            template = '{global_line_prefix}\t\t\t\tSystem.out.println("{label}: " + {to_binary_prefix}{name}{index}{divisor}{to_binary_suffix}{unit});{comment}'
 
-        result = []
+            if self.get_label_name() == None:
+                return []
 
-        for index in range(self.get_label_count()):
-            result.append(template.format(name=self.get_name().headless,
-                                          label=self.get_label_name(index=index),
-                                          index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
-                                          divisor=self.get_formatted_divisor('/{0}'),
-                                          unit=self.get_formatted_unit_name(' + " {0}"'),
-                                          to_binary_prefix=to_binary_prefix,
-                                          to_binary_suffix=to_binary_suffix,
-                                          comment=self.get_formatted_comment(' // {0}')))
+            if self.get_cardinality() < 0:
+                return [] # FIXME: streaming
+
+            # FIXME: Integer.toBinaryString() doesn't support leading zeros. therefore,
+            #        the result is not padded to the requested number of digits
+            if ':bitmask:' in self.get_type():
+                to_binary_prefix = 'Integer.toBinaryString('
+                to_binary_suffix = ')'
+            else:
+                to_binary_prefix = ''
+                to_binary_suffix = ''
+
+            result = []
+
+            for index in range(self.get_label_count()):
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              name=self.get_name().headless,
+                                              label=self.get_label_name(index=index),
+                                              index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
+                                              divisor=self.get_formatted_divisor('/{0}'),
+                                              unit=self.get_formatted_unit_name(' + " {0}"'),
+                                              to_binary_prefix=to_binary_prefix,
+                                              to_binary_suffix=to_binary_suffix,
+                                              comment=self.get_formatted_comment(' // {0}')))
 
         return result
 
@@ -214,49 +244,80 @@ class JavaExampleResult(common.ExampleResult):
         if name == self.get_device().get_initial_name():
             name += '_'
 
-        return template.format(type_=java_common.get_java_type(self.get_type().split(':')[0], 1, legacy=self.get_device().has_java_legacy_types()),
+        return template.format(type_=java_common.get_java_type(self.get_type().split(':')[0], self.get_cardinality(), legacy=self.get_device().has_java_legacy_types()),
                                name=name)
 
     def get_java_printlns(self):
-        template = '\t\tSystem.out.println("{label}: " + {to_binary_prefix}{object_prefix}{name}{index}{divisor}{to_binary_suffix}{unit});{comment}'
+        if self.get_type().split(':')[-1] == 'constant':
+            # FIXME: need to handle multiple labels
+            assert self.get_label_count() == 1
 
-        if self.get_label_name() == None:
-            return []
+            template = '{else_}if({object_prefix}{name} == {constant_name}) {{\n{global_line_prefix}\t\t\tSystem.out.println("{label}: {constant_title}");{comment}\n{global_line_prefix}\t\t}}'
+            constant_group = self.get_constant_group()
+            name = self.get_name().headless
 
-        if self.get_cardinality() < 0:
-            return [] # FIXME: streaming
+            if len(self.get_function().get_results()) > 1:
+                object_prefix = self.get_function().get_name(skip=1).headless + '.'
+            else:
+                if name == self.get_device().get_initial_name():
+                    name += '_'
 
-        name = self.get_name().headless
+                object_prefix = ''
 
-        if len(self.get_function().get_results()) > 1:
-            object_prefix = self.get_function().get_name(skip=1).headless + '.'
+            result = []
+
+            for constant in constant_group.get_constants():
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              else_='\belse ' if len(result) > 0 else global_line_prefix + '\t\t',
+                                              object_prefix=object_prefix,
+                                              name=self.get_name().headless,
+                                              label=self.get_label_name(),
+                                              constant_name=constant.get_java_source(),
+                                              constant_title=constant.get_name().space,
+                                              comment=self.get_formatted_comment(' // {0}')))
+
+            result = ['\r' + '\n'.join(result).replace('\n\b', ' ') + '\r']
         else:
-            if name == self.get_device().get_initial_name():
-                name += '_'
+            template = '{global_line_prefix}\t\tSystem.out.println("{label}: " + {to_binary_prefix}{object_prefix}{name}{index}{divisor}{to_binary_suffix}{unit});{comment}'
 
-            object_prefix = ''
+            if self.get_label_name() == None:
+                return []
 
-        # FIXME: Integer.toBinaryString() doesn't support leading zeros. therefore,
-        #        the result is not padded to the requested number of digits
-        if ':bitmask:' in self.get_type():
-            to_binary_prefix = 'Integer.toBinaryString('
-            to_binary_suffix = ')'
-        else:
-            to_binary_prefix = ''
-            to_binary_suffix = ''
+            if self.get_cardinality() < 0:
+                return [] # FIXME: streaming
 
-        result = []
+            name = self.get_name().headless
 
-        for index in range(self.get_label_count()):
-            result.append(template.format(name=name,
-                                          label=self.get_label_name(),
-                                          index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
-                                          divisor=self.get_formatted_divisor('/{0}'),
-                                          unit=self.get_formatted_unit_name(' + " {0}"'),
-                                          object_prefix=object_prefix,
-                                          to_binary_prefix=to_binary_prefix,
-                                          to_binary_suffix=to_binary_suffix,
-                                          comment=self.get_formatted_comment(' // {0}')))
+            if len(self.get_function().get_results()) > 1:
+                object_prefix = self.get_function().get_name(skip=1).headless + '.'
+            else:
+                if name == self.get_device().get_initial_name():
+                    name += '_'
+
+                object_prefix = ''
+
+            # FIXME: Integer.toBinaryString() doesn't support leading zeros. therefore,
+            #        the result is not padded to the requested number of digits
+            if ':bitmask:' in self.get_type():
+                to_binary_prefix = 'Integer.toBinaryString('
+                to_binary_suffix = ')'
+            else:
+                to_binary_prefix = ''
+                to_binary_suffix = ''
+
+            result = []
+
+            for index in range(self.get_label_count()):
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              object_prefix=object_prefix,
+                                              name=name,
+                                              label=self.get_label_name(index=index),
+                                              index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
+                                              divisor=self.get_formatted_divisor('/{0}'),
+                                              unit=self.get_formatted_unit_name(' + " {0}"'),
+                                              to_binary_prefix=to_binary_prefix,
+                                              to_binary_suffix=to_binary_suffix,
+                                              comment=self.get_formatted_comment(' // {0}')))
 
         return result
 
@@ -272,8 +333,8 @@ class JavaExampleGetterFunction(common.ExampleGetterFunction, JavaExampleArgumen
             return []
 
     def get_java_source(self):
-        template = r"""		// Get current {function_name_comment}
-		{variable} = {device_name}.{function_name_headless}({arguments}); // Can throw com.tinkerforge.TimeoutException
+        template = r"""{global_line_prefix}		// Get current {function_name_comment}
+{global_line_prefix}		{variable} = {device_name}.{function_name_headless}({arguments}); // Can throw com.tinkerforge.TimeoutException
 {printlns}
 """
         variables = []
@@ -292,13 +353,14 @@ class JavaExampleGetterFunction(common.ExampleGetterFunction, JavaExampleArgumen
             printlns.remove(None)
 
         if len(printlns) > 1:
-            printlns.insert(0, '')
+            printlns.insert(0, '\b')
 
-        return template.format(device_name=self.get_device().get_initial_name(),
+        return template.format(global_line_prefix=global_line_prefix,
+                               device_name=self.get_device().get_initial_name(),
                                function_name_headless=self.get_name().headless,
                                function_name_comment=self.get_comment_name(),
                                variable=variable,
-                               printlns='\n'.join(printlns),
+                               printlns='\n'.join(printlns).replace('\b\n\r', '\n').replace('\b', '').replace('\r\n\r', '\n\n').rstrip('\r').replace('\r', '\n'),
                                arguments=', '.join(self.get_java_arguments()))
 
 class JavaExampleSetterFunction(common.ExampleSetterFunction, JavaExampleArgumentsMixin):
@@ -365,7 +427,7 @@ class JavaExampleCallbackFunction(common.ExampleCallbackFunction):
                                   function_name_camel=self.get_name().camel,
                                   function_name_headless=self.get_name().headless,
                                   parameters=',<BP>'.join(parameters),
-                                  printlns='\n'.join(printlns),
+                                  printlns='\n'.join(printlns).replace('\r\n\r', '\n\n').strip('\r').replace('\r', '\n'),
                                   extra_message=extra_message)
 
         return common.break_string(result, '{}('.format(self.get_name().headless))
@@ -428,12 +490,12 @@ class JavaExampleCallbackThresholdFunction(common.ExampleCallbackThresholdFuncti
 
     def get_java_source(self):
         template = r"""		// Configure threshold for {function_name_comment} "{option_comment}"
-		{device_name}.set{function_name_camel}CallbackThreshold({arguments}'{option_char}',<BP>{mininum_maximums});
+		{device_name}.set{function_name_camel}CallbackThreshold({arguments}'{option_char}',<BP>{minimum_maximums});
 """
-        mininum_maximums = []
+        minimum_maximums = []
 
-        for mininum_maximum in self.get_minimum_maximums():
-            mininum_maximums.append(mininum_maximum.get_java_source())
+        for minimum_maximum in self.get_minimum_maximums():
+            minimum_maximums.append(minimum_maximum.get_java_source())
 
         result = template.format(device_name=self.get_device().get_initial_name(),
                                  function_name_camel=self.get_name().camel,
@@ -441,7 +503,7 @@ class JavaExampleCallbackThresholdFunction(common.ExampleCallbackThresholdFuncti
                                  arguments=common.wrap_non_empty('', ',<BP>'.join(self.get_java_arguments()), ',<BP>'),
                                  option_char=self.get_option_char(),
                                  option_comment=self.get_option_comment(),
-                                 mininum_maximums=',<BP>'.join(mininum_maximums))
+                                 minimum_maximums=',<BP>'.join(minimum_maximums))
 
         return common.break_string(result, 'CallbackThreshold(')
 
@@ -451,14 +513,14 @@ class JavaExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurati
 
     def get_java_source(self):
         templateA = r"""		// Set period for {function_name_comment} callback to {period_sec_short} ({period_msec}ms)
-		{device_name}.set{function_name_camel}CallbackConfiguration({arguments}{period_msec}, false);
+		{device_name}.set{function_name_camel}CallbackConfiguration({arguments}{period_msec}{value_has_to_change});
 """
         templateB = r"""		// Set period for {function_name_comment} callback to {period_sec_short} ({period_msec}ms) without a threshold
-		{device_name}.set{function_name_camel}CallbackConfiguration({arguments}{period_msec}, false,<BP>'{option_char}', {mininum_maximums});
+		{device_name}.set{function_name_camel}CallbackConfiguration({arguments}{period_msec}{value_has_to_change},<BP>'{option_char}', {minimum_maximums});
 """
         templateC = r"""		// Configure threshold for {function_name_comment} "{option_comment}"
 		// with a debounce period of {period_sec_short} ({period_msec}ms)
-		{device_name}.set{function_name_camel}CallbackConfiguration({arguments}{period_msec}, false,<BP>'{option_char}', {mininum_maximums});
+		{device_name}.set{function_name_camel}CallbackConfiguration({arguments}{period_msec}{value_has_to_change},<BP>'{option_char}', {minimum_maximums});
 """
 
         if self.get_option_char() == None:
@@ -470,10 +532,10 @@ class JavaExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurati
 
         period_msec, period_sec_short, period_sec_long = self.get_formatted_period()
 
-        mininum_maximums = []
+        minimum_maximums = []
 
-        for mininum_maximum in self.get_minimum_maximums():
-            mininum_maximums.append(mininum_maximum.get_java_source())
+        for minimum_maximum in self.get_minimum_maximums():
+            minimum_maximums.append(minimum_maximum.get_java_source())
 
         result = template.format(device_name=self.get_device().get_initial_name(),
                                  function_name_camel=self.get_name().camel,
@@ -482,9 +544,10 @@ class JavaExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurati
                                  period_msec=period_msec,
                                  period_sec_short=period_sec_short,
                                  period_sec_long=period_sec_long,
+                                 value_has_to_change=common.wrap_non_empty(', ', self.get_value_has_to_change('true', 'false', ''), ''),
                                  option_char=self.get_option_char(),
                                  option_comment=self.get_option_comment(),
-                                 mininum_maximums=',<BP>'.join(mininum_maximums))
+                                 minimum_maximums=',<BP>'.join(minimum_maximums))
 
         return common.break_string(result, 'CallbackConfiguration(')
 

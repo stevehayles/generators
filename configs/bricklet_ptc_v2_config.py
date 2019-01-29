@@ -4,7 +4,7 @@
 # with or without modification, are permitted. See the Creative
 # Commons Zero (CC0 1.0) License for more details.
 
-# PTC Bricklet communication config
+# PTC Bricklet 2.0 communication config
 
 from commonconstants import THRESHOLD_OPTION_CONSTANTS
 from commonconstants import add_callback_value_function
@@ -22,8 +22,8 @@ com = {
         'de': 'Liest Temperaturen von Pt100 und Pt1000 Sensoren'
     },
     'comcu': True,
-    'released': False,
-    'documented': False,
+    'released': True,
+    'documented': True,
     'discontinued': False,
     'packets': [],
     'examples': []
@@ -32,7 +32,7 @@ com = {
 temperature_doc = {
 'en':
 """
-Returns the temperature of connected sensor. The value
+Returns the temperature of the connected sensor. The value
 has a range of -246 to 849 °C and is given in °C/100,
 e.g. a value of 4223 means that a temperature of 42.23 °C is measured.
 """,
@@ -64,7 +64,7 @@ The value can be converted with the following formulas:
 """,
 'de':
 """
-Gibt den Wert zurück, wie vom "MAX31865 Präzisions Delta-Sigma ADC" berechnet.
+Gibt den Wert zurück, wie vom "MAX31865 Präzisions-Delta-Sigma ADC" berechnet.
 
 Der Wert kann mit den folgenden Formeln in einen Widerstand konvertiert werden:
 
@@ -80,7 +80,6 @@ add_callback_value_function(
     data_type = 'int32',
     doc       = resistance_doc
 )
-
 
 com['packets'].append({
 'type': 'function',
@@ -143,6 +142,10 @@ Returns *true* if the sensor is connected correctly.
 If this function
 returns *false*, there is either no Pt100 or Pt1000 sensor connected,
 the sensor is connected incorrectly or the sensor itself is faulty.
+
+If you want to get the status automatically, it is recommended to use the
+:cb:`Sensor Connected` callback. You can set the callback configuration
+with :func:`Set Sensor Connected Callback Configuration`.
 """,
 'de':
 """
@@ -151,6 +154,11 @@ Gibt *true* zurück wenn ein Sensor korrekt verbunden ist.
 Falls diese Funktion *false* zurück gibt, ist entweder kein
 Pt100 oder Pt1000 Sensor verbunden, der Sensor ist inkorrekt
 verbunden oder der Sensor selbst ist fehlerhaft.
+
+Zum automatischen übertragen des Status kann auch der
+:cb:`Sensor Connected` Callback verwendet werden.
+Der Callback wird mit der Funktion
+:func:`Set Sensor Connected Callback Configuration` konfiguriert.
 """
 }]
 })
@@ -223,7 +231,7 @@ averaging window has a length of 20s. If you want to do long term measurements t
 moving average will give the cleanest results.
 
 The default value is 1 for resistance and 40 for temperature. The default values match
-the non-changable averaging settings of the old PTC Bricklet 1.0
+the non-changeable averaging settings of the old PTC Bricklet 1.0
 """,
 'de':
 """
@@ -264,3 +272,83 @@ Gibt die Moving Average-Konfiguration zurück, wie von :func:`Set Moving Average
 }]
 })
 
+com['packets'].append({
+'type': 'function',
+'name': 'Set Sensor Connected Callback Configuration',
+'elements': [('Enabled', 'bool', 1, 'in')],
+'since_firmware': [1, 0, 0],
+'doc': ['ccf', {
+'en':
+"""
+If you enable this callback, the :cb:`Sensor Connected` callback is triggered
+every time a Pt sensor is connected/disconnected.
+
+By default this callback is disabled.
+""",
+'de':
+"""
+Wenn dieser Callback aktiviert ist, wird der :cb:`Sensor Connected` Callback
+jedes mal ausgelöst wenn ein Pt-Sensor verbunden/getrennt wird.
+
+Standardmäßig ist dieser Callback deaktiviert.
+"""
+}]
+})
+
+com['packets'].append({
+'type': 'function',
+'name': 'Get Sensor Connected Callback Configuration',
+'elements': [('Enabled', 'bool', 1, 'out')],
+'since_firmware': [1, 0, 0],
+'doc': ['ccf', {
+'en':
+"""
+Returns the configuration as set by :func:`Set Sensor Connected Callback Configuration`.
+""",
+'de':
+"""
+Gibt die Konfiguration zurück, wie von :func:`Set Sensor Connected Callback Configuration`
+gesetzt.
+"""
+}]
+})
+
+com['packets'].append({
+'type': 'callback',
+'name': 'Sensor Connected',
+'elements': [('Connected', 'bool', 1, 'out')],
+'since_firmware': [1, 0, 0],
+'doc': ['c', {
+'en':
+"""
+This callback is triggered periodically according to the configuration set by
+:func:`Set Sensor Connected Callback Configuration`.
+
+The :word:`parameter` is the same as :func:`Is Sensor Connected`.
+""",
+'de':
+"""
+Dieser Callback wird periodisch ausgelöst abhängig von der mittels
+:func:`Set Sensor Connected Callback Configuration` gesetzten Konfiguration
+
+Der :word:`parameter` ist der gleiche wie bei :func:`Is Sensor Connected`.
+"""
+}]
+})
+
+com['examples'].append({
+'name': 'Simple',
+'functions': [('getter', ('Get Temperature', 'temperature'), [(('Temperature', 'Temperature'), 'int32', 1, 100.0, '°C', None)], [])]
+})
+
+com['examples'].append({
+'name': 'Callback',
+'functions': [('callback', ('Temperature', 'temperature'), [(('Temperature', 'Temperature'), 'int32', 1, 100.0, '°C', None)], None, None),
+              ('callback_configuration', ('Temperature', 'temperature'), [], 1000, False, 'x', [(0, 0)])]
+})
+
+com['examples'].append({
+'name': 'Threshold',
+'functions': [('callback', ('Temperature', 'temperature'), [(('Temperature', 'Temperature'), 'int32', 1, 100.0, '°C', None)], None, None),
+              ('callback_configuration', ('Temperature', 'temperature'), [], 1000, False, '>', [(30, 0)])]
+})

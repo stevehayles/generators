@@ -1,5 +1,6 @@
 #!/usr/bin/perl
 
+use strict;
 use Tinkerforge::IPConnection;
 
 use constant HOST => 'localhost';
@@ -8,6 +9,9 @@ use constant SECRET => 'My Authentication Secret!';
 
 # Create IPConnection
 our $ipcon = Tinkerforge::IPConnection->new();
+
+# Disable auto reconnect mechanism, in case we have the wrong secret. If the authentication is successful, reenable it.
+$ipcon->set_auto_reconnect(0);
 
 # Authenticate each time the connection got (re-)established
 sub cb_connected
@@ -35,6 +39,9 @@ sub cb_connected
 		return;
 	}
 
+	# ...reenable auto reconnect mechanism, as described below...
+	$ipcon->set_auto_reconnect(1);
+	
 	# ...then trigger Enumerate
 	$ipcon->enumerate();
 }

@@ -4,11 +4,11 @@
 # with or without modification, are permitted. See the Creative
 # Commons Zero (CC0 1.0) License for more details.
 
-# GPS Bricklet communication config
+# GPS Bricklet 2.0 communication config
 
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
-    'api_version': [2, 0, 0],
+    'api_version': [2, 0, 1],
     'category': 'Bricklet',
     'device_identifier': 276,
     'name': 'GPS V2',
@@ -785,7 +785,7 @@ com['packets'].append({
 'doc': ['af', {
 'en':
 """
-If `SBAS <https://en.wikipedia.org/wiki/GNSS_augmentation#Satellite-based_augmentation_system>`__ is enabled, 
+If `SBAS <https://en.wikipedia.org/wiki/GNSS_augmentation#Satellite-based_augmentation_system>`__ is enabled,
 the position accuracy increases (if SBAS satellites are in view),
 but the update rate is limited to 5Hz. With SBAS disabled the update rate is increased to 10Hz.
 
@@ -793,7 +793,7 @@ By default SBAS is enabled and the update rate is 5Hz.
 """,
 'de':
 """
-Wenn `SBAS <https://de.wikipedia.org/wiki/Satellite_Based_Augmentation_System>`__ aktiviert ist, 
+Wenn `SBAS <https://de.wikipedia.org/wiki/Satellite_Based_Augmentation_System>`__ aktiviert ist,
 erhöht sich die Positionsgenauigkeit der GPS Daten falls SBAS Satelliten zu sehen sind.
 Die Aktualisierungsrate der GPS Daten beträgt 5Hz falls SBAS aktiviert ist und 10Hz falls SBAS deaktiviert ist.
 

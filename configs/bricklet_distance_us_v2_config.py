@@ -4,7 +4,7 @@
 # with or without modification, are permitted. See the Creative
 # Commons Zero (CC0 1.0) License for more details.
 
-# Humidity Bricklet 2.0 communication config
+# Distance US Bricklet 2.0 communication config
 
 from commonconstants import THRESHOLD_OPTION_CONSTANTS
 from commonconstants import add_callback_value_function
@@ -22,7 +22,7 @@ com = {
         'de': ''
     },
     'comcu': True,
-    'released': False,
+    'released': False, # FIXME: update Distance US Bricklet (1.0) replacement recommendation, once this Bricklet is released
     'documented': False,
     'discontinued': False,
     'packets': [],

@@ -288,21 +288,28 @@ process.stdin.on('data',
 class JavaScriptExampleArgument(common.ExampleArgument):
     def get_javascript_source(self):
         type_ = self.get_type()
+
+        def helper(value):
+            if type_ == 'bool':
+                if value:
+                    return 'true'
+                else:
+                    return 'false'
+            elif type_ in ['char', 'string']:
+                return "'{0}'".format(value)
+            elif ':bitmask:' in type_:
+                return common.make_c_like_bitmask(value)
+            elif type_.endswith(':constant'):
+                return self.get_value_constant(value).get_javascript_source()
+            else:
+                return str(value)
+
         value = self.get_value()
 
-        if type_ == 'bool':
-            if value:
-                return 'true'
-            else:
-                return 'false'
-        elif type_ in ['char', 'string']:
-            return "'{0}'".format(value)
-        elif ':bitmask:' in type_:
-            return common.make_c_like_bitmask(value)
-        elif type_.endswith(':constant'):
-            return self.get_value_constant().get_javascript_source()
-        else:
-            return str(value)
+        if isinstance(value, list):
+            return '[{0}]'.format(', '.join([helper(item) for item in value]))
+
+        return helper(value)
 
 class JavaScriptExampleArgumentsMixin(object):
     def get_javascript_arguments(self):
@@ -313,42 +320,65 @@ class JavaScriptExampleParameter(common.ExampleParameter):
         return self.get_name().headless
 
     def get_javascript_outputs(self):
-        template = "        {global_output_prefix}'{label}: ' + {to_binary_prefix}{name}{index}{divisor}{to_binary_suffix}{unit}{global_output_suffix};{comment}"
+        if self.get_type().split(':')[-1] == 'constant':
+            if self.get_label_name() == None:
+                return []
+                
+            # FIXME: need to handle multiple labels
+            assert self.get_label_count() == 1
 
-        if self.get_label_name() == None:
-            return []
+            template = "        {else_}if({name} === {constant_name}) {{\n            {global_output_prefix}'{label}: {constant_title}'{global_output_suffix};{comment}\n        }}"
+            constant_group = self.get_constant_group()
+            result = []
 
-        if self.get_cardinality() < 0:
-            return [] # FIXME: streaming
+            for constant in constant_group.get_constants():
+                result.append(template.format(else_='else ' if len(result) > 0 else '',
+                                              global_output_prefix=global_output_prefix,
+                                              global_output_suffix=global_output_suffix,
+                                              name=self.get_name().headless,
+                                              label=self.get_label_name(),
+                                              constant_name=constant.get_javascript_source(),
+                                              constant_title=constant.get_name().space,
+                                              comment=self.get_formatted_comment(' // {0}')))
 
-        divisor = self.get_formatted_divisor('/{0}')
+            result = ['\r' + '\n'.join(result) + '\r']
+        else:
+            template = "        {global_output_prefix}'{label}: ' + {to_binary_prefix}{name}{index}{divisor}{to_binary_suffix}{unit}{global_output_suffix};{comment}"
 
-        # FIXME: toString(2) doesn't support leading zeros. therefore,
-        #        the result is not padded to the requested number of digits
-        if ':bitmask:' in self.get_type():
-            if len(divisor) > 0:
-                to_binary_prefix = '('
-                to_binary_suffix = ').toString(2)'
+            if self.get_label_name() == None:
+                return []
+
+            if self.get_cardinality() < 0:
+                return [] # FIXME: streaming
+
+            divisor = self.get_formatted_divisor('/{0}')
+
+            # FIXME: toString(2) doesn't support leading zeros. therefore,
+            #        the result is not padded to the requested number of digits
+            if ':bitmask:' in self.get_type():
+                if len(divisor) > 0:
+                    to_binary_prefix = '('
+                    to_binary_suffix = ').toString(2)'
+                else:
+                    to_binary_prefix = ''
+                    to_binary_suffix = '.toString(2)'
             else:
                 to_binary_prefix = ''
-                to_binary_suffix = '.toString(2)'
-        else:
-            to_binary_prefix = ''
-            to_binary_suffix = ''
+                to_binary_suffix = ''
 
-        result = []
+            result = []
 
-        for index in range(self.get_label_count()):
-            result.append(template.format(global_output_prefix=global_output_prefix,
-                                          global_output_suffix=global_output_suffix,
-                                          name=self.get_name().headless,
-                                          label=self.get_label_name(index=index),
-                                          index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
-                                          divisor=divisor,
-                                          unit=self.get_formatted_unit_name(" + ' {0}'"),
-                                          to_binary_prefix=to_binary_prefix,
-                                          to_binary_suffix=to_binary_suffix,
-                                          comment=self.get_formatted_comment(' // {0}')))
+            for index in range(self.get_label_count()):
+                result.append(template.format(global_output_prefix=global_output_prefix,
+                                              global_output_suffix=global_output_suffix,
+                                              name=self.get_name().headless,
+                                              label=self.get_label_name(index=index),
+                                              index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
+                                              divisor=divisor,
+                                              unit=self.get_formatted_unit_name(" + ' {0}'"),
+                                              to_binary_prefix=to_binary_prefix,
+                                              to_binary_suffix=to_binary_suffix,
+                                              comment=self.get_formatted_comment(' // {0}')))
 
         return result
 
@@ -357,43 +387,63 @@ class JavaScriptExampleResult(common.ExampleResult):
         return self.get_name().headless
 
     def get_javascript_outputs(self):
-        template = "{global_line_prefix}                {global_output_prefix}'{label}: ' + {to_binary_prefix}{name}{index}{divisor}{to_binary_suffix}{unit}{global_output_suffix};{comment}"
+        if self.get_type().split(':')[-1] == 'constant':
+            # FIXME: need to handle multiple labels
+            assert self.get_label_count() == 1
 
-        if self.get_label_name() == None:
-            return []
+            template = "                {else_}if({name} === {constant_name}) {{\n                    {global_output_prefix}'{label}: {constant_title}'{global_output_suffix};{comment}\n                }}"
+            constant_group = self.get_constant_group()
+            result = []
 
-        if self.get_cardinality() < 0:
-            return [] # FIXME: streaming
+            for constant in constant_group.get_constants():
+                result.append(template.format(else_='else ' if len(result) > 0 else '',
+                                              global_output_prefix=global_output_prefix,
+                                              global_output_suffix=global_output_suffix,
+                                              name=self.get_name().headless,
+                                              label=self.get_label_name(),
+                                              constant_name=constant.get_javascript_source(),
+                                              constant_title=constant.get_name().space,
+                                              comment=self.get_formatted_comment(' // {0}')))
 
-        divisor = self.get_formatted_divisor('/{0}')
+            result = ['\r' + '\n'.join(result) + '\r']
+        else:
+            template = "{global_line_prefix}                {global_output_prefix}'{label}: ' + {to_binary_prefix}{name}{index}{divisor}{to_binary_suffix}{unit}{global_output_suffix};{comment}"
 
-        # FIXME: toString(2) doesn't support leading zeros. therefore,
-        #        the result is not padded to the requested number of digits
-        if ':bitmask:' in self.get_type():
-            if len(divisor) > 0:
-                to_binary_prefix = '('
-                to_binary_suffix = ').toString(2)'
+            if self.get_label_name() == None:
+                return []
+
+            if self.get_cardinality() < 0:
+                return [] # FIXME: streaming
+
+            divisor = self.get_formatted_divisor('/{0}')
+
+            # FIXME: toString(2) doesn't support leading zeros. therefore,
+            #        the result is not padded to the requested number of digits
+            if ':bitmask:' in self.get_type():
+                if len(divisor) > 0:
+                    to_binary_prefix = '('
+                    to_binary_suffix = ').toString(2)'
+                else:
+                    to_binary_prefix = ''
+                    to_binary_suffix = '.toString(2)'
             else:
                 to_binary_prefix = ''
-                to_binary_suffix = '.toString(2)'
-        else:
-            to_binary_prefix = ''
-            to_binary_suffix = ''
+                to_binary_suffix = ''
 
-        result = []
+            result = []
 
-        for index in range(self.get_label_count()):
-            result.append(template.format(global_line_prefix=global_line_prefix,
-                                          global_output_prefix=global_output_prefix,
-                                          global_output_suffix=global_output_suffix,
-                                          name=self.get_name().headless,
-                                          label=self.get_label_name(index=index),
-                                          index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
-                                          divisor=divisor,
-                                          unit=self.get_formatted_unit_name(" + ' {0}'"),
-                                          to_binary_prefix=to_binary_prefix,
-                                          to_binary_suffix=to_binary_suffix,
-                                          comment=self.get_formatted_comment(' // {0}')))
+            for index in range(self.get_label_count()):
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              global_output_prefix=global_output_prefix,
+                                              global_output_suffix=global_output_suffix,
+                                              name=self.get_name().headless,
+                                              label=self.get_label_name(index=index),
+                                              index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
+                                              divisor=divisor,
+                                              unit=self.get_formatted_unit_name(" + ' {0}'"),
+                                              to_binary_prefix=to_binary_prefix,
+                                              to_binary_suffix=to_binary_suffix,
+                                              comment=self.get_formatted_comment(' // {0}')))
 
         return result
 
@@ -429,7 +479,7 @@ class JavaScriptExampleGetterFunction(common.ExampleGetterFunction, JavaScriptEx
                                function_name_headless=self.get_name().headless,
                                function_name_comment=self.get_comment_name(),
                                variables=', '.join(variables),
-                               outputs='\n'.join(outputs),
+                               outputs='\n'.join(outputs).replace('\r\n\r', '\n\n').strip('\r').replace('\r', '\n'),
                                arguments=common.wrap_non_empty('', ', '.join(self.get_javascript_arguments()), ','))
 
 class JavaScriptExampleSetterFunction(common.ExampleSetterFunction, JavaScriptExampleArgumentsMixin):
@@ -498,7 +548,7 @@ class JavaScriptExampleCallbackFunction(common.ExampleCallbackFunction):
                                   override_comment=override_comment) + \
                  template3.format(global_callback_output_suffix=global_callback_output_suffix,
                                   parameters=',<BP>'.join(parameters),
-                                  outputs='\n'.join(outputs),
+                                  outputs='\n'.join(outputs).replace('\r\n\r', '\n\n').strip('\r').replace('\r', '\n'),
                                   extra_message=extra_message)
 
         return common.break_string(result, 'function (')
@@ -549,12 +599,12 @@ class JavaScriptExampleCallbackThresholdFunction(common.ExampleCallbackThreshold
 
     def get_javascript_source(self):
         template = r"""{global_line_prefix}        // Configure threshold for {function_name_comment} "{option_comment}"
-{global_line_prefix}        {device_name}.set{function_name_camel}CallbackThreshold({arguments}'{option_char}', {mininum_maximums});
+{global_line_prefix}        {device_name}.set{function_name_camel}CallbackThreshold({arguments}'{option_char}', {minimum_maximums});
 """
-        mininum_maximums = []
+        minimum_maximums = []
 
-        for mininum_maximum in self.get_minimum_maximums():
-            mininum_maximums.append(mininum_maximum.get_javascript_source())
+        for minimum_maximum in self.get_minimum_maximums():
+            minimum_maximums.append(minimum_maximum.get_javascript_source())
 
         return template.format(global_line_prefix=global_line_prefix,
                                device_name=self.get_device().get_initial_name(),
@@ -563,7 +613,7 @@ class JavaScriptExampleCallbackThresholdFunction(common.ExampleCallbackThreshold
                                arguments=common.wrap_non_empty('', ', '.join(self.get_javascript_arguments()), ', '),
                                option_char=self.get_option_char(),
                                option_comment=self.get_option_comment(),
-                               mininum_maximums=', '.join(mininum_maximums))
+                               minimum_maximums=', '.join(minimum_maximums))
 
 class JavaScriptExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurationFunction, JavaScriptExampleArgumentsMixin):
     def get_javascript_function(self):
@@ -571,14 +621,14 @@ class JavaScriptExampleCallbackConfigurationFunction(common.ExampleCallbackConfi
 
     def get_javascript_source(self):
         templateA = r"""{global_line_prefix}        // Set period for {function_name_comment} callback to {period_sec_short} ({period_msec}ms)
-{global_line_prefix}        {device_name}.set{function_name_camel}CallbackConfiguration({arguments}{period_msec}, false);
+{global_line_prefix}        {device_name}.set{function_name_camel}CallbackConfiguration({arguments}{period_msec}{value_has_to_change});
 """
         templateB = r"""{global_line_prefix}        // Set period for {function_name_comment} callback to {period_sec_short} ({period_msec}ms) without a threshold
-{global_line_prefix}        {device_name}.set{function_name_camel}CallbackConfiguration({arguments}{period_msec}, false, '{option_char}', {mininum_maximums});
+{global_line_prefix}        {device_name}.set{function_name_camel}CallbackConfiguration({arguments}{period_msec}{value_has_to_change}, '{option_char}', {minimum_maximums});
 """
         templateC = r"""{global_line_prefix}        // Configure threshold for {function_name_comment} "{option_comment}"
 {global_line_prefix}        // with a debounce period of {period_sec_short} ({period_msec}ms)
-{global_line_prefix}        {device_name}.set{function_name_camel}CallbackConfiguration({arguments}{period_msec}, false, '{option_char}', {mininum_maximums});
+{global_line_prefix}        {device_name}.set{function_name_camel}CallbackConfiguration({arguments}{period_msec}{value_has_to_change}, '{option_char}', {minimum_maximums});
 """
 
         if self.get_option_char() == None:
@@ -590,10 +640,10 @@ class JavaScriptExampleCallbackConfigurationFunction(common.ExampleCallbackConfi
 
         period_msec, period_sec_short, period_sec_long = self.get_formatted_period()
 
-        mininum_maximums = []
+        minimum_maximums = []
 
-        for mininum_maximum in self.get_minimum_maximums():
-            mininum_maximums.append(mininum_maximum.get_javascript_source())
+        for minimum_maximum in self.get_minimum_maximums():
+            minimum_maximums.append(minimum_maximum.get_javascript_source())
 
         return template.format(global_line_prefix=global_line_prefix,
                                device_name=self.get_device().get_initial_name(),
@@ -603,9 +653,10 @@ class JavaScriptExampleCallbackConfigurationFunction(common.ExampleCallbackConfi
                                period_msec=period_msec,
                                period_sec_short=period_sec_short,
                                period_sec_long=period_sec_long,
+                               value_has_to_change=common.wrap_non_empty(', ', self.get_value_has_to_change('true', 'false', ''), ''),
                                option_char=self.get_option_char(),
                                option_comment=self.get_option_comment(),
-                               mininum_maximums=', '.join(mininum_maximums))
+                               minimum_maximums=', '.join(minimum_maximums))
 
 class JavaScriptExampleSpecialFunction(common.ExampleSpecialFunction):
     def get_javascript_function(self):

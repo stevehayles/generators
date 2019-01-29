@@ -11,7 +11,8 @@ from commonconstants import add_callback_value_function
 
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
-    'api_version': [2, 0, 0],
+    'api_version': [2, 0, 1],
+    'api_version_extra': 1, # +1 for "Fix min/max types in add_callback_value_function logic [aff5bfc]"
     'category': 'Bricklet',
     'device_identifier': 294,
     'name': 'Rotary Encoder V2',
@@ -22,8 +23,8 @@ com = {
         'de': '360° Drehgeber/Drehencoder mit Taster'
     },
     'comcu': True,
-    'released': False,
-    'documented': False,
+    'released': True,
+    'documented': True,
     'discontinued': False,
     'packets': [],
     'examples': []
@@ -36,7 +37,7 @@ Returns the current count of the encoder. If you set reset
 to true, the count is set back to 0 directly after the
 current count is read.
 
-The encoder has 24 steps per rotation
+The encoder has 24 steps per rotation.
 
 Turning the encoder to the left decrements the counter,
 so a negative count is possible.
@@ -55,8 +56,8 @@ dekrementiert, d.h. negative Zählerwerte sind möglich.
 }
 
 add_callback_value_function(
-    packets   = com['packets'], 
-    name      = 'Get Count', 
+    packets   = com['packets'],
+    name      = 'Get Count',
     data_name = 'Count',
     data_type = 'int32',
     doc       = count_doc
@@ -129,5 +130,5 @@ com['examples'].append({
 com['examples'].append({
 'name': 'Callback',
 'functions': [('callback', ('Count', 'count'), [(('Count', 'Count'), 'int32', 1, None, None, None)], None, None),
-              ('callback_configuration', ('Count', 'count'), [], 1000, 'x', [(0, 0)])]
+              ('callback_configuration', ('Count', 'count'), [], 1000, False, 'x', [(0, 0)])]
 })

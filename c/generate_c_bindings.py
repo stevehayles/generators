@@ -157,6 +157,7 @@ extern "C" {{
 """
 
         return '\n' + self.get_formatted_constants(constant_format,
+                                                   bool_format_func=lambda value: str(value).lower(),
                                                    doxygen=self.get_category().camel + self.get_name().camel,
                                                    device_name=self.get_name().upper)
 
@@ -226,7 +227,7 @@ typedef struct {{
                 struct_body = ''
 
                 for element in packet.get_elements():
-                    c_type = element.get_c_type(False, struct=True)
+                    c_type = element.get_c_type('struct')
 
                     if element.get_cardinality() > 1:
                         if element.get_type() == 'bool':
@@ -246,7 +247,7 @@ typedef struct {{
             struct_body = ''
 
             for element in packet.get_elements(direction='in'):
-                c_type = element.get_c_type(False, struct=True)
+                c_type = element.get_c_type('struct')
 
                 if element.get_cardinality() > 1:
                     if element.get_type() == 'bool':
@@ -268,7 +269,7 @@ typedef struct {{
             struct_body = ''
 
             for element in packet.get_elements(direction='out'):
-                c_type = element.get_c_type(False, struct=True)
+                c_type = element.get_c_type('struct')
 
                 if element.get_cardinality() > 1:
                     if element.get_type() == 'bool':
@@ -322,17 +323,10 @@ void {0}_create({1} *{0}, const char *uid, IPConnection *ipcon) {{
         response_expected = ''
 
         for packet in self.get_packets('function'):
-            if len(packet.get_elements(direction='out')) > 0:
-                flag = 'DEVICE_RESPONSE_EXPECTED_ALWAYS_TRUE'
-            elif packet.get_doc_type() == 'ccf' or packet.get_high_level('stream_in') != None:
-                flag = 'DEVICE_RESPONSE_EXPECTED_TRUE'
-            else:
-                flag = 'DEVICE_RESPONSE_EXPECTED_FALSE'
-
-            response_expected += '\tdevice_p->response_expected[{0}_FUNCTION_{1}] = {2};\n' \
+            response_expected += '\tdevice_p->response_expected[{0}_FUNCTION_{1}] = DEVICE_RESPONSE_EXPECTED_{2};\n' \
                                  .format(self.get_name().upper,
                                          packet.get_name().upper,
-                                         flag)
+                                         packet.get_response_expected().upper())
 
         if len(response_expected) > 0:
             response_expected = '\n' + response_expected
@@ -719,9 +713,9 @@ int {device_name_under}_{name_under}({device_name_camel} *{device_name_under}{hi
                 chunk_offset_element = stream_in.get_chunk_offset_element()
 
                 if length_element != None:
-                    stream_length_type = length_element.get_c_type(False)
+                    stream_length_type = length_element.get_c_type('default')
                 elif chunk_offset_element != None:
-                    stream_length_type = chunk_offset_element.get_c_type(False)
+                    stream_length_type = chunk_offset_element.get_c_type('default')
 
                 if stream_in.get_fixed_length() != None:
                     template = template_stream_in_fixed_length
@@ -737,21 +731,21 @@ int {device_name_under}_{name_under}({device_name_camel} *{device_name_under}{hi
                 functions += template.format(device_name_camel=self.get_name().camel,
                                              device_name_under=self.get_name().under,
                                              name_under=packet.get_name(skip=-2).under,
-                                             parameters=common.wrap_non_empty(', ', packet.get_c_parameters(signature=False), ''),
+                                             parameters=common.wrap_non_empty(', ', packet.get_c_arguments('default'), ''),
                                              high_level_parameters=common.wrap_non_empty(', ', packet.get_c_parameters(high_level=True), ''),
                                              stream_name_under=stream_in.get_name().under,
                                              stream_length_type=stream_length_type,
                                              fixed_length=stream_in.get_fixed_length(),
-                                             chunk_data_type=stream_in.get_chunk_data_element().get_c_type(False),
+                                             chunk_data_type=stream_in.get_chunk_data_element().get_c_type('default'),
                                              chunk_cardinality=stream_in.get_chunk_data_element().get_cardinality())
             elif stream_out != None:
                 length_element = stream_out.get_length_element()
                 chunk_offset_element = stream_out.get_chunk_offset_element()
 
                 if length_element != None:
-                    stream_length_type = length_element.get_c_type(False)
+                    stream_length_type = length_element.get_c_type('default')
                 elif chunk_offset_element != None:
-                    stream_length_type = chunk_offset_element.get_c_type(False)
+                    stream_length_type = chunk_offset_element.get_c_type('default')
 
                 if stream_out.has_single_chunk():
                     template = template_stream_out_single_chunk
@@ -767,13 +761,13 @@ int {device_name_under}_{name_under}({device_name_camel} *{device_name_under}{hi
                 functions += template.format(device_name_camel=self.get_name().camel,
                                              device_name_under=self.get_name().under,
                                              name_under=packet.get_name(skip=-2).under,
-                                             parameters=common.wrap_non_empty(', ', packet.get_c_parameters(signature=False), ''),
+                                             parameters=common.wrap_non_empty(', ', packet.get_c_arguments('default'), ''),
                                              high_level_parameters=common.wrap_non_empty(', ', packet.get_c_parameters(high_level=True), ''),
                                              stream_name_under=stream_out.get_name().under,
                                              stream_length_type=stream_length_type,
                                              fixed_length=stream_out.get_fixed_length(default='0'),
                                              chunk_offset_check=chunk_offset_check,
-                                             chunk_data_type=stream_out.get_chunk_data_element().get_c_type(False),
+                                             chunk_data_type=stream_out.get_chunk_data_element().get_c_type('default'),
                                              chunk_cardinality=stream_out.get_chunk_data_element().get_cardinality())
 
         return functions
@@ -878,9 +872,9 @@ static void {device_name_under}_callback_wrapper_{name_under}(DevicePrivate *dev
 
                 if length_element != None:
                     stream_length = length_element.get_name().under
-                    stream_length_type = length_element.get_c_type(False)
+                    stream_length_type = length_element.get_c_type('default')
                 elif chunk_offset_element != None:
-                    stream_length_type = chunk_offset_element.get_c_type(False)
+                    stream_length_type = chunk_offset_element.get_c_type('default')
 
                 functions += template.format(device_name_under=packet.get_device().get_name().under,
                                              device_name_upper=packet.get_device().get_name().upper,
@@ -888,11 +882,11 @@ static void {device_name_under}_callback_wrapper_{name_under}(DevicePrivate *dev
                                              name_upper=packet.get_name(skip=-2).upper,
                                              name_camel=packet.get_name(skip=-2).camel,
                                              parameters=common.wrap_non_empty(', ', packet.get_c_parameters(), ''),
-                                             high_level_parameters=common.wrap_non_empty('', packet.get_c_parameters(signature=False, high_level=True, callback_wrapper=True, single_chunk=stream_out.has_single_chunk()), ', '),
+                                             high_level_parameters=common.wrap_non_empty('', packet.get_c_arguments('callback_wrapper', high_level=True, single_chunk=stream_out.has_single_chunk()), ', '),
                                              stream_name_under=stream_out.get_name().under,
                                              stream_length_type=stream_length_type,
                                              stream_length=stream_out.get_fixed_length(default=stream_length),
-                                             chunk_data_type=stream_out.get_chunk_data_element().get_c_type(False),
+                                             chunk_data_type=stream_out.get_chunk_data_element().get_c_type('default'),
                                              chunk_cardinality=stream_out.get_chunk_data_element().get_cardinality())
 
         # normal and low-level
@@ -1036,7 +1030,7 @@ typedef void (*{0}_CallbackFunction)({1});
         # normal and low-level
         for packet in self.get_packets('callback'):
             name = packet.get_name().camel
-            parameters = packet.get_c_parameters(signature=True)
+            parameters = packet.get_c_parameters()
 
             typedefs += template.format(name, common.wrap_non_empty('', parameters, ', ') + 'void *user_data')
 
@@ -1046,7 +1040,7 @@ typedef void (*{0}_CallbackFunction)({1});
                 continue
 
             name = packet.get_name(skip=-2).camel
-            parameters = packet.get_c_parameters(signature=True, high_level=True)
+            parameters = packet.get_c_parameters(high_level=True)
 
             typedefs += template.format(name, common.wrap_non_empty('', parameters, ', ') + 'void *user_data')
 
@@ -1276,7 +1270,7 @@ class CBindingsPacket(c_common.CPacket):
         text = self.get_device().specialize_c_doc_function_links(text)
 
         if self.get_type() == 'callback':
-            parameters = self.get_c_parameters(signature=True, high_level=high_level)
+            parameters = self.get_c_parameters(high_level=high_level)
 
             if len(parameters) > 0:
                 parameters += ', '
@@ -1334,7 +1328,7 @@ class CBindingsPacket(c_common.CPacket):
                     struct_list += temp.format(sf,
                                                element.get_name().under,
                                                element.get_cardinality(),
-                                               element.get_c_type(False))
+                                               element.get_c_type('default'))
             elif element.get_item_size() > 1:
                 struct_list += '\n\t{0}.{1} = leconvert_{2}_to({1});'.format(sf, element.get_name().under, element.get_type())
             else:
@@ -1379,7 +1373,7 @@ class CBindingsPacket(c_common.CPacket):
                     return_list += temp.format(element.get_name().under,
                                                sf,
                                                element.get_cardinality(),
-                                               element.get_c_type(False))
+                                               element.get_c_type('default'))
             elif element.get_item_size() > 1:
                 return_list += '\t*ret_{0} = leconvert_{2}_from({1}.{0});\n'.format(element.get_name().under, sf, element.get_type())
             else:

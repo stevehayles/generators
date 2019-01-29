@@ -22,8 +22,8 @@ com = {
         'de': 'Misst Schalldruck in dB(A/B/C/D/Z)'
     },
     'comcu': True,
-    'released': False,
-    'documented': False,
+    'released': True,
+    'documented': True,
     'discontinued': False,
     'packets': [],
     'examples': []
@@ -32,7 +32,8 @@ com = {
 decibel_doc = {
 'en':
 """
-Returns the measured decibels. The values are given in dB/10 (tenths dB).
+Returns the measured sound pressure in decibels. The values are given in
+dB/10 (tenths dB).
 
 The Bricklet supports the weighting standards dB(A), dB(B), dB(C), dB(D),
 dB(Z) and ITU-R 468. You can configure the weighting with :func:`Set Configuration`.
@@ -41,6 +42,14 @@ By default dB(A) will be used.
 """,
 'de':
 """
+Gibt die gemessenen Schalldruck in Dezibel zurück. Die Werte werden in
+dB/10 (Zehntel dB) zurückgegeben.
+
+Das Bricklet unterstützt die Gewichtungen dB(A), dB(B), dB(C), dB(D), dB(Z) und
+ITU-R 468. Die Gewichtungsfunktion kann mittels :func:`Set Configuration`
+gesetzt werden.
+
+Standardmäßig wird dB(A) genutzt.
 """
 }
 
@@ -63,7 +72,7 @@ com['packets'].append({
 'doc': ['bf', {
 'en':
 """
-Returns the spectrum. The length of the spectrum is between
+Returns the frequency spectrum. The length of the spectrum is between
 512 (FFT size 1024) and 64 (FFT size 128). See :func:`Set Configuration`.
 
 Each array element is one bin of the FFT. The first bin is always the
@@ -73,16 +82,35 @@ DC offset and the other bins have a size between 40Hz (FFT size 1024) and
 In sum the frequency of the spectrum always has a range from 0 to
 20480Hz (the FFT is applied to samples with a frequency of 40960Hz).
 
-The Returned data is already equalized and the weighting function is applied
+The returned data is already equalized, which means that the microphone
+frequency response is compensated and the weighting function is applied
 (see :func:`Set Configuration` for the available weighting standards). Use
 dB(Z) if you need the unaltered spectrum.
 
 The values are not in dB form yet. If you want a proper dB scale of the
-spectrum you have to apply the formula f(x) = 20*log10(max(1, x/sqrt(2))) 
+spectrum you have to apply the formula f(x) = 20*log10(max(1, x/sqrt(2)))
 on each value.
 """,
 'de':
 """
+Gibt das Frequenzspektrum zurück. Die Länge des Spektrums liegt zwischen 512
+(FFT Größe 1024) und 64 (FFT Größe 128). Siehe :func:`Set Configuration`.
+
+Jedes Listen-Element ist eine Gruppe des FFTs. Die erste Gruppe stellt immer
+das DC Offset dar. Die anderen Gruppen haben eine Größe zwischen 40Hz (FFT
+Größe 1024) und 320Hz (FFT Größe 128).
+
+Der Frequenzbereich des Spektrums besitzt immer einen Umfang von 0 bis 20480Hz
+(FFT wird auf Samples mit bis zu 40960Hz angewendet).
+
+Die zurückgegebenen Daten sind bereits ausgeglichen, was bedeutet dass der
+Mikrofon-Frequenzgang kompensiert wurde, und die Gewichtungsfunktion wurde
+angewendet (siehe :func:`Set Configuration` für die zur Verfügung stehenden
+Gewichtungen). Für ein ungewichtets Spektrum kann dB(Z) genutzt werden.
+
+Die Daten sind nicht in dB skaliert. Um diese in einer dB Form darzustellen
+muss die Formel f(x) = 20*log10(max(1, x/sqrt(2))) auf jeden Wert angewendet
+werden.
 """
 }]
 })
@@ -95,18 +123,18 @@ com['packets'].append({
 'doc': ['ccf', {
 'en':
 """
-The period in ms is the period with which the :cb:`Spectrum` callback is triggered
-periodically. A value of 0 turns the callback off.
+The period in ms is the period with which the :cb:`Spectrum` callback is
+triggered periodically. A value of 0 turns the callback off.
 
-Every new measured spectrum will be send at most once. Set the period to 1 to make
-sure that you get every spectrum.
+Every new measured spectrum will be send at most once. Set the period to 1 to
+make sure that you get every spectrum.
 
 The default value is 0.
 """,
 'de':
 """
-Die Periode in ms ist die Periode mit der der :cb:`Spectrum` Callback ausgelöst wird.
-Ein Wert von 0 schaltet den Callback ab.
+Die Periode in ms ist die Periode mit der der :cb:`Spectrum` Callback ausgelöst
+wird. Ein Wert von 0 schaltet den Callback ab.
 
 Jedes gemessene Spektrum wird maximal einmal gesendet. Setze die Periode auf 1
 um sicher zu stellen das jedes Spektrum gesendet wird.
@@ -124,11 +152,13 @@ com['packets'].append({
 'doc': ['ccf', {
 'en':
 """
-Returns the callback configuration as set by :func:`Get Spectrum Callback Configuration`.
+Returns the callback configuration as set by
+:func:`Get Spectrum Callback Configuration`.
 """,
 'de':
 """
-Gibt die Callback-Konfiguration zurück, wie mittels :func:`Get Spectrum Callback Configuration` gesetzt.
+Gibt die Callback-Konfiguration zurück, wie mittels
+:func:`Get Spectrum Callback Configuration` gesetzt.
 """
 }]
 })
@@ -145,16 +175,16 @@ com['packets'].append({
 'en':
 """
 This callback is triggered periodically according to the configuration set by
-:func:`Set Spectrum Callback Configuration`. 
+:func:`Set Spectrum Callback Configuration`.
 
-The `parameter` is the same as :func:`Get Spectrum`.
+The :word:`parameter` is the same as :func:`Get Spectrum`.
 """,
 'de':
 """
 Dieser Callback wird periodisch ausgelöst abhängig von der mittels
-:func:Set Spectrum Callback Configuration` gesetzten Konfiguration
+:func:`Set Spectrum Callback Configuration` gesetzten Konfiguration
 
-Der `parameter` ist der gleiche wie :func:`Get Spectrum`.
+Der :word:`parameter` ist der gleiche wie :func:`Get Spectrum`.
 """
 }]
 })
@@ -203,6 +233,28 @@ The defaults are FFT size 1024 and weighting standard dB(A).
 """,
 'de':
 """
+Setzt die Sound Pressure Level Bricklet Konfiguration.
+
+Verschiedene FFT Größen führen zu unterschiedlichen Abtastraten und
+FFT Größen. Umso größer die FFT Größe ist, umso genauer ist das Ergebnis
+der dB(X) Berechnung.
+
+Verfügbare FFT Größen sind:
+
+* 1024: 512 Gruppen, 10 Samples pro Sekunde, jede Gruppe hat Größe 40Hz
+* 512: 256 Gruppen, 20 Samples per Sekunde, jede Gruppe hat Größe 80Hz
+* 256: 128 Gruppen, 40 Samples per Sekunde, jede Gruppe hat Größe 160Hz
+* 128: 64 Gruppen, 80 Samples pro Sekunde, jede Gruppe hat Größe 320Hz
+
+Das Bricklet unterstützt verschiedene Gewichtungsfunktionen. Es kann zwischen
+dB(A), dB(B), dB(C), dB(D), dB(Z) und ITU-R 468 gewählt werden.
+
+dB(A/B/C/D) sind Standard-Gewichtungskurven. dB(A) wird of genutzt um
+Lautstärke in Konzerten zu messen. dB(Z) besitzt keine Gewichtung und gibt
+die Daten ungewichtet zurück. ITU-R 468 ist ein ITU Gewichtungsstandard der
+hauptsächlich in UK und Europa verwendet wird.
+
+Die Standardeinstellungen sind FFT Größe 1024 und Gewichtung dB(A).
 """
 }]
 })
@@ -229,6 +281,24 @@ Returns the configuration as set by :func:`Set Configuration`.
 """,
 'de':
 """
+Gibt die Konfiguration, die mittels :func:`Set Configuration` gesetzt werden kann zurück.
 """
 }]
+})
+
+com['examples'].append({
+'name': 'Simple',
+'functions': [('getter', ('Get Decibel', 'decibel'), [(('Decibel', 'Decibel'), 'uint16', 1, 10.0, 'dB(A)', None)], [])]
+})
+
+com['examples'].append({
+'name': 'Callback',
+'functions': [('callback', ('Decibel', 'decibel'), [(('Decibel', 'Decibel'), 'uint16', 1, 10.0, 'dB(A)', None)], None, None),
+              ('callback_configuration', ('Decibel', 'decibel'), [], 1000, False, 'x', [(0, 0)])]
+})
+
+com['examples'].append({
+'name': 'Threshold',
+'functions': [('callback', ('Decibel', 'decibel'), [(('Decibel', 'Decibel'), 'uint16', 1, 10.0, 'dB(A)', None)], None, None),
+              ('callback_configuration', ('Decibel', 'decibel'), [], 1000, False, '>', [(60, 0)])]
 })

@@ -60,9 +60,9 @@ class DelphiBindingsDevice(delphi_common.DelphiDevice):
             if packet.get_doc_type() != type_:
                 continue
 
-            ret_type = packet.get_delphi_return_type(True)
+            ret_type = packet.get_delphi_return_type('doc')
             name = packet.get_name().camel
-            params = '; '.join(packet.get_delphi_parameters(True))
+            params = '; '.join(packet.get_delphi_parameters('doc'))
             desc = packet.get_delphi_formatted_doc()
 
             if len(ret_type) > 0:
@@ -98,7 +98,7 @@ class DelphiBindingsDevice(delphi_common.DelphiDevice):
         cls = self.get_delphi_class_name()
         for packet in self.get_packets('callback'):
             name = packet.get_name().camel
-            params = '; '.join(packet.get_delphi_parameters(True))
+            params = '; '.join(packet.get_delphi_parameters('doc'))
             desc = packet.get_delphi_formatted_doc()
             semi = ''
             if len(params) > 0:
@@ -330,7 +330,7 @@ class DelphiBindingsPacket(delphi_common.DelphiPacket):
         if self.get_name().space == 'Set Response Expected':
             text += common.format_function_id_constants(prefix, self.get_device())
         else:
-            text += common.format_constants(prefix, self)
+            text += common.format_constants(prefix, self, bool_format_func=lambda value: str(value).lower())
 
         text += common.format_since_firmware(self.get_device(), self)
 

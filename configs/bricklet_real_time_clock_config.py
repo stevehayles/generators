@@ -20,7 +20,7 @@ com = {
     },
     'released': True,
     'documented': True,
-    'discontinued': False,
+    'discontinued': False, # selling remaining stock, replaced by Real-Time Clock Bricklet 2.0
     'packets': [],
     'examples': []
 }
@@ -81,7 +81,7 @@ Mögliche Wertebereiche:
 * Minute: 0 bis 59
 * Second: 0 bis 59
 * Centisecond: 0 bis 99
-* Weekday: 1 bis 7 (Montag bis Sontag)
+* Weekday: 1 bis 7 (Montag bis Sonntag)
 
 Wenn die Backup Batterie eingebaut ist, dann behält die Echtzeituhr Datum und
 Zeit auch dann, wenn kein Brick das Bricklet mit Strom versorgt.
@@ -453,12 +453,12 @@ aktuelle Uhrzeit mit dem eingestellten Alarm übereinstimmen (siehe
 
 com['examples'].append({
 'name': 'Simple',
-'functions': [('getter', ('Get Date Time', 'date and time'), [(('Year', 'Year'), 'uint16', 1, None, None, None), (('Month', 'Month'), 'uint8', 1, None, None, None), (('Day', 'Day'), 'uint8', 1, None, None, None), (('Hour', 'Hour'), 'uint8', 1, None, None, None), (('Minute', 'Minute'), 'uint8', 1, None, None, None), (('Second', 'Second'), 'uint8', 1, None, None, None), (('Centisecond', 'Centisecond'), 'uint8', 1, None, None, None), (('Weekday', 'Weekday'), 'uint8', 1, None, None, None)], []),
+'functions': [('getter', ('Get Date Time', 'date and time'), [(('Year', 'Year'), 'uint16', 1, None, None, None), (('Month', 'Month'), 'uint8', 1, None, None, None), (('Day', 'Day'), 'uint8', 1, None, None, None), (('Hour', 'Hour'), 'uint8', 1, None, None, None), (('Minute', 'Minute'), 'uint8', 1, None, None, None), (('Second', 'Second'), 'uint8', 1, None, None, None), (('Centisecond', 'Centisecond'), 'uint8', 1, None, None, None), (('Weekday', 'Weekday'), 'uint8:constant', 1, None, None, None)], []),
               ('getter', ('Get Timestamp', 'timestamp'), [(('Timestamp', 'Timestamp'), 'int64', 1, None, 'ms', None)], [])]
 })
 
 com['examples'].append({
 'name': 'Callback',
-'functions': [('callback', ('Date Time', 'date and time'), [(('Year', 'Year'), 'uint16', 1, None, None, None), (('Month', 'Month'), 'uint8', 1, None, None, None), (('Day', 'Day'), 'uint8', 1, None, None, None), (('Hour', 'Hour'), 'uint8', 1, None, None, None), (('Minute', 'Minute'), 'uint8', 1, None, None, None), (('Second', 'Second'), 'uint8', 1, None, None, None), (('Centisecond', 'Centisecond'), 'uint8', 1, None, None, None), (('Weekday', 'Weekday'), 'uint8', 1, None, None, None), (('Timestamp', 'Timestamp'), 'int64', 1, None, None, None)], None, None),
+'functions': [('callback', ('Date Time', 'date and time'), [(('Year', 'Year'), 'uint16', 1, None, None, None), (('Month', 'Month'), 'uint8', 1, None, None, None), (('Day', 'Day'), 'uint8', 1, None, None, None), (('Hour', 'Hour'), 'uint8', 1, None, None, None), (('Minute', 'Minute'), 'uint8', 1, None, None, None), (('Second', 'Second'), 'uint8', 1, None, None, None), (('Centisecond', 'Centisecond'), 'uint8', 1, None, None, None), (('Weekday', 'Weekday'), 'uint8:constant', 1, None, None, None), (('Timestamp', 'Timestamp'), 'int64', 1, None, None, None)], None, None),
               ('callback_period', ('Date Time', 'date and time'), [], 5000)]
 })

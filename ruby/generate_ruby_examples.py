@@ -110,21 +110,28 @@ ipcon.disconnect
 class RubyExampleArgument(common.ExampleArgument):
     def get_ruby_source(self):
         type_ = self.get_type()
+
+        def helper(value):
+            if type_ == 'bool':
+                if value:
+                    return 'true'
+                else:
+                    return 'false'
+            elif type_ in  ['char', 'string']:
+                return "'{0}'".format(value)
+            elif ':bitmask:' in type_:
+                return common.make_c_like_bitmask(value)
+            elif type_.endswith(':constant'):
+                return self.get_value_constant(value).get_ruby_source()
+            else:
+                return str(value)
+
         value = self.get_value()
 
-        if type_ == 'bool':
-            if value:
-                return 'true'
-            else:
-                return 'false'
-        elif type_ in  ['char', 'string']:
-            return "'{0}'".format(value)
-        elif ':bitmask:' in type_:
-            return common.make_c_like_bitmask(value)
-        elif type_.endswith(':constant'):
-            return self.get_value_constant().get_ruby_source()
-        else:
-            return str(value)
+        if isinstance(value, list):
+            return '[{0}]'.format(', '.join([helper(item) for item in value]))
+
+        return helper(value)
 
 class RubyExampleArgumentsMixin(object):
     def get_ruby_arguments(self):
@@ -140,42 +147,70 @@ class RubyExampleParameter(common.ExampleParameter):
         return name
 
     def get_ruby_puts(self):
-        template = '  puts "{label}: #{{{printf_prefix}{name}{index}{divisor}{printf_suffix}}}{unit}"{comment}'
+        if self.get_type().split(':')[-1] == 'constant':
+            if self.get_label_name() == None:
+                return []
+                
+            # FIXME: need to handle multiple labels
+            assert self.get_label_count() == 1
 
-        if self.get_label_name() == None:
-            return []
+            template = '{global_line_prefix}  {else_}if {name} == {constant_name}\n{global_line_prefix}    puts "{label}: {constant_title}"{comment}'
+            constant_group = self.get_constant_group()
+            name = self.get_name().under
 
-        if self.get_cardinality() < 0:
-            return [] # FIXME: streaming
+            if name == self.get_device().get_initial_name():
+                name += '_'
 
-        name = self.get_name().under
+            result = []
 
-        if name == self.get_device().get_initial_name():
-            name += '_'
+            for constant in constant_group.get_constants():
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              else_='els' if len(result) > 0 else '',
+                                              name=name,
+                                              label=self.get_label_name(),
+                                              constant_name=constant.get_ruby_source(),
+                                              constant_title=constant.get_name().space,
+                                              comment=self.get_formatted_comment(' # {0}')))
 
-        type_ = self.get_type()
-        divisor = self.get_formatted_divisor('/{0}')
-        printf_prefix = ''
-        printf_suffix = ''
+            result = ['\r' + '\n'.join(result) + '\n  end\r']
+        else:
+            template = '{global_line_prefix}  puts "{label}: #{{{printf_prefix}{name}{index}{divisor}{printf_suffix}}}{unit}"{comment}'
 
-        if ':bitmask:' in type_:
-            printf_prefix = "'%0{0}b' % ".format(int(type_.split(':')[2]))
+            if self.get_label_name() == None:
+                return []
 
-            if len(divisor) > 0:
-                printf_prefix += '('
-                printf_suffix = ')'
+            if self.get_cardinality() < 0:
+                return [] # FIXME: streaming
 
-        result = []
+            name = self.get_name().under
 
-        for index in range(self.get_label_count()):
-            result.append(template.format(name=name,
-                                          label=self.get_label_name(index=index),
-                                          index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
-                                          divisor=divisor,
-                                          unit=self.get_formatted_unit_name(' {0}'),
-                                          printf_prefix=printf_prefix,
-                                          printf_suffix=printf_suffix,
-                                          comment=self.get_formatted_comment(' # {0}')))
+            if name == self.get_device().get_initial_name():
+                name += '_'
+
+            type_ = self.get_type()
+            divisor = self.get_formatted_divisor('/{0}')
+            printf_prefix = ''
+            printf_suffix = ''
+
+            if ':bitmask:' in type_:
+                printf_prefix = "'%0{0}b' % ".format(int(type_.split(':')[2]))
+
+                if len(divisor) > 0:
+                    printf_prefix += '('
+                    printf_suffix = ')'
+
+            result = []
+
+            for index in range(self.get_label_count()):
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              name=name,
+                                              label=self.get_label_name(index=index),
+                                              index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
+                                              divisor=divisor,
+                                              unit=self.get_formatted_unit_name(' {0}'),
+                                              printf_prefix=printf_prefix,
+                                              printf_suffix=printf_suffix,
+                                              comment=self.get_formatted_comment(' # {0}')))
 
         return result
 
@@ -189,56 +224,89 @@ class RubyExampleResult(common.ExampleResult):
         return name
 
     def get_ruby_puts(self):
-        template = 'puts "{label}: #{{{printf_prefix}{array_prefix}{name}{index}{divisor}{printf_suffix}}}{unit}"{comment}'
+        if self.get_type().split(':')[-1] == 'constant':
+            # FIXME: need to handle multiple labels
+            assert self.get_label_count() == 1
 
-        if self.get_label_name() == None:
-            return []
+            template = '{global_line_prefix}{else_}if {array_prefix}{name} == {constant_name}\n{global_line_prefix}  puts "{label}: {constant_title}"{comment}'
+            constant_group = self.get_constant_group()
 
-        if self.get_cardinality() < 0:
-            return [] # FIXME: streaming
+            if len(self.get_function().get_results()) > 1:
+                name = '[{0}]'.format(self.get_index())
+                array_prefix = self.get_function().get_name(skip=1).under
+            else:
+                name = self.get_name().under
 
-        if len(self.get_function().get_results()) > 1:
-            name = '[{0}]'.format(self.get_index())
-            array_prefix = self.get_function().get_name(skip=1).under
+                if name == self.get_device().get_initial_name():
+                    name += '_'
+
+                array_prefix = ''
+
+            result = []
+
+            for constant in constant_group.get_constants():
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              else_='els' if len(result) > 0 else '',
+                                              name=name,
+                                              label=self.get_label_name(),
+                                              array_prefix=array_prefix,
+                                              constant_name=constant.get_ruby_source(),
+                                              constant_title=constant.get_name().space,
+                                              comment=self.get_formatted_comment(' # {0}')))
+
+            result = ['\r' + '\n'.join(result) + '\nend\r']
         else:
-            name = self.get_name().under
+            template = '{global_line_prefix}puts "{label}: #{{{printf_prefix}{array_prefix}{name}{index}{divisor}{printf_suffix}}}{unit}"{comment}'
 
-            if name == self.get_device().get_initial_name():
-                name += '_'
+            if self.get_label_name() == None:
+                return []
 
-            array_prefix = ''
+            if self.get_cardinality() < 0:
+                return [] # FIXME: streaming
 
-        type_ = self.get_type()
-        divisor = self.get_formatted_divisor('/{0}')
-        printf_prefix = ''
-        printf_suffix = ''
+            if len(self.get_function().get_results()) > 1:
+                name = '[{0}]'.format(self.get_index())
+                array_prefix = self.get_function().get_name(skip=1).under
+            else:
+                name = self.get_name().under
 
-        if ':bitmask:' in type_:
-            printf_prefix = "'%0{0}b' % ".format(int(type_.split(':')[2]))
+                if name == self.get_device().get_initial_name():
+                    name += '_'
 
-            if len(divisor) > 0:
-                printf_prefix += '('
-                printf_suffix = ')'
+                array_prefix = ''
 
-        result = []
+            type_ = self.get_type()
+            divisor = self.get_formatted_divisor('/{0}')
+            printf_prefix = ''
+            printf_suffix = ''
 
-        for index in range(self.get_label_count()):
-            result.append(template.format(name=name,
-                                          label=self.get_label_name(index=index),
-                                          array_prefix=array_prefix,
-                                          index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
-                                          divisor=divisor,
-                                          unit=self.get_formatted_unit_name(' {0}'),
-                                          printf_prefix=printf_prefix,
-                                          printf_suffix=printf_suffix,
-                                          comment=self.get_formatted_comment(' # {0}')))
+            if ':bitmask:' in type_:
+                printf_prefix = "'%0{0}b' % ".format(int(type_.split(':')[2]))
+
+                if len(divisor) > 0:
+                    printf_prefix += '('
+                    printf_suffix = ')'
+
+            result = []
+
+            for index in range(self.get_label_count()):
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              name=name,
+                                              label=self.get_label_name(index=index),
+                                              array_prefix=array_prefix,
+                                              index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
+                                              divisor=divisor,
+                                              unit=self.get_formatted_unit_name(' {0}'),
+                                              printf_prefix=printf_prefix,
+                                              printf_suffix=printf_suffix,
+                                              comment=self.get_formatted_comment(' # {0}')))
 
         return result
 
 class RubyExampleGetterFunction(common.ExampleGetterFunction, RubyExampleArgumentsMixin):
     def get_ruby_source(self):
-        template = r"""# Get current {function_name_comment}{array_content}
-{variables} = {device_name}.{function_name_under}{arguments}
+        template = r"""{global_line_prefix}# Get current {function_name_comment}{array_content}
+{global_line_prefix}{variables} = {device_name}.{function_name_under}{arguments}
 {puts}
 """
         comments = []
@@ -259,19 +327,20 @@ class RubyExampleGetterFunction(common.ExampleGetterFunction, RubyExampleArgumen
             puts.remove(None)
 
         if len(puts) > 1:
-            puts.insert(0, '')
+            puts.insert(0, '\b')
 
         arguments = common.wrap_non_empty(' ', ', '.join(self.get_ruby_arguments()), '')
 
         if arguments.strip().startswith('('):
             arguments = '({0})'.format(arguments.strip())
 
-        result = template.format(device_name=self.get_device().get_initial_name(),
+        result = template.format(global_line_prefix=global_line_prefix,
+                                 device_name=self.get_device().get_initial_name(),
                                  function_name_under=self.get_name().under,
                                  function_name_comment=self.get_comment_name(),
                                  array_content=array_content,
                                  variables=', '.join(variables),
-                                 puts='\n'.join(puts),
+                                 puts='\n'.join(puts).replace('\b\n\r', '\n').replace('\b', '').replace('\r\n\r', '\n\n').rstrip('\r').replace('\r', '\n'),
                                  arguments=arguments)
 
         return common.break_string(result, '# Get current {0} as ['.format(self.get_comment_name()), indent_head='#')
@@ -338,7 +407,7 @@ end
                                   function_name_under=self.get_name().under,
                                   function_name_upper=self.get_name().upper,
                                   parameters=common.wrap_non_empty(' |', ',<BP>'.join(parameters), '|'),
-                                  puts='\n'.join(puts),
+                                  puts='\n'.join(puts).replace('\r\n\r', '\n\n').strip('\r').replace('\r', '\n'),
                                   extra_message=extra_message)
 
         return common.break_string(result, ') do |')
@@ -379,12 +448,12 @@ class RubyExampleCallbackThresholdMinimumMaximum(common.ExampleCallbackThreshold
 class RubyExampleCallbackThresholdFunction(common.ExampleCallbackThresholdFunction, RubyExampleArgumentsMixin):
     def get_ruby_source(self):
         template = r"""# Configure threshold for {function_name_comment} "{option_comment}"
-{device_name}.set_{function_name_under}_callback_threshold {arguments}'{option_char}', {mininum_maximums}
+{device_name}.set_{function_name_under}_callback_threshold {arguments}'{option_char}', {minimum_maximums}
 """
-        mininum_maximums = []
+        minimum_maximums = []
 
-        for mininum_maximum in self.get_minimum_maximums():
-            mininum_maximums.append(mininum_maximum.get_ruby_source())
+        for minimum_maximum in self.get_minimum_maximums():
+            minimum_maximums.append(minimum_maximum.get_ruby_source())
 
         return template.format(device_name=self.get_device().get_initial_name(),
                                function_name_under=self.get_name().under,
@@ -392,19 +461,19 @@ class RubyExampleCallbackThresholdFunction(common.ExampleCallbackThresholdFuncti
                                arguments=common.wrap_non_empty('', ', '.join(self.get_ruby_arguments()), ', '),
                                option_char=self.get_option_char(),
                                option_comment=self.get_option_comment(),
-                               mininum_maximums=', '.join(mininum_maximums))
+                               minimum_maximums=', '.join(minimum_maximums))
 
 class RubyExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurationFunction, RubyExampleArgumentsMixin):
     def get_ruby_source(self):
         templateA = r"""# Set period for {function_name_comment} callback to {period_sec_short} ({period_msec}ms)
-{device_name}.set_{function_name_under}_callback_configuration {arguments}{period_msec}, false
+{device_name}.set_{function_name_under}_callback_configuration {arguments}{period_msec}{value_has_to_change}
 """
         templateB = r"""# Set period for {function_name_comment} callback to {period_sec_short} ({period_msec}ms) without a threshold
-{device_name}.set_{function_name_under}_callback_configuration {arguments}{period_msec}, false, '{option_char}', {mininum_maximums}
+{device_name}.set_{function_name_under}_callback_configuration {arguments}{period_msec}{value_has_to_change}, '{option_char}', {minimum_maximums}
 """
         templateC = r"""# Configure threshold for {function_name_comment} "{option_comment}"
 # with a debounce period of {period_sec_short} ({period_msec}ms)
-{device_name}.set_{function_name_under}_callback_configuration {arguments}{period_msec}, false, '{option_char}', {mininum_maximums}
+{device_name}.set_{function_name_under}_callback_configuration {arguments}{period_msec}{value_has_to_change}, '{option_char}', {minimum_maximums}
 """
 
         if self.get_option_char() == None:
@@ -416,10 +485,10 @@ class RubyExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurati
 
         period_msec, period_sec_short, period_sec_long = self.get_formatted_period()
 
-        mininum_maximums = []
+        minimum_maximums = []
 
-        for mininum_maximum in self.get_minimum_maximums():
-            mininum_maximums.append(mininum_maximum.get_ruby_source())
+        for minimum_maximum in self.get_minimum_maximums():
+            minimum_maximums.append(minimum_maximum.get_ruby_source())
 
         return template.format(device_name=self.get_device().get_initial_name(),
                                function_name_under=self.get_name().under,
@@ -428,9 +497,10 @@ class RubyExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurati
                                period_msec=period_msec,
                                period_sec_short=period_sec_short,
                                period_sec_long=period_sec_long,
+                               value_has_to_change=common.wrap_non_empty(', ', self.get_value_has_to_change('true', 'false', ''), ''),
                                option_char=self.get_option_char(),
                                option_comment=self.get_option_comment(),
-                               mininum_maximums=', '.join(mininum_maximums))
+                               minimum_maximums=', '.join(minimum_maximums))
 
 class RubyExampleSpecialFunction(common.ExampleSpecialFunction):
     def get_ruby_source(self):

@@ -10,11 +10,19 @@ import common
 args = sys.argv[1:]
 
 if len(args) == 0:
-    print 'usage: zip_diff.py <bindings>'
-    sys.exit(1)
+    bindings = os.path.split(os.getcwd())[-1]
+else:
+    bindings = args[0].rstrip('/')
 
-bindings = args[0].rstrip('/')
-version = common.get_changelog_version(bindings)
+root = os.path.split(__file__)[0]
+
+if len(root) == 0:
+    root = '.'
+
+with common.ChangedDirectory(root):
+    version = common.get_changelog_version(bindings)
+
+base = os.path.join(root, bindings)
 tmp = tempfile.mkdtemp()
 
 if os.system('bash -cex "curl http://download.tinkerforge.com/bindings/{0}/tinkerforge_{0}_bindings_latest.zip -o {1}/tinkerforge_{0}_bindings_latest.zip"'.format(bindings, tmp)) != 0:
@@ -25,11 +33,11 @@ if os.system('bash -cex "pushd {1} && unzip -q -d latest tinkerforge_{0}_binding
     print 'unzip latest.zip failed'
     sys.exit(1)
 
-if os.system('bash -cex "cp {0}/tinkerforge_{0}_bindings_{2}_{3}_{4}.zip {1} && pushd {1} && unzip -q -d {2}_{3}_{4} tinkerforge_{0}_bindings_{2}_{3}_{4}.zip && popd"'.format(bindings, tmp, *version)) != 0:
+if os.system('bash -cex "cp {0}/tinkerforge_{1}_bindings_{3}_{4}_{5}.zip {2} && pushd {2} && unzip -q -d {3}_{4}_{5} tinkerforge_{1}_bindings_{3}_{4}_{5}.zip && popd"'.format(base, bindings, tmp, *version)) != 0:
     print 'copy/unzip current.zip failed'
     sys.exit(1)
 
-if os.system('bash -cx "pushd {1} && diff -ur latest/ {2}_{3}_{4}/ > diff1.diff; popd"'.format(bindings, tmp, *version)) != 0:
+if os.system('bash -cx "pushd {0} && diff -ur latest/ {1}_{2}_{3}/ > diff1.diff; popd"'.format(tmp, *version)) != 0:
     print 'diff latest vs current failed'
     sys.exit(1)
 
@@ -105,6 +113,19 @@ javascript_header2 = re.compile(r'^@@ -[0-9]+,9 \+[0-9]+,9 @@\n' + \
 '  \*                                                           \*\n' + \
 '  \* JavaScript Bindings Version 2\.[0-9]+\.[0-9]+[ ]+\*\n' + \
 '  \*                                                           \*\n$')
+
+javascript_header3 = re.compile(r'^@@ -[0-9]+,9 \+[0-9]+,9 @@\n' + \
+' \n' + \
+' },{"\./Device":[0-9]+,"\./IPConnection":[0-9]+}\],[0-9]+:\[function\(require,module,exports\){\n' + \
+' /\* \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\n' + \
+'- \* This file was automatically generated on [0-9]{4}-[0-9]{2}-[0-9]{2}\.      \*\n' + \
+'\+ \* This file was automatically generated on [0-9]{4}-[0-9]{2}-[0-9]{2}\.      \*\n' + \
+'  \*                                                           \*\n' + \
+'- \* JavaScript Bindings Version 2\.[0-9]+\.[0-9]+[ ]+\*\n' + \
+'\+ \* JavaScript Bindings Version 2\.[0-9]+\.[0-9]+[ ]+\*\n' + \
+'  \*                                                           \*\n' + \
+'  \* If you have a bugfix for this file and want to commit it, \*\n' + \
+'  \* please fix the bug in the generator\. You can find a link  \*\n$')
 
 perl_header1 = re.compile(r'^@@ -1,5 \+1,5 @@\n' + \
 ' #############################################################\n' + \
@@ -207,6 +228,7 @@ for diff in diffs:
            not delphi_header2.match(hunk) and \
            not javascript_header1.match(hunk) and \
            not javascript_header2.match(hunk) and \
+           not javascript_header3.match(hunk) and \
            not perl_header1.match(hunk) and \
            not perl_header2.match(hunk) and \
            not php_header1.match(hunk) and \

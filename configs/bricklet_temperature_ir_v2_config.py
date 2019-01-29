@@ -4,14 +4,15 @@
 # with or without modification, are permitted. See the Creative
 # Commons Zero (CC0 1.0) License for more details.
 
-# Temperature IR Bricklet communication config
+# Temperature IR Bricklet 2.0 communication config
 
 from commonconstants import THRESHOLD_OPTION_CONSTANTS
 from commonconstants import add_callback_value_function
 
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
-    'api_version': [2, 0, 0],
+    'api_version': [2, 0, 1],
+    'api_version_extra': 1, # +1 for "Fix min/max types in add_callback_value_function logic [aff5bfc]"
     'category': 'Bricklet',
     'device_identifier': 291,
     'name': 'Temperature IR V2',
@@ -22,8 +23,8 @@ com = {
         'de': 'Kontaktlose Objekttemperaturmessung zwischen -70°C und +380°C'
     },
     'comcu': True,
-    'released': False,
-    'documented': False,
+    'released': True,
+    'documented': True,
     'discontinued': False,
     'packets': [],
     'examples': []
@@ -54,8 +55,8 @@ den :cb:`Ambient Temperature` Callback zu nutzen und die Periode mit
 }
 
 add_callback_value_function(
-    packets   = com['packets'], 
-    name      = 'Get Ambient Temperature', 
+    packets   = com['packets'],
+    name      = 'Get Ambient Temperature',
     data_name = 'Temperature',
     data_type = 'int16',
     doc       = ambient_temperature_doc
@@ -97,8 +98,8 @@ den :cb:`Object Temperature` Callback zu nutzen und die Periode mit
 }
 
 add_callback_value_function(
-    packets   = com['packets'], 
-    name      = 'Get Object Temperature', 
+    packets   = com['packets'],
+    name      = 'Get Object Temperature',
     data_name = 'Temperature',
     data_type = 'int16',
     doc       = object_temperature_doc
@@ -181,12 +182,12 @@ com['examples'].append({
 com['examples'].append({
 'name': 'Callback',
 'functions': [('callback', ('Object Temperature', 'object temperature'), [(('Temperature', 'Object Temperature'), 'int16', 1, 10.0, '°C', None)], None, None),
-              ('callback_configuration', ('Object Temperature', 'object temperature'), [], 1000, 'x', [(0, 0)])]
+              ('callback_configuration', ('Object Temperature', 'object temperature'), [], 1000, False, 'x', [(0, 0)])]
 })
 
 com['examples'].append({
 'name': 'Water Boiling',
 'functions': [('setter', 'Set Emissivity', [('uint16', 64224)], 'Set emissivity to 0.98 (emissivity of water, 65535 * 0.98 = 64224.299)', None),
               ('callback', ('Object Temperature', 'object temperature reached'), [(('Temperature', 'Object Temperature'), 'int16', 1, 10.0, '°C', None)], None, 'The water is boiling!'),
-              ('callback_configuration', ('Object Temperature', 'object temperature'), [], 10000, '>', [(100, 0)])]
+              ('callback_configuration', ('Object Temperature', 'object temperature'), [], 10000, False, '>', [(100, 0)])]
 })

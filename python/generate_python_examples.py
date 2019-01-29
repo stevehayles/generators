@@ -28,14 +28,22 @@ import os
 
 sys.path.append(os.path.split(os.getcwd())[0])
 import common
+import python_common
 
 global_line_prefix = ''
 
 class PythonConstant(common.Constant):
-    def get_python_source(self):
-        template = '{device_name}.{constant_group_name}_{constant_name}'
+    def get_python_source(self, callback=False):
+        templateA = '{device_class}.{constant_group_name}_{constant_name}'
+        templateB = '{device_name}.{constant_group_name}_{constant_name}'
 
-        return template.format(device_name=self.get_device().get_initial_name(),
+        if callback:
+            template = templateA
+        else:
+            template = templateB
+
+        return template.format(device_class=self.get_device().get_python_class_name(),
+                               device_name=self.get_device().get_initial_name(),
                                constant_group_name=self.get_constant_group().get_name().upper,
                                constant_name=self.get_name().upper)
 
@@ -122,21 +130,28 @@ if __name__ == "__main__":
 class PythonExampleArgument(common.ExampleArgument):
     def get_python_source(self):
         type_ = self.get_type()
+
+        def helper(value):
+            if type_ == 'bool':
+                if value:
+                    return 'True'
+                else:
+                    return 'False'
+            elif type_ in  ['char', 'string']:
+                return '"{0}"'.format(value)
+            elif ':bitmask:' in type_:
+                return common.make_c_like_bitmask(value)
+            elif type_.endswith(':constant'):
+                return self.get_value_constant(value).get_python_source()
+            else:
+                return str(value)
+
         value = self.get_value()
 
-        if type_ == 'bool':
-            if value:
-                return 'True'
-            else:
-                return 'False'
-        elif type_ in  ['char', 'string']:
-            return '"{0}"'.format(value)
-        elif ':bitmask:' in type_:
-            return common.make_c_like_bitmask(value)
-        elif type_.endswith(':constant'):
-            return self.get_value_constant().get_python_source()
-        else:
-            return str(value)
+        if isinstance(value, list):
+            return '[{0}]'.format(', '.join([helper(item) for item in value]))
+
+        return helper(value)
 
 class PythonExampleArgumentsMixin(object):
     def get_python_arguments(self):
@@ -147,37 +162,60 @@ class PythonExampleParameter(common.ExampleParameter):
         return self.get_name().under
 
     def get_python_prints(self):
-        template = '    print("{label}: " + {format_prefix}{name}{index}{divisor}{format_suffix}{unit}){comment}'
+        if self.get_type().split(':')[-1] == 'constant':
+            if self.get_label_name() == None:
+                return []
+                
+            # FIXME: need to handle multiple labels
+            assert self.get_label_count() == 1
 
-        if self.get_label_name() == None:
-            return []
+            template = '{global_line_prefix}    {else_}if {name} == {constant_name}:\n{global_line_prefix}        print("{label}: {constant_title}"){comment}'
+            constant_group = self.get_constant_group()
+            result = []
 
-        if self.get_cardinality() < 0:
-            return [] # FIXME: streaming
+            for constant in constant_group.get_constants():
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              else_='el' if len(result) > 0 else '',
+                                              name=self.get_name().under,
+                                              label=self.get_label_name(),
+                                              constant_name=constant.get_python_source(callback=True),
+                                              constant_title=constant.get_name().space,
+                                              comment=self.get_formatted_comment(' # {0}')))
 
-        type_ = self.get_type()
-
-        if ':bitmask:' in type_:
-            format_prefix = 'format('
-            format_suffix = ', "0{0}b")'.format(int(type_.split(':')[2]))
-        elif type_ in ['char', 'string']:
-            format_prefix = ''
-            format_suffix = ''
+            result = ['\r' + '\n'.join(result) + '\r']
         else:
-            format_prefix = 'str('
-            format_suffix = ')'
+            template = '{global_line_prefix}    print("{label}: " + {format_prefix}{name}{index}{divisor}{format_suffix}{unit}){comment}'
 
-        result = []
+            if self.get_label_name() == None:
+                return []
 
-        for index in range(self.get_label_count()):
-            result.append(template.format(name=self.get_name().under,
-                                          label=self.get_label_name(index=index),
-                                          index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
-                                          divisor=self.get_formatted_divisor('/{0}'),
-                                          unit=self.get_formatted_unit_name(' + " {0}"'),
-                                          format_prefix=format_prefix,
-                                          format_suffix=format_suffix,
-                                          comment=self.get_formatted_comment(' # {0}')))
+            if self.get_cardinality() < 0:
+                return [] # FIXME: streaming
+
+            type_ = self.get_type()
+
+            if ':bitmask:' in type_:
+                format_prefix = 'format('
+                format_suffix = ', "0{0}b")'.format(int(type_.split(':')[2]))
+            elif type_ in ['char', 'string']:
+                format_prefix = ''
+                format_suffix = ''
+            else:
+                format_prefix = 'str('
+                format_suffix = ')'
+
+            result = []
+
+            for index in range(self.get_label_count()):
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              name=self.get_name().under,
+                                              label=self.get_label_name(index=index),
+                                              index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
+                                              divisor=self.get_formatted_divisor('/{0}'),
+                                              unit=self.get_formatted_unit_name(' + " {0}"'),
+                                              format_prefix=format_prefix,
+                                              format_suffix=format_suffix,
+                                              comment=self.get_formatted_comment(' # {0}')))
 
         return result
 
@@ -191,42 +229,62 @@ class PythonExampleResult(common.ExampleResult):
         return name
 
     def get_python_prints(self):
-        template = '    print("{label}: " + {format_prefix}{name}{index}{divisor}{format_suffix}{unit}){comment}'
+        if self.get_type().split(':')[-1] == 'constant':
+            # FIXME: need to handle multiple labels
+            assert self.get_label_count() == 1
 
-        if self.get_label_name() == None:
-            return []
+            template = '{global_line_prefix}    {else_}if {name} == {constant_name}:\n{global_line_prefix}        print("{label}: {constant_title}"){comment}'
+            constant_group = self.get_constant_group()
+            result = []
 
-        if self.get_cardinality() < 0:
-            return [] # FIXME: streaming
+            for constant in constant_group.get_constants():
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              else_='el' if len(result) > 0 else '',
+                                              name=self.get_name().under,
+                                              label=self.get_label_name(),
+                                              constant_name=constant.get_python_source(),
+                                              constant_title=constant.get_name().space,
+                                              comment=self.get_formatted_comment(' # {0}')))
 
-        name = self.get_name().under
-
-        if name == self.get_device().get_initial_name():
-            name += '_'
-
-        type_ = self.get_type()
-
-        if ':bitmask:' in type_:
-            format_prefix = 'format('
-            format_suffix = ', "0{0}b")'.format(int(type_.split(':')[2]))
-        elif type_ in ['char', 'string']:
-            format_prefix = ''
-            format_suffix = ''
+            result = ['\r' + '\n'.join(result) + '\r']
         else:
-            format_prefix = 'str('
-            format_suffix = ')'
+            template = '{global_line_prefix}    print("{label}: " + {format_prefix}{name}{index}{divisor}{format_suffix}{unit}){comment}'
 
-        result = []
+            if self.get_label_name() == None:
+                return []
 
-        for index in range(self.get_label_count()):
-            result.append(template.format(name=name,
-                                          label=self.get_label_name(index=index),
-                                          index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
-                                          divisor=self.get_formatted_divisor('/{0}'),
-                                          unit=self.get_formatted_unit_name(' + " {0}"'),
-                                          format_prefix=format_prefix,
-                                          format_suffix=format_suffix,
-                                          comment=self.get_formatted_comment(' # {0}')))
+            if self.get_cardinality() < 0:
+                return [] # FIXME: streaming
+
+            name = self.get_name().under
+
+            if name == self.get_device().get_initial_name():
+                name += '_'
+
+            type_ = self.get_type()
+
+            if ':bitmask:' in type_:
+                format_prefix = 'format('
+                format_suffix = ', "0{0}b")'.format(int(type_.split(':')[2]))
+            elif type_ in ['char', 'string']:
+                format_prefix = ''
+                format_suffix = ''
+            else:
+                format_prefix = 'str('
+                format_suffix = ')'
+
+            result = []
+
+            for index in range(self.get_label_count()):
+                result.append(template.format(global_line_prefix=global_line_prefix,
+                                              name=name,
+                                              label=self.get_label_name(index=index),
+                                              index='[{0}]'.format(index) if self.get_label_count() > 1 else '',
+                                              divisor=self.get_formatted_divisor('/{0}'),
+                                              unit=self.get_formatted_unit_name(' + " {0}"'),
+                                              format_prefix=format_prefix,
+                                              format_suffix=format_suffix,
+                                              comment=self.get_formatted_comment(' # {0}')))
 
         return result
 
@@ -238,8 +296,8 @@ class PythonExampleGetterFunction(common.ExampleGetterFunction, PythonExampleArg
         return None
 
     def get_python_source(self):
-        template = r"""    # Get current {function_name_comment}
-    {variables} = {device_name}.{function_name_under}({arguments})
+        template = r"""{global_line_prefix}    # Get current {function_name_comment}
+{global_line_prefix}    {variables} = {device_name}.{function_name_under}({arguments})
 {prints}
 """
         variables = []
@@ -253,13 +311,14 @@ class PythonExampleGetterFunction(common.ExampleGetterFunction, PythonExampleArg
             prints.remove(None)
 
         if len(prints) > 1:
-            prints.insert(0, '')
+            prints.insert(0, '\b')
 
-        result = template.format(device_name=self.get_device().get_initial_name(),
+        result = template.format(global_line_prefix=global_line_prefix,
+                                 device_name=self.get_device().get_initial_name(),
                                  function_name_under=self.get_name().under,
                                  function_name_comment=self.get_comment_name(),
                                  variables=',<BP>'.join(variables),
-                                 prints='\n'.join(prints),
+                                 prints='\n'.join(prints).replace('\b\n\r', '\n').replace('\b', '').replace('\r\n\r', '\n\n').rstrip('\r').replace('\r', '\n'),
                                  arguments=', '.join(self.get_python_arguments()))
 
         return common.break_string(result, '    ', continuation=' \\', indent_suffix='  ')
@@ -324,7 +383,7 @@ class PythonExampleCallbackFunction(common.ExampleCallbackFunction):
                                   override_comment=override_comment) + \
                  template2.format(function_name_under=self.get_name().under,
                                   parameters=',<BP>'.join(parameters),
-                                  prints='\n'.join(prints),
+                                  prints='\n'.join(prints).replace('\r\n\r', '\n\n').strip('\r').replace('\r', '\n'),
                                   extra_message=extra_message)
 
         return common.break_string(result, 'cb_{}('.format(self.get_name().under))
@@ -392,12 +451,12 @@ class PythonExampleCallbackThresholdFunction(common.ExampleCallbackThresholdFunc
 
     def get_python_source(self):
         template = r"""    # Configure threshold for {function_name_comment} "{option_comment}"
-    {device_name}.set_{function_name_under}_callback_threshold({arguments}"{option_char}", {mininum_maximums})
+    {device_name}.set_{function_name_under}_callback_threshold({arguments}"{option_char}", {minimum_maximums})
 """
-        mininum_maximums = []
+        minimum_maximums = []
 
-        for mininum_maximum in self.get_minimum_maximums():
-            mininum_maximums.append(mininum_maximum.get_python_source())
+        for minimum_maximum in self.get_minimum_maximums():
+            minimum_maximums.append(minimum_maximum.get_python_source())
 
         return template.format(device_name=self.get_device().get_initial_name(),
                                function_name_under=self.get_name().under,
@@ -405,7 +464,7 @@ class PythonExampleCallbackThresholdFunction(common.ExampleCallbackThresholdFunc
                                arguments=common.wrap_non_empty('', ', '.join(self.get_python_arguments()), ', '),
                                option_char=self.get_option_char(),
                                option_comment=self.get_option_comment(),
-                               mininum_maximums=', '.join(mininum_maximums))
+                               minimum_maximums=', '.join(minimum_maximums))
 
 class PythonExampleCallbackConfigurationFunction(common.ExampleCallbackConfigurationFunction, PythonExampleArgumentsMixin):
     def get_python_imports(self):
@@ -416,14 +475,14 @@ class PythonExampleCallbackConfigurationFunction(common.ExampleCallbackConfigura
 
     def get_python_source(self):
         templateA = r"""    # Set period for {function_name_comment} callback to {period_sec_short} ({period_msec}ms)
-    {device_name}.set_{function_name_under}_callback_configuration({arguments}{period_msec}, False)
+    {device_name}.set_{function_name_under}_callback_configuration({arguments}{period_msec}{value_has_to_change})
 """
         templateB = r"""    # Set period for {function_name_comment} callback to {period_sec_short} ({period_msec}ms) without a threshold
-    {device_name}.set_{function_name_under}_callback_configuration({arguments}{period_msec}, False, "{option_char}", {mininum_maximums})
+    {device_name}.set_{function_name_under}_callback_configuration({arguments}{period_msec}{value_has_to_change}, "{option_char}", {minimum_maximums})
 """
         templateC = r"""    # Configure threshold for {function_name_comment} "{option_comment}"
     # with a debounce period of {period_sec_short} ({period_msec}ms)
-    {device_name}.set_{function_name_under}_callback_configuration({arguments}{period_msec}, False, "{option_char}", {mininum_maximums})
+    {device_name}.set_{function_name_under}_callback_configuration({arguments}{period_msec}{value_has_to_change}, "{option_char}", {minimum_maximums})
 """
 
         if self.get_option_char() == None:
@@ -435,10 +494,10 @@ class PythonExampleCallbackConfigurationFunction(common.ExampleCallbackConfigura
 
         period_msec, period_sec_short, period_sec_long = self.get_formatted_period()
 
-        mininum_maximums = []
+        minimum_maximums = []
 
-        for mininum_maximum in self.get_minimum_maximums():
-            mininum_maximums.append(mininum_maximum.get_python_source())
+        for minimum_maximum in self.get_minimum_maximums():
+            minimum_maximums.append(minimum_maximum.get_python_source())
 
         return template.format(device_name=self.get_device().get_initial_name(),
                                function_name_under=self.get_name().under,
@@ -447,9 +506,10 @@ class PythonExampleCallbackConfigurationFunction(common.ExampleCallbackConfigura
                                period_msec=period_msec,
                                period_sec_short=period_sec_short,
                                period_sec_long=period_sec_long,
+                               value_has_to_change=common.wrap_non_empty(', ', self.get_value_has_to_change('True', 'False', ''), ''),
                                option_char=self.get_option_char(),
                                option_comment=self.get_option_comment(),
-                               mininum_maximums=', '.join(mininum_maximums))
+                               minimum_maximums=', '.join(minimum_maximums))
 
 class PythonExampleSpecialFunction(common.ExampleSpecialFunction):
     def get_python_imports(self):
@@ -509,6 +569,9 @@ class PythonExamplesGenerator(common.ExamplesGenerator):
 
     def get_constant_class(self):
         return PythonConstant
+
+    def get_device_class(self):
+        return python_common.PythonDevice
 
     def get_example_class(self):
         return PythonExample
