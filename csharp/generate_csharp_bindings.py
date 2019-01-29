@@ -658,11 +658,11 @@ namespace Tinkerforge
             async_return = ''
             async_returns = []
             read_conv = '\n\t\t\tvar {0} = LEConverter.{1}({2}, response{3});'
-            read_conv_bool_array = """\n			byte[] {0} = LEConverter.ByteArrayFrom({2}, response, {1});
+            read_conv_bool_array = """\n			var {0} = LEConverter.ByteArrayFrom({2}, response, {1});
 			var {4} = new bool[{3}];
 
 			for (int i = 0; i < {3}; i++) 
-            {{
+			{{
 				{4}[i] = ({0}[i / 8] & (1 << (i % 8))) != 0;
 			}}\n"""
 
