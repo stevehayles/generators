@@ -385,9 +385,10 @@ namespace Tinkerforge
             convs = '\n'
             conv = '\t\t\t{0} {1} = LEConverter.{2}({3}, response{4});\n'
             conv_bool_array = """			bool[] {0} = new bool[{1}];
-			byte[] {2} = new byte[{3}];
-			{2} = LEConverter.ByteArrayFrom({4}, response, {3});
-			for (int i = 0; i < {1}; i++) {{
+			byte[] {2} = LEConverter.ByteArrayFrom({4}, response, {3});
+
+			for (int i = 0; i < {1}; i++) 
+			{{
 				{0}[i] = ({2}[i / 8] & (1 << (i % 8))) != 0;
 			}}
 """
@@ -534,10 +535,11 @@ namespace Tinkerforge
             method_tail = ''
             read_convs = ''
             read_conv = '\n\t\t\t{0} = LEConverter.{1}({2}, response{3});'
-            read_conv_bool_array = """\n			byte[] {0} = new byte[{1}];
+            read_conv_bool_array = """\n			byte[] {0} = LEConverter.ByteArrayFrom({2}, response, {1});
 			{4} = new bool[{3}];
-			{0} = LEConverter.ByteArrayFrom({2}, response, {1});
-			for (int i = 0; i < {3}; i++) {{
+
+			for (int i = 0; i < {3}; i++) 
+			{{
 				{4}[i] = ({0}[i / 8] & (1 << (i % 8))) != 0;
 			}}"""
 
