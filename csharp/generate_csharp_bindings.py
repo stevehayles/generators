@@ -663,12 +663,13 @@ namespace Tinkerforge
             async_return = ''
             async_returns = []
             read_conv = '\n\t\t\tvar {0} = LEConverter.{1}({2}, response{3});'
-            read_conv_bool_array = """\n			byte[] {0} = new byte[{1}];
-			{4} = new bool[{3}];
-			var {0} = LEConverter.ByteArrayFrom({2}, response, {1});
-			for (int i = 0; i < {3}; i++) {{
+            read_conv_bool_array = """\n			byte[] {0} = LEConverter.ByteArrayFrom({2}, response, {1});
+			var {4} = new bool[{3}];
+
+			for (int i = 0; i < {3}; i++) 
+            {{
 				{4}[i] = ({0}[i / 8] & (1 << (i % 8))) != 0;
-			}}"""
+			}}\n"""
 
             pos = 8
 
