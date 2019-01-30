@@ -19,8 +19,8 @@ com = {
         'de': ''
     },
     'comcu': True,
-    'released': False,
-    'documented': False,
+    'released': True,
+    'documented': True,
     'discontinued': False,
     'packets': [],
     'examples': []
@@ -212,12 +212,12 @@ com['packets'].append({
 'doc': ['bf', {
 'en':
 """
-Configures the info LED (marked as "Force" on the Bricklet) to be either turned off, 
+Configures the info LED (marked as "Force" on the Bricklet) to be either turned off,
 turned on, or blink in heartbeat mode.
 """,
 'de':
 """
-Konfiguriert die Info-LED (als "Force" auf dem Bricklet gekennzeichnet). 
+Konfiguriert die Info-LED (als "Force" auf dem Bricklet gekennzeichnet).
 Die LED kann ausgeschaltet, eingeschaltet oder im Herzschlagmodus betrieben werden.
 """
 }]
@@ -287,9 +287,9 @@ You can enable the callback for each axis (x, y, z) individually and choose a
 resolution of 8 bit or 16 bit.
 
 If at least one of the axis is enabled and the resolution is set to 8 bit,
-the :cb:`Continuous Acceleration 8 Bit` callback is activated. If at least 
+the :cb:`Continuous Acceleration 8 Bit` callback is activated. If at least
 one of the axis is enabled and the resolution is set to 16 bit,
-the :cb:`Continuous Acceleration 16 Bit` callback is activated. 
+the :cb:`Continuous Acceleration 16 Bit` callback is activated.
 
 If no axis is enabled, both callbacks are disabled. If one of the continuous
 callbacks is enabled, the :cb:`Acceleration` callback is disabled.
@@ -297,7 +297,7 @@ callbacks is enabled, the :cb:`Acceleration` callback is disabled.
 The maximum throughput depends on the exact configuration:
 
 .. csv-table::
- :header: "Number of axis enabled", "throughput 8 bit", "throughout 16 bit"
+ :header: "Number of axis enabled", "Throughput 8 bit", "Throughout 16 bit"
  :widths: 20, 20, 20
 
  "1", "25600Hz", "25600Hz"
@@ -312,15 +312,15 @@ die :cb:`Continuous Acceleration 16 Bit` oder :cb:`Continuous Acceleration 8 Bit
 Callbacks genutzt werden.
 
 Die Callbacks können für die Achsen (x, y, z) individuell aktiviert werden. Des
-weiteren kann eine Auflösung von 8-Bit oder 16-Bit ausgewählt werden. 
+weiteren kann eine Auflösung von 8-Bit oder 16-Bit ausgewählt werden.
 
 Wenn mindestens eine Achse aktiviert ist mit 8-Bit Auflösung,
-wird der :cb:`Continuous Acceleration 8 Bit`-Callback aktiviert. 
+wird der :cb:`Continuous Acceleration 8 Bit`-Callback aktiviert.
 Wenn mindestens eine Achse aktiviert ist mit 16-Bit Auflösung,
 wird der :cb:`Continuous Acceleration 16 Bit`-Callback aktiviert.
 
 Wenn keine Achse aktiviert is, sind beide Callbacks deaktiviert. Wenn einer der
-"Continuous Callbacks" genutzt wird, wird der :cb:`Acceleration`-Callback 
+"Continuous Callbacks" genutzt wird, wird der :cb:`Acceleration`-Callback
 automatisch deaktiviert.
 
 Der maximale Durchsatz hängt von der Konfiguraiton ab:
@@ -387,8 +387,8 @@ kann mit der Funktion :func:`Set Configuration` eingestellt werden und
 der Callback kann per :func:`Set Continuous Acceleration Configuration`
 aktiviert werden.
 
-Die Daten sind in der Sequenz "x, y, z, x, y, z, ..." formatiert, abhängig 
-von den aktivierten Achsen . Beispiele:
+Die Daten sind in der Sequenz "x, y, z, x, y, z, ..." formatiert, abhängig
+von den aktivierten Achsen. Beispiele:
 
 * x, y, z aktiviert: "x, y, z, ... 10x ..., x, y, z"
 * x, z aktiviert: "x, z, ... 15x ..., x, z"
@@ -425,8 +425,8 @@ kann mit der Funktion :func:`Set Configuration` eingestellt werden und
 der Callback kann per :func:`Set Continuous Acceleration Configuration`
 aktiviert werden.
 
-Die Daten sind in der Sequenz "x, y, z, x, y, z, ..." formatiert, abhängig 
-von den aktivierten Achsen . Beispiele:
+Die Daten sind in der Sequenz "x, y, z, x, y, z, ..." formatiert, abhängig
+von den aktivierten Achsen. Beispiele:
 
 * x, y, z aktiviert: "x, y, z, ... 20x ..., x, y, z"
 * x, z aktiviert: "x, z, ... 30x ..., x, z"
@@ -434,4 +434,15 @@ von den aktivierten Achsen . Beispiele:
 
 """
 }]
+})
+
+com['examples'].append({
+'name': 'Simple',
+'functions': [('getter', ('Get Acceleration', 'acceleration'), [(('X', 'Acceleration [X]'), 'int32', 1, 10000.0, 'g', None), (('Y', 'Acceleration [Y]'), 'int32', 1, 10000.0, 'g', None), (('Z', 'Acceleration [Z]'), 'int32', 1, 10000.0, 'g', None)], [])]
+})
+
+com['examples'].append({
+'name': 'Callback',
+'functions': [('callback', ('Acceleration', 'acceleration'), [(('X', 'Acceleration [X]'), 'int32', 1, 10000.0, 'g', None), (('Y', 'Acceleration [Y]'), 'int32', 1, 10000.0, 'g', None), (('Z', 'Acceleration [Z]'), 'int32', 1, 10000.0, 'g', None)], None, None),
+              ('callback_configuration', ('Acceleration', 'acceleration'), [], 1000, False, None, [])]
 })
