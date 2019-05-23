@@ -17,13 +17,16 @@ com = {
     'display_name': 'Piezo Speaker 2.0',
     'manufacturer': 'Tinkerforge',
     'description': {
-        'en': '',
-        'de': ''
+        'en': 'Creates beep and alarm with configurable volume and frequency',
+        'de': 'Erzeugt Piepton und Alarm mit konfigurierbarer Lautstärke und Frequenz'
     },
-    'comcu': True,
-    'released': False,
-    'documented': False,
+    'released': True,
+    'documented': True,
     'discontinued': False,
+    'features': [
+        'comcu_bricklet',
+        'bricklet_get_identity'
+    ],
     'packets': [],
     'examples': []
 }
@@ -34,12 +37,12 @@ com['packets'].append({
 'elements': [('Frequency', 'uint16', 1, 'in'),
              ('Volume', 'uint8', 1, 'in'),
              ('Duration', 'uint32', 1, 'in', ('Beep Duration', [('Off', 0),
-                                                                ('Infinite', 4294967295)])),],
+                                                                ('Infinite', 4294967295)]))],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
 """
-Beeps with the given frequency and volume for the duration in ms with. 
+Beeps with the given frequency and volume for the duration in ms. 
 
 For example: If you set a duration of 1000, with a volume of 10 and a frequency
 value of 2000 the piezo buzzer will beep with maximum loudness for one 
@@ -135,7 +138,7 @@ A duration of 4294967295 results in an infinite alarm.
 Below you can find two sets of example settings that you can try out. You can use
 these as a starting point to find an alarm signal that suits your application.
 
-*Example 1: 10 seconds of loud annoying fast alarm*
+Example 1: 10 seconds of loud annoying fast alarm
 
 * Start Frequency = 800
 * End Frequency = 2000
@@ -144,7 +147,7 @@ these as a starting point to find an alarm signal that suits your application.
 * Volume = 10
 * Duration = 10000
 
-*Example 2: 10 seconds of soft siren sound with slow build-up*
+Example 2: 10 seconds of soft siren sound with slow build-up
 
 * Start Frequency = 250
 * End Frequency = 750
@@ -159,7 +162,7 @@ The ranges are:
 * End Frequency: 51Hz - 15000Hz (has to be bigger than start frequency)
 * Step Size: 1Hz - 65535Hz (has to be small enough to fit into the frequency range)
 * Step Delay: 1ms - 65535ms (has to be small enough to fit into the duration)
-* Volume: 0-10
+* Volume: 0 - 10
 * Duration: 0ms - 4294967295ms
 """,
 'de':
@@ -175,7 +178,7 @@ Die folgenden Parameter können genutzt werden:
 * *Step Delay*: Zeit zwischen zwei Schritten (Dauer eines Tons im Frequenzdurchlauf) in ms.
 * *Duration*: Dauer des Alarm in ms
 
-Im weiteren gibt es zwei Beispiele zum ausprobieren. Diese Beispiele können
+Nachfolgend gibt es zwei Beispiele zum ausprobieren. Diese Beispiele können
 als Startpunkt genutzt werden um ein Alarm-Signal passend für die eigene Anwendung
 zu entwerfen.
 
@@ -203,7 +206,7 @@ Die Wertebereiche sind:
 * *End Frequency*: 51Hz - 15000Hz (muss größer als *Start Frequency* sein)
 * *Step Size*: 1Hz - 65535Hz (muss klein genug sein um in den Frequenzbereich zu passen)
 * *Step Delay*: 1ms - 65535ms (muss kleiner als *Duration* sein)
-* *Volume*: 0-10
+* *Volume*: 0 - 10
 * *Duration*: 0ms - 4294967295ms
 """
 }]
@@ -238,7 +241,7 @@ Gibt die letzten Alarm-Einstellungen zurück, wie von :func:`Set Alarm` gesetzt.
 Alarm aktuell läuft, wird auch die verbleibende Zeit des Alarms in ms sowie die aktuelle
 Frequenz in Hz zurück gegeben.
 
-Wenn die Lautstärke während eines Alarms aktualisiert wird (mit:func:`Update Volume`), 
+Wenn die Lautstärke während eines Alarms aktualisiert wird (mit :func:`Update Volume`),
 gibt diese Funktion die aktualisierten Werte zurück.
 """
 }]
@@ -252,11 +255,12 @@ com['packets'].append({
 'doc': ['bf', {
 'en':
 """
-Updates the volume of an ongoing beep or alarm.
+Updates the volume of an ongoing beep or alarm. The range of the volume is 0 to 10.
 """,
 'de':
 """
-Aktualisiert die Lautstärke eines aktuell laufenden Beep oder Alarm.
+Aktualisiert die Lautstärke eines aktuell laufenden Beep oder Alarm. Der
+Wertebereich der Lautstärke ist 0 bis 10.
 """
 }]
 })
@@ -269,11 +273,12 @@ com['packets'].append({
 'doc': ['bf', {
 'en':
 """
-Updates the frequency of an ongoing beep.
+Updates the frequency of an ongoing beep. The range of the frequency is 50Hz to 15000Hz.
 """,
 'de':
 """
-Aktualisiert die Frequenz eines aktuell laufenden Beeps.
+Aktualisiert die Frequenz eines aktuell laufenden Beeps. Der Wertebereich der
+Frequenz ist 50Hz bis 15000Hz.
 """
 }]
 })

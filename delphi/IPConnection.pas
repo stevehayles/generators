@@ -1,5 +1,5 @@
 {
-  Copyright (C) 2012-2015 Matthias Bolte <matthias@tinkerforge.com>
+  Copyright (C) 2012-2015, 2019 Matthias Bolte <matthias@tinkerforge.com>
   Copyright (C) 2017 Ishraq Ibne Ashraf <ishraq@tinkerforge.com>
 
   Redistribution and use in source and binary forms of this file,
@@ -96,17 +96,25 @@ type
   ENotConnectedException = class(ETinkerforgeException)
   end;
 
+  { EInvalidParameterException }
+  EInvalidParameterException = class(ETinkerforgeException)
+  end;
+
   { ENotSupportedException }
   ENotSupportedException = class(ETinkerforgeException)
   end;
   NotSupportedException = ENotSupportedException; { for backward compatibility }
 
+  { EUnknownErrorCodeException }
+  EUnknownErrorCodeException = class(ETinkerforgeException)
+  end;
+
   { EStreamOutOfSyncException }
   EStreamOutOfSyncException = class(ETinkerforgeException)
   end;
 
-  { EInvalidParameterException }
-  EInvalidParameterException = class(ETinkerforgeException)
+  { EInvalidUIDException }
+  EInvalidUIDException = class(ETinkerforgeException)
   end;
 
   { TThreadWrapper }
@@ -310,12 +318,12 @@ type
     procedure SendRequest(const request: TByteArray);
   end;
 
-  function GetUIDFromData(const data: TByteArray): longword;
-  function GetLengthFromData(const data: TByteArray): byte;
-  function GetFunctionIDFromData(const data: TByteArray): byte;
-  function GetSequenceNumberFromData(const data: TByteArray): byte;
-  function GetResponseExpectedFromData(const data: TByteArray): boolean;
-  function GetErrorCodeFromData(const data: TByteArray): byte;
+function GetUIDFromData(const data: TByteArray): longword;
+function GetLengthFromData(const data: TByteArray): byte;
+function GetFunctionIDFromData(const data: TByteArray): byte;
+function GetSequenceNumberFromData(const data: TByteArray): byte;
+function GetResponseExpectedFromData(const data: TByteArray): boolean;
+function GetErrorCodeFromData(const data: TByteArray): byte;
 
 implementation
 

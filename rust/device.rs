@@ -13,6 +13,8 @@ use std::sync::{
     Arc, Mutex,
 };
 
+use std::error::Error;
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub(crate) enum ResponseExpectedFlag {
     InvalidFunctionId,
@@ -74,12 +76,16 @@ impl std::fmt::Display for SetResponseExpectedError {
 
 impl Device {
     pub(crate) fn new(api_version: [u8; 3], uid: &str, ip_connection: &IpConnection, high_level_function_count: u8) -> Device {
-        Device {
-            api_version,
-            internal_uid: uid.base58_to_u32().unwrap(),
-            req_tx: ip_connection.req.socket_thread_tx.clone(),
-            response_expected: [ResponseExpectedFlag::InvalidFunctionId; 256],
-            high_level_locks: vec![Arc::new(Mutex::new(())); high_level_function_count as usize],
+        match uid.base58_to_u32() {
+            Ok(internal_uid) => Device {
+                api_version,
+                internal_uid: internal_uid,
+                req_tx: ip_connection.req.socket_thread_tx.clone(),
+                response_expected: [ResponseExpectedFlag::InvalidFunctionId; 256],
+                high_level_locks: vec![Arc::new(Mutex::new(())); high_level_function_count as usize],
+            },
+            //FIXME: (breaking change) Don't panic here, return a Result instead.
+            Err(e) => panic!("UID {} could not be parsed: {}", uid, e.description())
         }
     }
 

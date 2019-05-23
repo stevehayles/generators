@@ -15,12 +15,15 @@ com = {
     'display_name': 'Motion Detector',
     'manufacturer': 'Tinkerforge',
     'description': {
-        'en': 'Passive infrared (PIR) motion sensor, 7m range',
-        'de': 'Passiver Infrarot (PIR) Bewegungssensor, 7m Reichweite'
+        'en': 'Passive infrared (PIR) motion sensor with 7m range',
+        'de': 'Passiver Infrarot (PIR) Bewegungssensor mit 7m Reichweite'
     },
     'released': True,
     'documented': True,
     'discontinued': False, # selling remaining stock, replaced by Motion Detector Bricklet 2.0
+    'features': [
+        'bricklet_get_identity'
+    ],
     'packets': [],
     'examples': []
 }

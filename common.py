@@ -683,15 +683,7 @@ def subgenerate(root_dir, language, generator_class, config_name):
 
     configs = sorted(os.listdir(config_path))
 
-    if config_name == 'tinkerforge':
-        configs.remove('device_commonconfig.py')
-        configs.remove('brick_commonconfig.py')
-        configs.remove('bricklet_commonconfig.py')
-
     common_device_packets = copy.deepcopy(__import__('device_commonconfig').common_packets)
-    common_brick_packets = copy.deepcopy(__import__('brick_commonconfig').common_packets)
-    common_bricklet_packets = copy.deepcopy(__import__('bricklet_commonconfig').common_packets)
-    common_bricklet_comcu_packets = copy.deepcopy(__import__('bricklet_comcu_commonconfig').common_packets)
 
     brick_infos = []
     bricklet_infos = []
@@ -701,23 +693,21 @@ def subgenerate(root_dir, language, generator_class, config_name):
     generator.prepare()
 
     def prepare_common_packets(com, common_packets):
-        removed_features = com.get('removed_features', [])
+        features = com['features']
 
         for common_packet in common_packets:
-            if common_packet['since_firmware'] is None:
+            if common_packet.get('is_virtual', False):
                 continue
 
             if com['name'] in common_packet['since_firmware']:
-                common_packet['since_firmware'] = \
-                    common_packet['since_firmware'][com['name']]
+                common_packet['since_firmware'] = common_packet['since_firmware'][com['name']]
             else:
-                common_packet['since_firmware'] = \
-                    common_packet['since_firmware']['*']
+                common_packet['since_firmware'] = common_packet['since_firmware']['*']
 
-            if common_packet['since_firmware'] is None:
+            if common_packet['since_firmware'] == None:
                 common_packet['to_be_removed'] = True
 
-            if common_packet.get('feature') in removed_features:
+            if common_packet['feature'] not in features:
                 common_packet['to_be_removed'] = True
 
         return filter(lambda x: 'to_be_removed' not in x, common_packets)
@@ -738,18 +728,8 @@ def subgenerate(root_dir, language, generator_class, config_name):
             else:
                 print(' * {0}'.format(config[:-10]))
 
-            if config.startswith('brick_') and 'common_included' not in com:
-                common_packets = copy.deepcopy(common_device_packets) + copy.deepcopy(common_brick_packets)
-                com['packets'].extend(prepare_common_packets(com, common_packets))
-                com['common_included'] = True
-
-            if config.startswith('bricklet_') and 'common_included' not in com:
-                if com.get('comcu', False):
-                    common_packets = copy.deepcopy(common_device_packets) + copy.deepcopy(common_bricklet_comcu_packets) + copy.deepcopy(common_bricklet_packets)
-                else:
-                    common_packets = copy.deepcopy(common_device_packets) + copy.deepcopy(common_bricklet_packets)
-
-                com['packets'].extend(prepare_common_packets(com, common_packets))
+            if 'common_included' not in com:
+                com['packets'].extend(prepare_common_packets(com, copy.deepcopy(common_device_packets)))
                 com['common_included'] = True
 
             device = generator.get_device_class()(com, generator)
@@ -928,9 +908,9 @@ def break_string(string, indent_marker, space=' ', continuation='', indent_head=
 def check_output_and_error(*popenargs, **kwargs):
     process = subprocess.Popen(stdout=subprocess.PIPE, stderr=subprocess.PIPE, *popenargs, **kwargs)
     output, error = process.communicate()
-    retcode = process.poll()
+    exit_code = process.poll()
 
-    return retcode, (output + error).decode('utf-8')
+    return exit_code, (output + error).decode('utf-8')
 
 class GeneratorError(Exception):
     pass
@@ -1671,7 +1651,7 @@ class Device(object):
         return self.generator
 
     def has_comcu(self):
-        return self.raw_data.get('comcu', False)
+        return 'comcu_bricklet' in self.raw_data['features']
 
     def is_released(self):
         return self.raw_data['released']
@@ -2982,14 +2962,11 @@ class ExamplesGenerator(Generator):
 
 def tester_worker(cookie, args, env):
     try:
-        with open(os.devnull) as f:
-            output = subprocess.check_output(args, env=env, stderr=subprocess.STDOUT, stdin=f).decode('utf-8')
-    except subprocess.CalledProcessError as e:
-        return cookie, e.output.decode('utf-8'), e.returncode == 0
+        exit_code, output = check_output_and_error(args, env=env)
     except Exception as e:
-        return cookie, 'Tester Exception: ' + str(e), False
+        return cookie, None, 'Tester Exception: ' + str(e)
 
-    return cookie, output, True
+    return cookie, exit_code, output
 
 class Tester(object):
     PROCESSES = 4
@@ -3019,8 +2996,15 @@ class Tester(object):
         self.test_count += 1
         self.test((path,), path, extra)
 
-    def handle_result(self, cookie, output, success):
+    def handle_result(self, cookie, exit_code, output):
+        if exit_code == None: # FIXME: add better handling
+            if len(output) > 0:
+                print(output)
+
+            sys.exit(1)
+
         path = cookie[0]
+        success = self.check_success(exit_code, output)
 
         if self.comment != None:
             print('>>> [{0}] testing {1}'.format(self.comment, path))
@@ -3032,8 +3016,7 @@ class Tester(object):
         if len(output) > 0:
             print(output)
 
-
-        if sys.stdout.isatty(): #Only print color codes if stdout is not piped
+        if sys.stdout.isatty(): # only print color codes if stdout is not piped
             if success:
                 self.success_count += 1
                 print('\033[01;32m>>> test succeded\033[0m\n')
@@ -3053,6 +3036,9 @@ class Tester(object):
 
     def test(self, cookie, path, extra):
         raise NotImplementedError()
+
+    def check_success(self, exit_code, output):
+        return exit_code == 0
 
     def run(self):
         tmp_dir = os.path.join('/tmp/tester', self.name)

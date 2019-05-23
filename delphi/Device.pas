@@ -1,5 +1,5 @@
 {
-  Copyright (C) 2012-2013 Matthias Bolte <matthias@tinkerforge.com>
+  Copyright (C) 2012-2013, 2019 Matthias Bolte <matthias@tinkerforge.com>
 
   Redistribution and use in source and binary forms of this file,
   with or without modification, are permitted. See the Creative
@@ -30,6 +30,8 @@ type
     requestMutex: TCriticalSection;
   public
     uid_: longword;
+    uidString: string;
+    uidValid: boolean;
     ipcon: TObject;
     apiVersion: TVersionNumber;
     expectedResponseFunctionID: byte; { protected by requestMutex }
@@ -39,7 +41,7 @@ type
     callbackWrappers: array [0..255] of TCallbackWrapper;
 
     /// <summary>
-    ///  Creates the device objectwith the unique device ID *uid* and adds
+    ///  Creates the device object with the unique device ID *uid* and adds
     ///  it to the IPConnection *ipcon*.
     /// </summary>
     constructor Create(const uid__: string; ipcon_: TObject);
@@ -130,19 +132,21 @@ constructor TDevice.Create(const uid__: string; ipcon_: TObject);
 var longUid: uint64; value1, value2, i: longint;
 begin
   inherited Create;
-  longUid := Base58Decode(uid__);
-  if (longUid > $FFFFFFFF) then begin
+  uidString := uid__;
+  uidValid := Base58Decode(uid__, longUid);
+  if (uidValid and (longUid > $FFFFFFFF)) then begin
     { Convert from 64bit to 32bit }
     value1 := longUid and $FFFFFFFF;
     value2 := longword((longUid shr 32) and $FFFFFFFF);
-    uid_ := (value1 and $00000FFF);
-    uid_ := uid_ or ((value1 and longword($0F000000)) shr 12);
-    uid_ := uid_ or ((value2 and longword($0000003F)) shl 16);
-    uid_ := uid_ or ((value2 and longword($000F0000)) shl 6);
-    uid_ := uid_ or ((value2 and longword($3F000000)) shl 2);
-  end
-  else begin
-    uid_ := longUid and $FFFFFFFF;
+    longUid := (value1 and $00000FFF);
+    longUid := longUid or ((value1 and longword($0F000000)) shr 12);
+    longUid := longUid or ((value2 and longword($0000003F)) shl 16);
+    longUid := longUid or ((value2 and longword($000F0000)) shl 6);
+    longUid := longUid or ((value2 and longword($3F000000)) shl 2);
+  end;
+  uid_ := longUid;
+  if (uid_ = 0) then begin
+    uidValid := false; { broadcast UID is forbidden }
   end;
   ipcon := ipcon_;
   apiVersion[0] := 0;
@@ -155,12 +159,16 @@ begin
   for i := 0 to Length(responseExpected) - 1 do begin
     responseExpected[i] := DEVICE_RESPONSE_EXPECTED_INVALID_FUNCTION_ID;
   end;
-  (ipcon as TIPConnection).devices.Insert(uid_, self);
+  if (uidValid) then begin
+    (ipcon as TIPConnection).devices.Insert(uid_, self);
+  end;
 end;
 
 destructor TDevice.Destroy;
 begin
-  (ipcon as TIPConnection).devices.Remove(uid_);
+  if (uidValid) then begin
+    (ipcon as TIPConnection).devices.Remove(uid_);
+  end;
   requestMutex.Destroy;
   responseQueue.Destroy;
   inherited Destroy;
@@ -225,6 +233,9 @@ end;
 function TDevice.SendRequest(const request: TByteArray): TByteArray;
 var ipcon_: TIPConnection; kind, errorCode, functionID: byte;
 begin
+  if (not uidValid) then begin
+    raise EInvalidUIDException.Create('UID "' + uidString + '" is invalid');
+  end;
   SetLength(result, 0);
   ipcon_ := ipcon as TIPConnection;
   if (GetResponseExpectedFromData(request)) then begin
@@ -257,16 +268,14 @@ begin
     if (errorCode = 0) then begin
       { No error }
     end
+    else if (errorCode = 1) then begin
+      raise EInvalidParameterException.Create('Got invalid parameter for function ID ' + IntToStr(functionID));
+    end
+    else if (errorCode = 2) then begin
+      raise ENotSupportedException.Create('Function ID ' + IntToStr(functionID) + ' is not supported');
+    end
     else begin
-      if (errorCode = 1) then begin
-        raise ENotSupportedException.Create('Got invalid parameter for function ID ' + IntToStr(functionID));
-      end
-      else if (errorCode = 2) then begin
-        raise ENotSupportedException.Create('Function ID ' + IntToStr(functionID) + ' is not supported');
-      end
-      else begin
-        raise ENotSupportedException.Create('Function ID ' + IntToStr(functionID) + ' returned an unknown error');
-      end;
+      raise EUnknownErrorCodeException.Create('Function ID ' + IntToStr(functionID) + ' returned an unknown error');
     end;
   end
   else begin

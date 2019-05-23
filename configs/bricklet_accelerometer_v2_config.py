@@ -18,10 +18,13 @@ com = {
         'en': 'Measures acceleration in three axis',
         'de': 'Misst Beschleunigung in drei Achsen'
     },
-    'comcu': True,
     'released': True,
     'documented': True,
     'discontinued': False,
+    'features': [
+        'comcu_bricklet',
+        'bricklet_get_identity'
+     ],
     'packets': [],
     'examples': []
 }
@@ -81,7 +84,7 @@ com['packets'].append({
 'doc': ['bf', {
 'en':
 """
-Configures the data rate, full scale range and filter bandwidth.
+Configures the data rate and full scale range.
 Possible values are:
 
 * Data rate of 0.781Hz to 25600Hz.
@@ -94,7 +97,7 @@ The default values are 100Hz data rate and -2g to +2g range.
 """,
 'de':
 """
-Konfiguriert die Datenrate, den Wertebereich und die Filterbandbreite.
+Konfiguriert die Datenrate und den Wertebereich.
 Mögliche Konfigurationswerte sind:
 
 * Datenrate zwischen 0,781Hz und 25600Hz.
@@ -298,6 +301,9 @@ the :cb:`Continuous Acceleration 8 Bit` callback is activated. If at least
 one of the axis is enabled and the resolution is set to 16 bit,
 the :cb:`Continuous Acceleration 16 Bit` callback is activated.
 
+If a resolution of 8 bit is used, only the 8 most significant bits will be
+transferred. This means that the unit changes from g/10000 to g*256/10000.
+
 If no axis is enabled, both callbacks are disabled. If one of the continuous
 callbacks is enabled, the :cb:`Acceleration` callback is disabled.
 
@@ -326,11 +332,14 @@ wird der :cb:`Continuous Acceleration 8 Bit`-Callback aktiviert.
 Wenn mindestens eine Achse aktiviert ist mit 16-Bit Auflösung,
 wird der :cb:`Continuous Acceleration 16 Bit`-Callback aktiviert.
 
+Bei einer Auflösung von 8-Bit werden nur die 8 höchstwertigen Bits übertragen.
+Daher ändert sich die Einheit von g/10000 auf g*256/10000.
+
 Wenn keine Achse aktiviert is, sind beide Callbacks deaktiviert. Wenn einer der
 "Continuous Callbacks" genutzt wird, wird der :cb:`Acceleration`-Callback
 automatisch deaktiviert.
 
-Der maximale Durchsatz hängt von der Konfiguraiton ab:
+Der maximale Durchsatz hängt von der Konfiguration ab:
 
 .. csv-table::
  :header: "Anzahl aktiviert Achsen", "Durchsatz 8-Bit", "Durchsatz 16-Bit"
@@ -379,6 +388,8 @@ Returns 30 acceleration values with 16 bit resolution. The data rate can
 be configured with :func:`Set Configuration` and this callback can be
 enabled with :func:`Set Continuous Acceleration Configuration`.
 
+The unit of the values is g/10000.
+
 The data is formated in the sequence "x, y, z, x, y, z, ..." depending on
 the enabled axis. Examples:
 
@@ -393,6 +404,8 @@ Gibt 30 Beschleunigungswerte mit 16 bit Auflösung zurück. Die Datenrate
 kann mit der Funktion :func:`Set Configuration` eingestellt werden und
 der Callback kann per :func:`Set Continuous Acceleration Configuration`
 aktiviert werden.
+
+Die Einheit der Werte ist g/10000.
 
 Die Daten sind in der Sequenz "x, y, z, x, y, z, ..." formatiert, abhängig
 von den aktivierten Achsen. Beispiele:
@@ -417,6 +430,8 @@ Returns 30 acceleration values with 8 bit resolution. The data rate can
 be configured with :func:`Set Configuration` and this callback can be
 enabled with :func:`Set Continuous Acceleration Configuration`.
 
+The unit of the values is g*256/10000.
+
 The data is formated in the sequence "x, y, z, x, y, z, ..." depending on
 the enabled axis. Examples:
 
@@ -431,6 +446,8 @@ Gibt 30 Beschleunigungswerte mit 8 bit Auflösung zurück. Die Datenrate
 kann mit der Funktion :func:`Set Configuration` eingestellt werden und
 der Callback kann per :func:`Set Continuous Acceleration Configuration`
 aktiviert werden.
+
+Die Einheit der Werte ist g*256/10000.
 
 Die Daten sind in der Sequenz "x, y, z, x, y, z, ..." formatiert, abhängig
 von den aktivierten Achsen. Beispiele:

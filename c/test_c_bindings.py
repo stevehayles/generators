@@ -37,26 +37,15 @@ class CExamplesTester(common.Tester):
 
         self.compiler = compiler
 
-    def after_unzip(self):
-        print('>>> patching ip_connection.c')
-
-        with open('/tmp/tester/c/source/ip_connection.c', 'r') as f:
-            code = f.read()
-
-        # GCC 7 complains that _BSD_SOURCE is deprecated, patch the code to
-        # avoid the warning, but keep using _BSD_SOURCE in the actual code for
-        # backwards compatibility
-        code = code.replace(' _BSD_SOURCE', ' _DEFAULT_SOURCE')
-
-        with open('/tmp/tester/c/source/ip_connection.c', 'w') as f:
-            f.write(code)
-
-        return True
-
     def test(self, cookie, path, extra):
+        uses_libgd = False
+
+        with open(path, 'r') as f:
+            uses_libgd = '#include <gd.h>' in f.read()
+
         # skip OLED scribble example because mingw32 has no libgd package
-        if self.compiler.startswith('mingw32-') and path.endswith('example_scribble.c'):
-            self.execute(cookie, ['true'])
+        if self.compiler.startswith('mingw32-') and uses_libgd:
+            self.handle_result(cookie, 0, '>>> skipping')
             return
 
         if extra:
@@ -108,10 +97,16 @@ class CExamplesTester(common.Tester):
         if self.compiler.startswith('mingw32-'):
             args += ['-lws2_32']
 
-        if path.endswith('example_scribble.c'):
+        if uses_libgd:
             args += ['-lm', '-lgd']
 
         self.execute(cookie, args)
+
+    def check_success(self, exit_code, output):
+        if self.compiler == 'scan-build clang' and exit_code == 0 and 'scan-build: No bugs found.\n' not in output:
+            return False
+
+        return True
 
 def run(root_dir):
     extra_paths = [os.path.join(root_dir, '../../weather-station/write_to_lcd/c/weather_station.c'),

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2016 Matthias Bolte <matthias@tinkerforge.com>
+ * Copyright (C) 2012-2016, 2019 Matthias Bolte <matthias@tinkerforge.com>
  * Copyright (C) 2011 Olaf Lüke <olaf@tinkerforge.com>
  *
  * Redistribution and use in source and binary forms of this file,
@@ -13,6 +13,9 @@
 	#endif
 	#ifndef _GNU_SOURCE
 		#define _GNU_SOURCE
+	#endif
+	#ifndef _DEFAULT_SOURCE
+		#define _DEFAULT_SOURCE
 	#endif
 #endif
 
@@ -77,7 +80,7 @@ extern "C" {
 
 typedef struct {
 	PacketHeader header;
-} ATTRIBUTE_PACKED Enumerate;
+} ATTRIBUTE_PACKED DeviceEnumerate_Broadcast;
 
 typedef struct {
 	PacketHeader header;
@@ -88,22 +91,22 @@ typedef struct {
 	uint8_t firmware_version[3];
 	uint16_t device_identifier;
 	uint8_t enumeration_type;
-} ATTRIBUTE_PACKED EnumerateCallback;
+} ATTRIBUTE_PACKED DeviceEnumerate_Callback;
 
 typedef struct {
 	PacketHeader header;
-} ATTRIBUTE_PACKED GetAuthenticationNonce;
+} ATTRIBUTE_PACKED BrickDaemonGetAuthenticationNonce_Request;
 
 typedef struct {
 	PacketHeader header;
 	uint8_t server_nonce[4];
-} ATTRIBUTE_PACKED GetAuthenticationNonceResponse;
+} ATTRIBUTE_PACKED BrickDaemonGetAuthenticationNonce_Response;
 
 typedef struct {
 	PacketHeader header;
 	uint8_t client_nonce[4];
 	uint8_t digest[20];
-} ATTRIBUTE_PACKED Authenticate;
+} ATTRIBUTE_PACKED BrickDaemonAuthenticate_Request;
 
 #if defined _MSC_VER || defined __BORLANDC__
 	#pragma pack(pop)
@@ -128,10 +131,11 @@ typedef struct {
 
 	STATIC_ASSERT(sizeof(PacketHeader) == 8, "PacketHeader has invalid size");
 	STATIC_ASSERT(sizeof(Packet) == 80, "Packet has invalid size");
-	STATIC_ASSERT(sizeof(EnumerateCallback) == 34, "EnumerateCallback has invalid size");
-	STATIC_ASSERT(sizeof(GetAuthenticationNonce) == 8, "GetAuthenticationNonce has invalid size");
-	STATIC_ASSERT(sizeof(GetAuthenticationNonceResponse) == 12, "GetAuthenticationNonceResponse has invalid size");
-	STATIC_ASSERT(sizeof(Authenticate) == 32, "Authenticate has invalid size");
+	STATIC_ASSERT(sizeof(DeviceEnumerate_Broadcast) == 8, "DeviceEnumerate_Broadcast has invalid size");
+	STATIC_ASSERT(sizeof(DeviceEnumerate_Callback) == 34, "DeviceEnumerate_Callback has invalid size");
+	STATIC_ASSERT(sizeof(BrickDaemonGetAuthenticationNonce_Request) == 8, "BrickDaemonGetAuthenticationNonce_Request has invalid size");
+	STATIC_ASSERT(sizeof(BrickDaemonGetAuthenticationNonce_Response) == 12, "BrickDaemonGetAuthenticationNonce_Response has invalid size");
+	STATIC_ASSERT(sizeof(BrickDaemonAuthenticate_Request) == 32, "BrickDaemonAuthenticate_Request has invalid size");
 #endif
 
 void millisleep(uint32_t msec) {
@@ -517,36 +521,77 @@ static void base58_encode(uint64_t value, char *str) {
 }
 #endif
 
-static uint64_t base58_decode(const char *str) {
-	int i;
+// https://www.fefe.de/intof.html
+static bool uint64_add(uint64_t a, uint64_t b, uint64_t *c) {
+	if (UINT64_MAX - a < b) {
+		return false;
+	}
+
+	*c = a + b;
+
+	return true;
+}
+
+static bool uint64_multiply(uint64_t a, uint64_t b, uint64_t *c) {
+	uint64_t a0 = a & UINT32_MAX;
+	uint64_t a1 = a >> 32;
+	uint64_t b0 = b & UINT32_MAX;
+	uint64_t b1 = b >> 32;
+	uint64_t c0;
+	uint64_t c1;
+
+	if (a1 > 0 && b1 > 0) {
+		return false;
+	}
+
+	c1 = a1 * b0 + a0 * b1;
+
+	if (c1 > UINT32_MAX) {
+		return false;
+	}
+
+	c0 = a0 * b0;
+	c1 <<= 32;
+
+	return uint64_add(c1, c0, c);
+}
+
+static bool base58_decode(const char *str, uint64_t *ret_value) {
+	int i = strlen(str) - 1;
 	int k;
+	uint64_t next;
 	uint64_t value = 0;
 	uint64_t base = 1;
 
-	for (i = 0; i < BASE58_MAX_STR_SIZE; i++) {
-		if (str[i] == '\0') {
-			break;
-		}
-	}
+	*ret_value = 0;
 
-	--i;
-
-	for (; i >= 0; i--) {
-		if (str[i] == '\0') {
-			continue;
-		}
-
-		for (k = 0; k < 58; k++) {
+	for (; i >= 0; --i) {
+		for (k = 0; k < 58; ++k) {
 			if (BASE58_ALPHABET[k] == str[i]) {
 				break;
 			}
 		}
 
-		value += k * base;
-		base *= 58;
+		if (k == 58) {
+			return false; // invalid char
+		}
+
+		if (!uint64_multiply(k, base, &next))  {
+			return false; // overflow
+		}
+
+		if (!uint64_add(value, next, &value))  {
+			return false; // overflow
+		}
+
+		if (i > 0 && !uint64_multiply(base, 58, &base))  {
+			return false; // overflow
+		}
 	}
 
-	return value;
+	*ret_value = value;
+
+	return true;
 }
 
 /*****************************************************************************
@@ -1162,7 +1207,9 @@ static int ipcon_send_request(IPConnectionPrivate *ipcon_p, Packet *request);
 static void device_destroy(DevicePrivate *device_p) {
 	int i;
 
-	table_remove(&device_p->ipcon_p->devices, device_p->uid);
+	if (device_p->uid_valid) {
+		table_remove(&device_p->ipcon_p->devices, device_p->uid);
+	}
 
 	for (i = 0; i < DEVICE_NUM_FUNCTION_IDS; i++) {
 		free(device_p->high_level_callbacks[i].data);
@@ -1191,9 +1238,9 @@ void device_create(Device *device, const char *uid_str,
 	device_p = (DevicePrivate *)malloc(sizeof(DevicePrivate));
 	device->p = device_p;
 
-	uid = base58_decode(uid_str);
+	device_p->uid_valid = base58_decode(uid_str, &uid);
 
-	if (uid > 0xFFFFFFFF) {
+	if (device_p->uid_valid && uid > 0xFFFFFFFF) {
 		// convert from 64bit to 32bit
 		value1 = uid & 0xFFFFFFFF;
 		value2 = (uid >> 32) & 0xFFFFFFFF;
@@ -1205,9 +1252,13 @@ void device_create(Device *device, const char *uid_str,
 		uid |= (value2 & 0x3F000000) << 2;
 	}
 
+	if (uid == 0) {
+		device_p->uid_valid = false; // broadcast UID is forbidden
+	}
+
 	device_p->ref_count = 1;
 
-	device_p->uid = uid & 0xFFFFFFFF;
+	device_p->uid = uid;
 
 	device_p->ipcon_p = ipcon_p;
 
@@ -1249,7 +1300,9 @@ void device_create(Device *device, const char *uid_str,
 	}
 
 	// add to IPConnection
-	table_insert(&ipcon_p->devices, device_p->uid, device_p);
+	if (device_p->uid_valid) {
+		table_insert(&ipcon_p->devices, device_p->uid, device_p);
+	}
 }
 
 void device_release(DevicePrivate *device_p) {
@@ -1339,6 +1392,10 @@ int device_send_request(DevicePrivate *device_p, Packet *request, Packet *respon
 	uint8_t response_expected = packet_header_get_response_expected(&request->header);
 	uint8_t error_code;
 
+	if (!device_p->uid_valid) {
+		return E_INVALID_UID;
+	}
+
 	if (response_expected) {
 		mutex_lock(&device_p->request_mutex);
 
@@ -1427,8 +1484,8 @@ static void brickd_destroy(BrickDaemon *brickd) {
 
 static int brickd_get_authentication_nonce(BrickDaemon *brickd, uint8_t ret_server_nonce[4]) {
 	DevicePrivate *device_p = brickd->p;
-	GetAuthenticationNonce request;
-	GetAuthenticationNonceResponse response;
+	BrickDaemonGetAuthenticationNonce_Request request;
+	BrickDaemonGetAuthenticationNonce_Response response;
 	int ret;
 
 	ret = packet_header_create(&request.header, sizeof(request), BRICK_DAEMON_FUNCTION_GET_AUTHENTICATION_NONCE, device_p->ipcon_p, device_p);
@@ -1450,7 +1507,7 @@ static int brickd_get_authentication_nonce(BrickDaemon *brickd, uint8_t ret_serv
 
 static int brickd_authenticate(BrickDaemon *brickd, uint8_t client_nonce[4], uint8_t digest[20]) {
 	DevicePrivate *device_p = brickd->p;
-	Authenticate request;
+	BrickDaemonAuthenticate_Request request;
 	int ret;
 
 	ret = packet_header_create(&request.header, sizeof(request), BRICK_DAEMON_FUNCTION_AUTHENTICATE, device_p->ipcon_p, device_p);
@@ -1486,6 +1543,10 @@ static void ipcon_disconnect_unlocked(IPConnectionPrivate *ipcon_p);
 
 static DevicePrivate *ipcon_acquire_device(IPConnectionPrivate *ipcon_p, uint32_t uid) {
 	DevicePrivate *device_p;
+
+	if (uid == 0) {
+		return NULL;
+	}
 
 	mutex_lock(&ipcon_p->devices_ref_mutex);
 
@@ -1584,7 +1645,7 @@ static void ipcon_dispatch_meta(IPConnectionPrivate *ipcon_p, Meta *meta) {
 static void ipcon_dispatch_packet(IPConnectionPrivate *ipcon_p, Packet *packet) {
 	EnumerateCallbackFunction enumerate_callback_function;
 	void *user_data;
-	EnumerateCallback *enumerate_callback;
+	DeviceEnumerate_Callback *enumerate_callback;
 	DevicePrivate *device_p;
 	CallbackWrapperFunction callback_wrapper_function;
 
@@ -1592,7 +1653,7 @@ static void ipcon_dispatch_packet(IPConnectionPrivate *ipcon_p, Packet *packet) 
 		if (ipcon_p->registered_callbacks[IPCON_CALLBACK_ENUMERATE] != NULL) {
 			*(void **)(&enumerate_callback_function) = ipcon_p->registered_callbacks[IPCON_CALLBACK_ENUMERATE];
 			user_data = ipcon_p->registered_callback_user_data[IPCON_CALLBACK_ENUMERATE];
-			enumerate_callback = (EnumerateCallback *)packet;
+			enumerate_callback = (DeviceEnumerate_Callback *)packet;
 
 			enumerate_callback_function(enumerate_callback->uid,
 			                            enumerate_callback->connected_uid,
@@ -2293,10 +2354,10 @@ uint32_t ipcon_get_timeout(IPConnection *ipcon) { // in msec
 
 int ipcon_enumerate(IPConnection *ipcon) {
 	IPConnectionPrivate *ipcon_p = ipcon->p;
-	Enumerate enumerate;
+	DeviceEnumerate_Broadcast enumerate;
 	int ret;
 
-	ret = packet_header_create(&enumerate.header, sizeof(Enumerate),
+	ret = packet_header_create(&enumerate.header, sizeof(DeviceEnumerate_Broadcast),
 	                           IPCON_FUNCTION_ENUMERATE, ipcon_p, NULL);
 
 	if (ret < 0) {
@@ -2352,7 +2413,7 @@ int packet_header_create(PacketHeader *header, uint8_t length,
 
 	if (device_p != NULL) {
 		ret = device_get_response_expected(device_p, function_id, &response_expected);
-		packet_header_set_response_expected(header, response_expected ? 1 : 0);
+		packet_header_set_response_expected(header, response_expected);
 	}
 
 	return ret;
@@ -2362,8 +2423,8 @@ uint8_t packet_header_get_sequence_number(PacketHeader *header) {
 	return (header->sequence_number_and_options >> 4) & 0x0F;
 }
 
-void packet_header_set_sequence_number(PacketHeader *header,
-                                       uint8_t sequence_number) {
+void packet_header_set_sequence_number(PacketHeader *header, uint8_t sequence_number) {
+	header->sequence_number_and_options &= ~0xF0;
 	header->sequence_number_and_options |= (sequence_number << 4) & 0xF0;
 }
 
@@ -2371,9 +2432,12 @@ uint8_t packet_header_get_response_expected(PacketHeader *header) {
 	return (header->sequence_number_and_options >> 3) & 0x01;
 }
 
-void packet_header_set_response_expected(PacketHeader *header,
-                                         uint8_t response_expected) {
-	header->sequence_number_and_options |= (response_expected << 3) & 0x08;
+void packet_header_set_response_expected(PacketHeader *header, bool response_expected) {
+	if (response_expected) {
+		header->sequence_number_and_options |= 0x01 << 3;
+	} else {
+		header->sequence_number_and_options &= ~(0x01 << 3);
+	}
 }
 
 uint8_t packet_header_get_error_code(PacketHeader *header) {

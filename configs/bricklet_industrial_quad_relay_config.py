@@ -21,6 +21,9 @@ com = {
     'released': True,
     'documented': True,
     'discontinued': True, # replaced by Industrial Quad Relay Bricklet 2.0
+    'features': [
+        'bricklet_get_identity'
+    ],
     'packets': [],
     'examples': []
 }
@@ -40,11 +43,13 @@ For example: The value 3 or 0b0011 will close the relay of pins 0-1 and open
 the other pins.
 
 If no groups are used (see :func:`Set Group`), the pins correspond to the
-markings on the Quad Relay Bricklet.
+markings on the Industrial Quad Relay Bricklet.
 
 If groups are used, the pins correspond to the element in the group.
 Element 1 in the group will get pins 0-3, element 2 pins 4-7, element 3
 pins 8-11 and element 4 pins 12-15.
+
+All running monoflop timers will be aborted if this function is called.
 """,
 'de':
 """
@@ -55,11 +60,14 @@ Zum Beispiel: Der Wert 3 bzw. 0b0011 wird die Relais 0-1 schließen und alle
 anderen öffnen.
 
 Falls keine Gruppen verwendet werden (siehe :func:`Set Group`), entsprechen
-die Pins der Beschriftung auf dem Quad Relay Bricklet.
+die Pins der Beschriftung auf dem Industrial Quad Relay Bricklet.
 
 Falls Gruppen verwendet werden, entsprechen die Pins den Elementen der
 Gruppe. Element 1 in der Gruppe bekommt Pins 0-3,
 Element 2 Pins 4-7, Element 3 Pins 8-11 und Element 4 Pins 12-15.
+
+Alle laufenden Monoflop Timer werden abgebrochen, wenn diese Funktion aufgerufen
+wird.
 """
 }]
 })
@@ -294,11 +302,14 @@ For example: The values (3, 1) or (0b0011, 0b0001) will close the relay of
 pin 0, open the relay of pin 1 and leave the others untouched.
 
 If no groups are used (see :func:`Set Group`), the pins correspond to the
-markings on the Quad Relay Bricklet.
+markings on the Industrial Quad Relay Bricklet.
 
 If groups are used, the pins correspond to the element in the group.
 Element 1 in the group will get pins 0-3, element 2 pins 4-7, element 3
 pins 8-11 and element 4 pins 12-15.
+
+Running monoflop timers for the selected relays will be aborted if this function
+is called.
 """,
 'de':
 """
@@ -311,11 +322,14 @@ Zum Beispiel: Die Werte (3, 1) bzw. (0b0011, 0b0001) wird das Relais 0
 schließen, das Relais 1 öffnen und alle anderen unangetastet lassen.
 
 Falls keine Gruppen verwendet werden (siehe :func:`Set Group`), entsprechen
-die Pins der Beschriftung auf dem Quad Relay Bricklet.
+die Pins der Beschriftung auf dem Industrial Quad Relay Bricklet.
 
 Falls Gruppen verwendet werden, entsprechen die Pins den Elementen der
 Gruppe. Element 1 in der Gruppe bekommt Pins 0-3,
 Element 2 Pins 4-7, Element 3 Pins 8-11 und Element 4 Pins 12-15.
+
+Laufende Monoflop Timer für die ausgewählten Relais werden abgebrochen, wenn
+diese Funktion aufgerufen wird.
 """
 }]
 })

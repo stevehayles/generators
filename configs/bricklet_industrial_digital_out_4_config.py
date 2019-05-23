@@ -21,6 +21,9 @@ com = {
     'released': True,
     'documented': True,
     'discontinued': False, # selling remaining stock, replaced by Industrial Digital Out 4 Bricklet 2.0
+    'features': [
+        'bricklet_get_identity'
+    ],
     'packets': [],
     'examples': []
 }
@@ -40,11 +43,13 @@ For example: The value 3 or 0b0011 will turn pins 0-1 high and the other pins
 low.
 
 If no groups are used (see :func:`Set Group`), the pins correspond to the
-markings on the Digital Out 4 Bricklet.
+markings on the Industrial Digital Out 4 Bricklet.
 
 If groups are used, the pins correspond to the element in the group.
 Element 1 in the group will get pins 0-3, element 2 pins 4-7, element 3
 pins 8-11 and element 4 pins 12-15.
+
+All running monoflop timers will be aborted if this function is called.
 """,
 'de':
 """
@@ -55,11 +60,14 @@ Zum Beispiel: Der Wert 3 bzw. 0b0011 wird die Pins 0-1 auf logisch 1
 und alle anderen auf logisch 0 setzen.
 
 Falls keine Gruppen verwendet werden (siehe :func:`Set Group`), entsprechen
-die Pins der Beschriftung auf dem Digital Out 4 Bricklet.
+die Pins der Beschriftung auf dem Industrial Digital Out 4 Bricklet.
 
 Falls Gruppen verwendet werden, entsprechen die Pins den Elementen der
 Gruppe. Element 1 in der Gruppe bekommt Pins 0-3,
 Element 2 Pins 4-7, Element 3 Pins 8-11 und Element 4 Pins 12-15.
+
+Alle laufenden Monoflop Timer werden abgebrochen, wenn diese Funktion aufgerufen
+wird.
 """
 }]
 })
@@ -294,11 +302,14 @@ For example: The values (3, 1) or (0b0011, 0b0001) will turn pin 0 high, pin 1
 low the other pins remain untouched.
 
 If no groups are used (see :func:`Set Group`), the pins correspond to the
-markings on the Digital Out 4 Bricklet.
+markings on the Industrial Digital Out 4 Bricklet.
 
 If groups are used, the pins correspond to the element in the group.
 Element 1 in the group will get pins 0-3, element 2 pins 4-7, element 3
 pins 8-11 and element 4 pins 12-15.
+
+Running monoflop timers for the selected pins will be aborted if this function
+is called.
 """,
 'de':
 """
@@ -310,11 +321,14 @@ logisch 1 und den Pin 1 auf logisch 0 setzen. Alle anderen Pins bleiben
 unangetastet.
 
 Falls keine Gruppen verwendet werden (siehe :func:`Set Group`), entsprechen
-die Pins der Beschriftung auf dem Digital Out 4 Bricklet.
+die Pins der Beschriftung auf dem Industrial Digital Out 4 Bricklet.
 
 Falls Gruppen verwendet werden, entsprechen die Pins den Elementen der
 Gruppe. Element 1 in der Gruppe bekommt Pins 0-3,
 Element 2 Pins 4-7, Element 3 Pins 8-11 und Element 4 Pins 12-15.
+
+Laufende Monoflop Timer für die ausgewählten Pins werden abgebrochen, wenn
+diese Funktion aufgerufen wird.
 """
 }]
 })

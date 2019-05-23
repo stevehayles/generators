@@ -15,13 +15,16 @@ com = {
     'display_name': 'Remote Switch 2.0',
     'manufacturer': 'Tinkerforge',
     'description': {
-        'en': 'Controls remote mains switches',
-        'de': 'Steuert Funksteckdosen'
+        'en': 'Controls remote mains switches and receives signals from remotes',
+        'de': 'Steuert Funksteckdosen und empfängt Signale von Fernbedienungen'
     },
-    'comcu': True,
     'released': True,
     'documented': True,
     'discontinued': False,
+    'features': [
+        'comcu_bricklet',
+        'bricklet_get_identity'
+    ],
     'packets': [],
     'examples': []
 }

@@ -1061,6 +1061,42 @@ namespace Tinkerforge
 	}
 
 	/// <summary>
+	///  Used to report if a method was called with an invalid parameter.
+	/// </summary>
+	public class InvalidParameterException : TinkerforgeException
+	{
+		/// <summary>
+		/// </summary>
+		public InvalidParameterException(string message) : base(message)
+		{
+		}
+	}
+
+	/// <summary>
+	///  Used to report if not supported method was called.
+	/// </summary>
+	public class NotSupportedException : TinkerforgeException
+	{
+		/// <summary>
+		/// </summary>
+		public NotSupportedException(string message) : base(message)
+		{
+		}
+	}
+
+	/// <summary>
+	///  Used to report if device responds with an unknown error code.
+	/// </summary>
+	public class UnknownErrorCodeException : TinkerforgeException
+	{
+		/// <summary>
+		/// </summary>
+		public UnknownErrorCodeException(string message) : base(message)
+		{
+		}
+	}
+
+	/// <summary>
 	///  Used to report if a stream method call hit an out-of-sync condition.
 	/// </summary>
 	public class StreamOutOfSyncException : TinkerforgeException
@@ -1097,6 +1133,10 @@ namespace Tinkerforge
 				uidTmp |= (value2 & 0x0000003FL) << 16;
 				uidTmp |= (value2 & 0x000F0000L) << 6;
 				uidTmp |= (value2 & 0x3F000000L) << 2;
+			}
+
+			if (uidTmp == 0) {
+				throw new ArgumentOutOfRangeException("UID '" + uid + "' is empty or maps to zero");
 			}
 
 			IntRepresentation = (int)uidTmp;
@@ -1356,11 +1396,11 @@ namespace Tinkerforge
 					case 0:
 						break;
 					case 1:
-						throw new NotSupportedException("Got invalid parameter for function ID " + functionID);
+						throw new InvalidParameterException("Got invalid parameter for function ID " + functionID);
 					case 2:
 						throw new NotSupportedException("Function ID " + functionID + " is not supported");
 					default:
-						throw new NotSupportedException("Function ID " + functionID + " returned an unknown error");
+						throw new UnknownErrorCodeException("Function ID " + functionID + " returned an unknown error");
 				}
 			}
 			else
@@ -1385,9 +1425,9 @@ namespace Tinkerforge
 
 		public BrickDaemon(string uid, IPConnection ipcon) : base(uid, ipcon)
 		{
-			this.apiVersion[0] = 2;
-			this.apiVersion[1] = 0;
-			this.apiVersion[2] = 0;
+			apiVersion[0] = 2;
+			apiVersion[1] = 0;
+			apiVersion[2] = 0;
 
 			responseExpected[FUNCTION_GET_AUTHENTICATION_NONCE] = ResponseExpectedFlag.ALWAYS_TRUE;
 			responseExpected[FUNCTION_AUTHENTICATE] = ResponseExpectedFlag.TRUE;
@@ -1460,17 +1500,41 @@ namespace Tinkerforge
 		{
 			long value = 0;
 			long columnMultiplier = 1;
+
 			for (int i = encoded.Length - 1; i >= 0; i--)
 			{
 				int column = IndexOf(encoded[i], BASE58);
 
 				if (column < 0)
 				{
-					throw new ArgumentOutOfRangeException("Invalid Base58 value: " + encoded);
+					throw new ArgumentOutOfRangeException("UID '" + encoded + "' contains invalid character");
 				}
 
-				value += column * columnMultiplier;
-				columnMultiplier *= 58;
+				try
+				{
+					checked
+					{
+						value += column * columnMultiplier;
+					}
+				}
+				catch (OverflowException)
+				{
+					throw new ArgumentOutOfRangeException("UID '" + encoded + "' is too big");
+				}
+
+				try
+				{
+					checked
+					{
+						columnMultiplier *= 58;
+					}
+				}
+				catch (OverflowException)
+				{
+					if (i > 0) {
+						throw new ArgumentOutOfRangeException("UID '" + encoded + "' is too big");
+					}
+				}
 			}
 
 			return value;
@@ -2269,29 +2333,29 @@ namespace Tinkerforge
 
 		public override long Seek(long offset, SeekOrigin origin)
 		{
-			throw new NotSupportedException();
+			throw new System.NotSupportedException();
 		}
 
 		public override void SetLength(long value)
 		{
-			throw new NotSupportedException();
+			throw new System.NotSupportedException();
 		}
 
 		public override long Position
 		{
 			get
 			{
-				throw new NotSupportedException();
+				throw new System.NotSupportedException();
 			}
 			set
 			{
-				throw new NotSupportedException();
+				throw new System.NotSupportedException();
 			}
 		}
 
 		public override long Length
 		{
-			get { throw new NotSupportedException(); }
+			get { throw new System.NotSupportedException(); }
 		}
 	}
 #endif

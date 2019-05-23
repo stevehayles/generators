@@ -21,6 +21,9 @@ com = {
     'released': True,
     'documented': True,
     'discontinued': True, # replaced by Solid State Relay Bricklet 2.0
+    'features': [
+        'bricklet_get_identity'
+    ],
     'packets': [],
     'examples': []
 }
@@ -35,7 +38,7 @@ com['packets'].append({
 """
 Sets the state of the relays *true* means on and *false* means off.
 
-Running monoflop timers will be overwritten if this function is called.
+A running monoflop timer will be aborted if this function is called.
 
 The default value is *false*.
 """,
@@ -43,7 +46,7 @@ The default value is *false*.
 """
 Setzt den Zustand des Relais, *true* bedeutet ein und *false* aus.
 
-Laufende Monoflop Timer werden überschrieben wenn diese Funktion aufgerufen wird.
+Ein laufender Monoflop Timer wird abgebrochen, wenn diese Funktion aufgerufen wird.
 
 Der Standardwert ist *false*.
 """

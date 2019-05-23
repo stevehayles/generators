@@ -20,9 +20,12 @@ function base58Decode(str) {
     for (index = i = 0, len = ref.length; i < len; index = ++i) {
         char = ref[index];
         if ((char_index = alphabet.indexOf(char)) === -1) {
-            throw new Error('Value passed is not a valid Base58 string.');
+            throw new Error('UID "' + str + '" contains invalid character');
         }
         num += char_index * Math.pow(base, index);
+        if (!Number.isSafeInteger(num) || num > 0xFFFFFFFF) {
+            throw new Error('UID "' + str + '" is too big');
+        }
     }
     return num;
 }
@@ -30,6 +33,9 @@ function base58Decode(str) {
 function Device(deviceRegistering, uid, ipcon) {
     if (deviceRegistering !== undefined && uid !== undefined && ipcon !== undefined) {
         this.uid = base58Decode(uid);
+        if (this.uid === 0) {
+            throw new Error('UID "' + uid + '" is empty or maps to zero');
+        }
         this.responseExpected = {};
         this.callbackFormats = {};
         this.highLevelCallbacks = {};
@@ -53,15 +59,19 @@ function Device(deviceRegistering, uid, ipcon) {
         // Creates the device object with the unique device ID *uid* and adds
         // it to the IPConnection *ipcon*.
         this.ipcon.devices[this.uid] = deviceRegistering;
+
         this.getDeviceOID = function () {
             return this.deviceOID++;
         };
+
         this.getAPIVersion = function () {
             return this.APIVersion;
         };
+
         this.on = function (callbackID, function_) {
             this.registeredCallbacks[callbackID] = function_;
         };
+
         this.getResponseExpected = function (functionID, errorCallback) {
             if (this.responseExpected[functionID] === undefined) {
                 if (errorCallback !== undefined) {
@@ -69,6 +79,7 @@ function Device(deviceRegistering, uid, ipcon) {
                 }
                 return;
             }
+
             if (this.responseExpected[functionID] === Device.RESPONSE_EXPECTED_TRUE ||
                 this.responseExpected[functionID] === Device.RESPONSE_EXPECTED_ALWAYS_TRUE) {
                 return true;
@@ -76,13 +87,16 @@ function Device(deviceRegistering, uid, ipcon) {
                 return false;
             }
         };
+
         this.setResponseExpected = function (functionID, responseBoolean, errorCallback) {
             if (this.responseExpected[functionID] === undefined) {
                 if (errorCallback !== undefined) {
                     errorCallback(Device.ERROR_INVALID_FUNCTION_ID);
                 }
+
                 return;
             }
+
             if (this.responseExpected[functionID] === Device.RESPONSE_EXPECTED_TRUE ||
                 this.responseExpected[functionID] === Device.RESPONSE_EXPECTED_FALSE) {
                 if (responseBoolean) {
@@ -90,12 +104,15 @@ function Device(deviceRegistering, uid, ipcon) {
                 } else {
                     this.responseExpected[functionID] = Device.RESPONSE_EXPECTED_FALSE;
                 }
+
                 return;
             }
+
             if (errorCallback !== undefined) {
                 errorCallback(Device.ERROR_INVALID_FUNCTION_ID);
             }
         };
+
         this.setResponseExpectedAll = function (responseBoolean) {
             if (responseBoolean === true || responseBoolean === false) {
                 for (var fid in this.responseExpected) {
@@ -117,10 +134,12 @@ function Device(deviceRegistering, uid, ipcon) {
             streamStateObject['responseProperties']['runningSubcall'] = false;
             streamStateObject['responseProperties']['runningSubcallOOS'] = false;
             streamStateObject['responseProperties']['waitingFirstChunk'] = true;
+
             if (streamStateObject['responseProperties']['timeout'] !== null) {
-              clearTimeout(streamStateObject['responseProperties']['timeout']);
-              streamStateObject['responseProperties']['timeout'] = null;
+                clearTimeout(streamStateObject['responseProperties']['timeout']);
+                streamStateObject['responseProperties']['timeout'] = null;
             }
+
             streamStateObject['responseProperties']['data'].length = 0;
             streamStateObject['responseProperties']['streamInChunkOffset'] = 0;
             streamStateObject['responseProperties']['streamInChunkLength'] = 0;

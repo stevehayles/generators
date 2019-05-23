@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2012-2015, 2017 Matthias Bolte <matthias@tinkerforge.com>
+# Copyright (C) 2012-2015, 2017, 2019 Matthias Bolte <matthias@tinkerforge.com>
 # Copyright (C) 2011-2012 Olaf Lüke <olaf@tinkerforge.com>
 #
 # Redistribution and use in source and binary forms of this file,
@@ -54,7 +54,11 @@ def base58decode(encoded):
     column_multiplier = 1
 
     for c in encoded[::-1]:
-        column = BASE58.index(c)
+        try:
+            column = BASE58.index(c)
+        except ValueError:
+            raise Error(Error.INVALID_UID, 'UID "{0}" contains invalid character'.format(encoded), suppress_context=True)
+
         value += column * column_multiplier
         column_multiplier *= 58
 
@@ -305,12 +309,24 @@ class Error(Exception):
     NOT_SUPPORTED = -10
     UNKNOWN_ERROR_CODE = -11
     STREAM_OUT_OF_SYNC = -12
+    INVALID_UID = -13
 
-    def __init__(self, value, description):
+    def __init__(self, value, description, suppress_context=False):
         Exception.__init__(self, '{0} ({1})'.format(description, value))
 
         self.value = value
         self.description = description
+
+        if sys.hexversion >= 0x03000000 and suppress_context:
+            # this is a Python 2 syntax compatible form of the "raise ... from None"
+            # syntax in Python 3. especially the timeout error shows in Python 3
+            # the queue.Empty exception as its context. this is confusing and doesn't
+            # help much. the "raise ... from None" syntax in Python 3 stops the
+            # default traceback printer from outputting the context of the exception
+            # while keeping the queue.Empty exception in the __context__ field for
+            # debugging purposes.
+            self.__cause__ = None
+            self.__suppress_context__ = True
 
 class Device(object):
     RESPONSE_EXPECTED_INVALID_FUNCTION_ID = 0
@@ -326,8 +342,14 @@ class Device(object):
 
         uid_ = base58decode(uid)
 
-        if uid_ > 0xFFFFFFFF:
+        if uid_ > (1 << 64) - 1:
+            raise Error(Error.INVALID_UID, 'UID "{0}" is too big'.format(uid))
+
+        if uid_ > (1 << 32) - 1:
             uid_ = uid64_to_uid32(uid_)
+
+        if uid_ == 0:
+            raise Error(Error.INVALID_UID, 'UID "{0}" is empty or maps to zero'.format(uid))
 
         self.uid = uid_
         self.ipcon = ipcon
@@ -1129,7 +1151,7 @@ class IPConnection(object):
                             continue
             except socket.error:
                 self.handle_disconnect_by_peer(IPConnection.DISCONNECT_REASON_ERROR, None, True)
-                raise Error(Error.NOT_CONNECTED, 'Not connected')
+                raise Error(Error.NOT_CONNECTED, 'Not connected', suppress_context=True)
 
             self.disconnect_probe_flag = False
 
@@ -1170,7 +1192,7 @@ class IPConnection(object):
                             break
                 except queue.Empty:
                     msg = 'Did not receive response for function {0} in time'.format(function_id)
-                    raise Error(Error.TIMEOUT, msg)
+                    raise Error(Error.TIMEOUT, msg, suppress_context=True)
                 finally:
                     device.expected_response_function_id = None
                     device.expected_response_sequence_number = None

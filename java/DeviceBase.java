@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2014 Ishraq Ibne Ashraf <ishraq@tinkerforge.com>
- * Copyright (C) 2012-2013 Matthias Bolte <matthias@tinkerforge.com>
+ * Copyright (C) 2012-2013, 2019 Matthias Bolte <matthias@tinkerforge.com>
  * Copyright (C) 2011 Olaf Lüke <olaf@tinkerforge.com>
  *
  * Redistribution and use in source and binary forms of this file,
@@ -45,6 +45,10 @@ public abstract class DeviceBase {
 			uidTmp |= (value2 & 0x0000003FL) << 16;
 			uidTmp |= (value2 & 0x000F0000L) << 6;
 			uidTmp |= (value2 & 0x3F000000L) << 2;
+		}
+
+		if (uidTmp == 0) {
+			throw new IllegalArgumentException("UID '" + uid + "' is empty or maps to zero");
 		}
 
 		this.uid = uidTmp;
@@ -141,7 +145,7 @@ public abstract class DeviceBase {
 		}
 	}
 
-	byte[] sendRequest(byte[] request) throws TimeoutException, NotConnectedException {
+	byte[] sendRequest(byte[] request) throws TinkerforgeException {
 		byte[] response = null;
 
 		if (IPConnection.getResponseExpectedFromData(request)) {
@@ -186,11 +190,11 @@ public abstract class DeviceBase {
 				case 0:
 					break;
 				case 1:
-					throw new UnsupportedOperationException("Got invalid parameter for function ID " + functionID);
+					throw new InvalidParameterException("Got invalid parameter for function ID " + functionID);
 				case 2:
-					throw new UnsupportedOperationException("Function ID " + functionID + " is not supported");
+					throw new NotSupportedException("Function ID " + functionID + " is not supported");
 				default:
-					throw new UnsupportedOperationException("Function ID " + functionID + " returned an unknown error");
+					throw new UnknownErrorCodeException("Function ID " + functionID + " returned an unknown error");
 			}
 		} else {
 			ipcon.sendRequest(request);

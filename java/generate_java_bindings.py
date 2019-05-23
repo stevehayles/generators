@@ -845,11 +845,11 @@ public class {0} extends Device {{
                                                          bbput.format(put_suffix, cast, name + '[i].charAt(0)'))
                     elif element.get_type() == 'bool':
                         bbput_format = bool_loop.format(name + 'Bits',
-                                                        element.get_cardinality() // 8,
+                                                        int(math.ceil(element.get_cardinality() / 8.0)),
                                                         bool_loop_sub1.format(element.get_cardinality(),
                                                                               name,
                                                                               name + 'Bits'),
-                                                        bool_loop_sub2.format(element.get_cardinality() // 8,
+                                                        bool_loop_sub2.format(int(math.ceil(element.get_cardinality() / 8.0)),
                                                                               name + 'Bits'))
                     else:
                         bbput_format = plain_loop.format(element.get_cardinality(),
@@ -863,7 +863,7 @@ public class {0} extends Device {{
 
                 bbputs += bbput_format + '\n'
 
-            throws = 'throws TimeoutException, NotConnectedException'
+            throws = 'throws TinkerforgeException'
 
             if len(packet.get_elements(direction='out')) == 0:
                 bbgets = ''
@@ -899,7 +899,7 @@ public class {0} extends Device {{
 	/**
 	 * {doc}
 	 */
-	public {return_type} {name_headless}({high_level_parameters}) throws TimeoutException, NotConnectedException {{
+	public {return_type} {name_headless}({high_level_parameters}) throws TinkerforgeException {{
 		if ({stream_name_headless}.length > {stream_max_length}) {{
 			throw new IllegalArgumentException("{stream_name_space} can be at most {stream_max_length} items long");
 		}}
@@ -932,7 +932,7 @@ public class {0} extends Device {{
 	/**
 	 * {doc}
 	 */
-	public {return_type} {name_headless}({high_level_parameters}) throws TimeoutException, NotConnectedException {{{result_variable}
+	public {return_type} {name_headless}({high_level_parameters}) throws TinkerforgeException {{{result_variable}
 		{stream_length_type} {stream_name_headless}Length = {fixed_length};
 		{stream_length_type} {stream_name_headless}ChunkOffset = 0;
 		{chunk_data_type} {stream_name_headless}ChunkData = {chunk_data_new};
@@ -962,7 +962,7 @@ public class {0} extends Device {{
 	/**
 	 * {doc}
 	 */
-	public {return_type} {name_headless}({high_level_parameters}) throws TimeoutException, NotConnectedException {{
+	public {return_type} {name_headless}({high_level_parameters}) throws TinkerforgeException {{
 		if ({stream_name_headless}.length > {stream_max_length}) {{
 			throw new IllegalArgumentException("{stream_name_space} can be at most {stream_max_length} items long");
 		}}
@@ -1011,7 +1011,7 @@ public class {0} extends Device {{
 	/**
 	 * {doc}
 	 */
-	public {return_type} {name_headless}({high_level_parameters}) throws TimeoutException, NotConnectedException {{
+	public {return_type} {name_headless}({high_level_parameters}) throws TinkerforgeException {{
 		if ({stream_name_headless}.length > {chunk_cardinality}) {{
 			throw new IllegalArgumentException("{stream_name_space} can be at most {chunk_cardinality} items long");
 		}}
@@ -1029,7 +1029,7 @@ public class {0} extends Device {{
 	/**
 	 * {doc}
 	 */
-	public {return_type} {name_headless}({high_level_parameters}) throws StreamOutOfSyncException, TimeoutException, NotConnectedException {{
+	public {return_type} {name_headless}({high_level_parameters}) throws TinkerforgeException {{
 		{result_type} ret;
 		{chunk_data_type} {stream_name_headless} = null; // stop the compiler from wrongly complaining that this variable is used unassigned
 		{stream_length_type} {stream_name_headless}Length{fixed_length};
@@ -1091,7 +1091,7 @@ public class {0} extends Device {{
 	/**
 	 * {doc}
 	 */
-	public {return_type} {name_headless}({high_level_parameters}) throws TimeoutException, NotConnectedException {{
+	public {return_type} {name_headless}({high_level_parameters}) throws TinkerforgeException {{
 		{result_type} ret = {name_headless}LowLevel({parameters});
 		{chunk_data_type} {stream_name_headless} = {stream_data_new};
 
@@ -1466,7 +1466,7 @@ class JavaBindingsPacket(java_common.JavaPacket):
                 if with_obj:
                     if element.get_type() == 'bool':
                         bbget_format = bbget.format(bbret + 'Bits',
-                                                    str(int(math.ceil(element.get_cardinality() / 8.0))),
+                                                    int(math.ceil(element.get_cardinality() / 8.0)),
                                                     loop.format(element.get_cardinality(),
                                                                 bool_array_unpack.format(obj,
                                                                                          bbret,
@@ -1480,7 +1480,7 @@ class JavaBindingsPacket(java_common.JavaPacket):
 
                     if element.get_type() == 'bool':
                         bbget_format = bbget.format(bbret + 'Bits',
-                                                    str(int(math.ceil(element.get_cardinality() / 8.0))),
+                                                    int(math.ceil(element.get_cardinality() / 8.0)),
                                                     loop.format(element.get_cardinality(),
                                                                 bool_array_unpack.format(obj,
                                                                                          bbret,

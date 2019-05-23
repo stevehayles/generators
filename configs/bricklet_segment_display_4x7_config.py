@@ -16,11 +16,14 @@ com = {
     'manufacturer': 'Tinkerforge',
     'description': {
         'en': 'Four 7-segment displays with switchable colon',
-        'de': 'Vier 7-Segment Anzeigen mit schaltbarem Doppelpunkt'
+        'de': 'Vier 7-Segment-Anzeigen mit schaltbarem Doppelpunkt'
     },
     'released': True,
     'documented': True,
-    'discontinued': False,
+    'discontinued': False, # selling remaining stock, replaced by Segment Display 4x7 Bricklet 2.0
+    'features': [
+        'bricklet_get_identity'
+    ],
     'packets': [],
     'examples': []
 }
@@ -51,7 +54,7 @@ parameter turns the colon of the display on or off.
 """,
 'de':
 """
-Die 7-Segment Anzeige kann mit Bitmaps gesetzt werden. Jedes Bit kontrolliert
+Die 7-Segment-Anzeige kann mit Bitmaps gesetzt werden. Jedes Bit kontrolliert
 ein Segment:
 
 .. image:: /Images/Bricklets/bricklet_segment_display_4x7_bit_order.png

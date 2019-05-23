@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2014 Matthias Bolte <matthias@tinkerforge.com>
+ * Copyright (C) 2012-2014, 2019 Matthias Bolte <matthias@tinkerforge.com>
  * Copyright (C) 2011 Olaf Lüke <olaf@tinkerforge.com>
  *
  * Redistribution and use in source and binary forms of this file,
@@ -52,7 +52,8 @@ enum {
 	E_INVALID_PARAMETER = -9, // error response from device
 	E_NOT_SUPPORTED = -10, // error response from device
 	E_UNKNOWN_ERROR_CODE = -11, // error response from device
-	E_STREAM_OUT_OF_SYNC = -12
+	E_STREAM_OUT_OF_SYNC = -12,
+	E_INVALID_UID = -13
 };
 
 #ifdef IPCON_EXPOSE_MILLISLEEP
@@ -229,6 +230,7 @@ struct _DevicePrivate {
 	int ref_count;
 
 	uint32_t uid; // always host endian
+	bool uid_valid;
 
 	IPConnectionPrivate *ipcon_p;
 
@@ -589,8 +591,7 @@ uint8_t packet_header_get_sequence_number(PacketHeader *header);
 /**
  * \internal
  */
-void packet_header_set_sequence_number(PacketHeader *header,
-                                       uint8_t sequence_number);
+void packet_header_set_sequence_number(PacketHeader *header, uint8_t sequence_number);
 
 /**
  * \internal
@@ -600,8 +601,7 @@ uint8_t packet_header_get_response_expected(PacketHeader *header);
 /**
  * \internal
  */
-void packet_header_set_response_expected(PacketHeader *header,
-                                         uint8_t response_expected);
+void packet_header_set_response_expected(PacketHeader *header, bool response_expected);
 
 /**
  * \internal
