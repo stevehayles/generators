@@ -6,7 +6,7 @@
 
 # Compass Bricklet communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 from commonconstants import add_callback_value_function
 
 com = {
@@ -18,34 +18,46 @@ com = {
     'display_name': 'Compass',
     'manufacturer': 'Tinkerforge',
     'description': {
-        'en': '3-axis compass with 0.1mG (milli Gauss) und 0.1° resolution',
-        'de': '3-Achs Kompass mit 0,1mG (Milligauß) und 0,1° Auflösung'
+        'en': '3-axis compass with 0.1mG (milli Gauss) and 0.1° resolution',
+        'de': '3-Achsen Kompass mit 0,1mG (Milligauß) und 0,1° Auflösung'
     },
-    'released': False,
-    'documented': False,
+    'released': True,
+    'documented': True,
     'discontinued': False,
     'features': [
         'comcu_bricklet',
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
 
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
+
+com['constant_groups'].append({
+'name': 'Data Rate',
+'type': 'uint8',
+'constants': [('100Hz', 0),
+              ('200Hz', 1),
+              ('400Hz', 2),
+              ('600Hz', 3)]
+})
+
 heading_doc = {
 'en':
 """
-Returns the heading in 1/10 degree (north = 0 degree).
+Returns the heading in 1/10 degree (north = 0 degree, east = 90 degree).
 
-Alternatively you can use :func:`Get Magnetic Flux Density` and calculate the heading
-with ``heading = atan2(y, x)*180/PI``.
+Alternatively you can use :func:`Get Magnetic Flux Density` and calculate the
+heading with ``heading = atan2(y, x) * 180 / PI``.
 """,
 'de':
 """
-Gibt die Richtung in 1/10 grad zurück (Norden = 0 Grad).
+Gibt die Richtung in 1/10 Grad zurück (Norden = 0 Grad, Osten = 90 Grad).
 
 Alternativ kann die Funktion :func:`Get Magnetic Flux Density` genutzt werden um
-die Richtung per ``heading = atan2(y, x)*180/PI`` zu bestimmen.
+die Richtung per ``heading = atan2(y, x) * 180 / PI`` zu bestimmen.
 """
 }
 
@@ -69,11 +81,19 @@ com['packets'].append({
 """
 Returns the `magnetic flux density (magnetic induction) <https://en.wikipedia.org/wiki/Magnetic_flux>`__
 for all three axis in 1/10 `mG (milli Gauss) <https://en.wikipedia.org/wiki/Gauss_(unit)>`__.
+
+If you want to get the value periodically, it is recommended to use the
+:cb:`Magnetic Flux Density` callback. You can set the callback configuration
+with :func:`Set Magnetic Flux Density Callback Configuration`.
 """,
 'de':
 """
 Gibt die `magnetische Flussdichte (magnetische Induktion) <https://de.wikipedia.org/wiki/Magnetische_Flussdichte>`__
 für alle drei Achsen in 1/10 `mG (Milligauß) <https://de.wikipedia.org/wiki/Gau%C3%9F_(Einheit)>`__ zurück.
+
+Wenn der Wert periodisch benötigt wird, kann auch der :cb:`Magnetic Flux Density` Callback
+verwendet werden. Der Callback wird mit der Funktion
+:func:`Set Magnetic Flux Density Callback Configuration` konfiguriert.
 """
 }]
 })
@@ -165,16 +185,13 @@ Die :word:`parameters` sind der gleichen wie :func:`Get Magnetic Flux Density`.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Configuration',
-'elements': [('Data Rate', 'uint8', 1, 'in', ('Data Rate', [('100Hz', 0),
-                                                            ('200Hz', 1),
-                                                            ('400Hz', 2),
-                                                            ('600Hz', 3)])),
+'elements': [('Data Rate', 'uint8', 1, 'in', {'constant_group': 'Data Rate'}),
              ('Background Calibration', 'bool', 1, 'in')],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
 """
-Configuration:
+Configures the data rate and background calibration.
 
 * Data Rate: Sets the data rate that is used by the magnetometer.
   The lower the data rate, the lower is the noise on the data.
@@ -185,23 +202,22 @@ Configuration:
   This polarity flipping takes about 20ms. This means that once a second
   you will not get new data for a period of 20ms. We highly recommend that
   you keep the background calibration enabled and only disable it if the 20ms
-  off-time is a problem in you application.
-
+  off-time is a problem in your application.
 
 Default values: Data rate of 100Hz and background calibration enabled.
 """,
 'de':
 """
-Konfigurationen:
+Konfiguriert die Datenrate und Hintergrundkalibrierung:
 
 * Data Rate: Setzt die Datenrate des eingesetzten Magnetometers.
-  Desto niedriger die Datenrate ist desto weniger Rauschen befindet sich auf den Daten.
-* Background Calibration: Aktiviert die automatische Hintergrundkalibrierung wenn
+  Je niedriger die Datenrate ist, desto weniger Rauschen befindet sich auf den Daten.
+* Background Calibration: Aktiviert die automatische Hintergrundkalibrierung, wenn
   auf *true* gesetzt. Wenn die Hintergrundkalibrierung aktiviert ist, ändert
-  das Bricklet einmal pro Sekunde die Erfassungs-Polarität um damit automatisch
-  temperaturabhängige Offsets zu entfernen. Das ändern der Polarität dauert ungefähr
-  20ms. Daher werden einmal pro Sekunde für 20ms keine neuen Daten generiert wenn
-  die Kalibrierung aktiviert ist. Wir empfehlen die Kalibrierung nur zu deaktivieren
+  das Bricklet einmal pro Sekunde die Erfassungspolarität, um damit automatisch
+  temperaturabhängige Offsets zu entfernen. Das Ändern der Polarität dauert ungefähr
+  20ms. Daher werden einmal pro Sekunde für 20ms keine neuen Daten generiert, wenn
+  die Kalibrierung aktiviert ist. Wir empfehlen die Kalibrierung nur zu deaktivieren,
   falls diese 20ms Auszeit ein großes Problem in der Anwendung des Bricklets darstellen.
 
 Standardwerte: Datenrate 100Hz und Hintergrundkalibrierung aktiviert.
@@ -209,14 +225,10 @@ Standardwerte: Datenrate 100Hz und Hintergrundkalibrierung aktiviert.
 }]
 })
 
-
 com['packets'].append({
 'type': 'function',
 'name': 'Get Configuration',
-'elements': [('Data Rate', 'uint8', 1, 'out', ('Data Rate', [('100Hz', 0),
-                                                             ('200Hz', 1),
-                                                             ('400Hz', 2),
-                                                             ('600Hz', 3)])),
+'elements': [('Data Rate', 'uint8', 1, 'out', {'constant_group': 'Data Rate',}),
              ('Background Calibration', 'bool', 1, 'out')],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
@@ -235,25 +247,25 @@ com['packets'].append({
 'type': 'function',
 'name': 'Set Calibration',
 'elements': [('Offset', 'int16', 3, 'in'),
-             ('Multiplier', 'int16', 3, 'in')],
+             ('Gain', 'int16', 3, 'in')],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
 """
-Sets offset and multiplier coefficent for each of the three axis.
+Sets offset and gain for each of the three axes.
 
 The Bricklet is factory calibrated. If you want to re-calibrate the
 Bricklet we recommend that you do the calibration through Brick Viewer.
 
-The calibration is saved in non-voltile memory and only has to be
+The calibration is saved in non-volatile memory and only has to be
 done once.
 """,
 'de':
 """
-Setzt den Offset und Multiplikator-Koeffizienten für alle drei Achsen.
+Setzt Offset und Gain für alle drei Achsen.
 
-Das Bricklet ist Werkskalibriert. Wenn eine re-kalibrierung durchgeführt
-werden sollen empfehlen wir dafür den Brick Viewer zu nutzen.
+Das Bricklet ist ab Werk kalibriert. Wenn eine Rekalibrierung durchgeführt
+werden soll, empfehlen wir dafür den Brick Viewer zu nutzen.
 
 Die Kalibrierung wird in nicht-flüchtigem Speicher gespeichert und muss
 nur einmal durchgeführt werden.
@@ -265,7 +277,7 @@ com['packets'].append({
 'type': 'function',
 'name': 'Get Calibration',
 'elements': [('Offset', 'int16', 3, 'out'),
-             ('Multiplier', 'int16', 3, 'out')],
+             ('Gain', 'int16', 3, 'out')],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -274,7 +286,7 @@ Returns the calibration parameters as set by :func:`Set Calibration`.
 """,
 'de':
 """
-Gibt die Kalibrierungs-Parameter zurück, wie von :func:`Set Calibration` gesetzt.
+Gibt die Kalibrierungsparameter zurück, wie von :func:`Set Calibration` gesetzt.
 """
 }]
 })

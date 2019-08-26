@@ -6,7 +6,7 @@
 
 # Industrial Dual 0-20mA Bricklet communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
@@ -26,9 +26,21 @@ com = {
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
+
+com['constant_groups'].append({
+'name': 'Sample Rate',
+'type': 'uint8',
+'constants': [('240 SPS', 0),
+              ('60 SPS', 1),
+              ('15 SPS', 2),
+              ('4 SPS', 3)]
+})
 
 com['doc'] = {
 'en':
@@ -113,7 +125,7 @@ Setzt die Periode in ms mit welcher der :cb:`Current` Callback für den
 übergebenen Sensor ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Current` Callback wird nur ausgelöst wenn sich die Stromstärke seit der
+Der :cb:`Current` Callback wird nur ausgelöst, wenn sich die Stromstärke seit der
 letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -144,7 +156,7 @@ com['packets'].append({
 'type': 'function',
 'name': 'Set Current Callback Threshold',
 'elements': [('Sensor', 'uint8', 1, 'in'),
-             ('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+             ('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min', 'int32', 1, 'in'),
              ('Max', 'int32', 1, 'in')],
 'since_firmware': [1, 0, 0],
@@ -180,10 +192,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn die Stromstärke *außerhalb* des min und max Wertes ist"
- "'i'",    "Callback wird ausgelöst wenn die Stromstärke *innerhalb* des min und max Wertes ist"
- "'<'",    "Callback wird ausgelöst wenn die Stromstärke kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn die Stromstärke größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn die Stromstärke *außerhalb* des min und max Wertes ist"
+ "'i'",    "Callback wird ausgelöst, wenn die Stromstärke *innerhalb* des min und max Wertes ist"
+ "'<'",    "Callback wird ausgelöst, wenn die Stromstärke kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn die Stromstärke größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0).
 """
@@ -194,7 +206,7 @@ com['packets'].append({
 'type': 'function',
 'name': 'Get Current Callback Threshold',
 'elements': [('Sensor', 'uint8', 1, 'in'),
-             ('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+             ('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min', 'int32', 1, 'out'),
              ('Max', 'int32', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -269,10 +281,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Sample Rate',
-'elements': [('Rate', 'uint8', 1, 'in', ('Sample Rate', [('240 SPS', 0),
-                                                         ('60 SPS', 1),
-                                                         ('15 SPS', 2),
-                                                         ('4 SPS', 3)]))],
+'elements': [('Rate', 'uint8', 1, 'in', {'constant_group': 'Sample Rate'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -313,10 +322,7 @@ Der Standardwert ist 3 (4 Samples pro Sekunde mit 18 Bit Auflösung).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Sample Rate',
-'elements': [('Rate', 'uint8', 1, 'out', ('Sample Rate', [('240 SPS', 0),
-                                                          ('60 SPS', 1),
-                                                          ('15 SPS', 2),
-                                                          ('4 SPS', 3)]))],
+'elements': [('Rate', 'uint8', 1, 'out', {'constant_group': 'Sample Rate'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -352,7 +358,7 @@ last triggering.
 Dieser Callback wird mit der Periode, wie gesetzt mit :func:`Set Current Callback Period`,
 ausgelöst. Der :word:`parameter` ist die Stromstärke des Sensors.
 
-Der :cb:`Current` Callback wird nur ausgelöst wenn sich die Stromstärke seit der
+Der :cb:`Current` Callback wird nur ausgelöst, wenn sich die Stromstärke seit der
 letzten Auslösung geändert hat.
 """
 }]
@@ -376,7 +382,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Current Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist die Stromstärke des Sensors.
 

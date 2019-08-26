@@ -6,7 +6,7 @@
 
 # Thermocouple Bricklet communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
@@ -26,9 +26,44 @@ com = {
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
+
+com['constant_groups'].append({
+'name': 'Averaging',
+'type': 'uint8',
+'constants': [('1', 1),
+              ('2', 2),
+              ('4', 4),
+              ('8', 8),
+              ('16', 16)]
+})
+
+com['constant_groups'].append({
+'name': 'Type',
+'type': 'uint8',
+'constants': [('B', 0),
+              ('E', 1),
+              ('J', 2),
+              ('K', 3),
+              ('N', 4),
+              ('R', 5),
+              ('S', 6),
+              ('T', 7),
+              ('G8', 8),
+              ('G32', 9)]
+})
+
+com['constant_groups'].append({
+'name': 'Filter Option',
+'type': 'uint8',
+'constants': [('50Hz', 0),
+              ('60Hz', 1)]
+})
 
 com['packets'].append({
 'type': 'function',
@@ -79,7 +114,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Temperature` Callback ausgelöst
 wird. Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Temperature` Callback wird nur ausgelöst wenn sich die Temperatur seit
+Der :cb:`Temperature` Callback wird nur ausgelöst, wenn sich die Temperatur seit
 der letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -108,7 +143,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Temperature Callback Threshold',
-'elements': [('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min', 'int32', 1, 'in'),
              ('Max', 'int32', 1, 'in')],
 'since_firmware': [1, 0, 0],
@@ -142,10 +177,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn die Temperatur *außerhalb* des min und max Wertes ist"
- "'i'",    "Callback wird ausgelöst wenn die Temperatur *innerhalb* des min und max Wertes ist"
- "'<'",    "Callback wird ausgelöst wenn die Temperatur kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn die Temperatur größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn die Temperatur *außerhalb* des min und max Wertes ist"
+ "'i'",    "Callback wird ausgelöst, wenn die Temperatur *innerhalb* des min und max Wertes ist"
+ "'<'",    "Callback wird ausgelöst, wenn die Temperatur kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn die Temperatur größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0).
 """
@@ -155,7 +190,7 @@ Der Standardwert ist ('x', 0, 0).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Temperature Callback Threshold',
-'elements': [('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min', 'int32', 1, 'out'),
              ('Max', 'int32', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -248,7 +283,7 @@ Dieser Callback wird mit der Periode, wie gesetzt mit
 :func:`Set Temperature Callback Period`, ausgelöst. Der :word:`parameter` ist
 die Temperatur des Thermoelements.
 
-Der :cb:`Temperature` Callback wird nur ausgelöst wenn sich die Temperatur seit
+Der :cb:`Temperature` Callback wird nur ausgelöst, wenn sich die Temperatur seit
 der letzten Auslösung geändert hat.
 """
 }]
@@ -271,7 +306,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Temperature Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist die Temperatur des Thermoelements.
 
@@ -284,23 +319,9 @@ mit :func:`Set Debounce Period` gesetzt, ausgelöst.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Configuration',
-'elements': [('Averaging', 'uint8', 1, 'in', ('Averaging', [('1', 1),
-                                                            ('2', 2),
-                                                            ('4', 4),
-                                                            ('8', 8),
-                                                            ('16', 16)])),
-             ('Thermocouple Type', 'uint8', 1, 'in', ('Type', [('B', 0),
-                                                               ('E', 1),
-                                                               ('J', 2),
-                                                               ('K', 3),
-                                                               ('N', 4),
-                                                               ('R', 5),
-                                                               ('S', 6),
-                                                               ('T', 7),
-                                                               ('G8', 8),
-                                                               ('G32', 9)])),
-             ('Filter', 'uint8', 1, 'in', ('Filter Option', [('50Hz', 0),
-                                                             ('60Hz', 1)]))],
+'elements': [('Averaging', 'uint8', 1, 'in', {'constant_group': 'Averaging'}),
+             ('Thermocouple Type', 'uint8', 1, 'in', {'constant_group': 'Type'}),
+             ('Filter', 'uint8', 1, 'in', {'constant_group': 'Filter Option'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -365,23 +386,9 @@ Die Standardkonfiguration ist 16 Samples, Typ K und 50Hz.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Configuration',
-'elements': [('Averaging', 'uint8', 1, 'out', ('Averaging', [('1', 1),
-                                                             ('2', 2),
-                                                             ('4', 4),
-                                                             ('8', 8),
-                                                             ('16', 16)])),
-             ('Thermocouple Type', 'uint8', 1, 'out', ('Type', [('B', 0),
-                                                                ('E', 1),
-                                                                ('J', 2),
-                                                                ('K', 3),
-                                                                ('N', 4),
-                                                                ('R', 5),
-                                                                ('S', 6),
-                                                                ('T', 7),
-                                                                ('G8', 8),
-                                                                ('G32', 9)])),
-             ('Filter', 'uint8', 1, 'out', ('Filter Option', [('50Hz', 0),
-                                                              ('60Hz', 1)]))],
+'elements': [('Averaging', 'uint8', 1, 'out', {'constant_group': 'Averaging'}),
+             ('Thermocouple Type', 'uint8', 1, 'out', {'constant_group': 'Type'}),
+             ('Filter', 'uint8', 1, 'out', {'constant_group': 'Filter Option'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -428,7 +435,7 @@ Fall ist mit hoher Wahrscheinlichkeit das Thermoelement defekt. Ein
 Open Circuit-Error deutet darauf hin, das kein Thermoelement angeschlossen
 ist.
 
-Der :cb:`Error State` Callback wird automatisch jedes mal ausgelöst wenn sich
+Der :cb:`Error State` Callback wird automatisch jedes mal ausgelöst, wenn sich
 der Error-Status ändert.
 """
 }]
@@ -448,7 +455,7 @@ This Callback is triggered every time the error state changes
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Error-Status sich verändert
+Dieser Callback wird ausgelöst, wenn der Error-Status sich verändert
 (siehe :func:`Get Error State`).
 """
 }]

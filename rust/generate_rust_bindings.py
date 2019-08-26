@@ -50,14 +50,21 @@ class RustBindingsDevice(rust_common.RustDevice):
 
         conv_receiver = conv_receiver_imports[0] if len(conv_receiver_imports) == 1 else ("{" + ", ".join(conv_receiver_imports) + "}")
 
-        tf_doc_link = {'en': '//! See also the documentation [here](https://www.tinkerforge.com/en/doc/Software/{device_category_camel}s/{device_name_camel}_{device_category_camel}_Rust.html).',
-                       'de': '//! Siehe auch die Dokumentation [hier](https://www.tinkerforge.com/de/doc/Software/{device_category_camel}s/{device_name_camel}_{device_category_camel}_Rust.html).'
+        tf_doc_link = {
+        'en': '//! See also the documentation [here](https://www.tinkerforge.com/en/doc/Software/{category_name}/{rst_name}_Rust.html).',
+        'de': '//! Siehe auch die Dokumentation [hier](https://www.tinkerforge.com/de/doc/Software/{category_name}/{rst_name}_Rust.html).'
         }
 
         description = common.select_lang(self.get_description()) + "."
         description += '\n//! \n'
-        description += common.select_lang(tf_doc_link).format(device_category_camel = self.get_category().camel,
-                                                              device_name_camel = self.get_name().camel)
+
+        category_name = self.get_category().camel
+
+        if not self.is_tng():
+            category_name += 's'
+
+        description += common.select_lang(tf_doc_link).format(category_name=category_name,
+                                                              rst_name=self.get_doc_rst_name())
 
         return """{header}
 
@@ -66,7 +73,7 @@ use crate::{{
     byte_converter::*,
     converting_receiver::{conv_receiver},{callback_recv}{high_level_callback_recv}
     device::*,
-    ip_connection::IpConnection,{low_level}
+    ip_connection::GetRequestSender,{low_level}
 }};""".format(header=self.get_generator().get_header_comment(kind='asterisk'),
               description=description,
               callback_recv = "" if len(self.get_packets("callback")) == 0 else "\n\tconverting_callback_receiver::ConvertingCallbackReceiver,",
@@ -105,7 +112,7 @@ impl From<{function}> for u8 {{
 
         # Create constants used in function parameters
         for constant_group in self.get_constant_groups():
-            constant_type = constant_group.get_elements()[0].get_rust_type(ignore_cardinality=True)
+            constant_type = constant_group.get_rust_type()
             constant_name = self.get_name().upper + "_" + self.get_category().upper +'_'+ constant_group.get_name().upper + "_"
             enum_values = []
             for constant in constant_group.get_constants():
@@ -304,8 +311,8 @@ pub struct {name} {{
     pub const DEVICE_IDENTIFIER: u16 = {device_identifier};
     pub const DEVICE_DISPLAY_NAME: &'static str = "{device_display_name}";
     /// Creates an object with the unique device ID `uid`. This object can then be used after the IP Connection `ip_connection` is connected.
-    pub fn new(uid: &str, ip_connection: &IpConnection) -> {name} {{
-        let mut result = {name} {{ device: Device::new({apiVersion}, uid, ip_connection, {high_level_function_count}) }};
+    pub fn new<T: GetRequestSender>(uid: &str, req_sender: T) -> {name} {{
+        let mut result = {name} {{ device: Device::new({apiVersion}, uid, req_sender, {high_level_function_count}) }};
         {response_expected_config}
         result
     }}
@@ -650,8 +657,14 @@ class RustBindingsGenerator(common.BindingsGenerator):
     def get_element_class(self):
         return rust_common.RustElement
 
+    def get_constant_group_class(self):
+        return rust_common.RustConstantGroup
+
     def generate(self, device):
-        filename = '{0}_{1}'.format(device.get_name().under, device.get_category().under)
+        if device.is_tng():
+            filename = '{0}_{1}'.format(device.get_category().under, device.get_name().under)
+        else:
+            filename = '{0}_{1}'.format(device.get_name().under, device.get_category().under)
 
         with open(os.path.join(self.get_bindings_dir(), filename + '.rs'), 'w') as f:
             f.write(device.get_rust_source())
@@ -775,7 +788,7 @@ impl FromByteSlice for [bool; {count}] {{
 #![doc(html_favicon_url = "https://raw.githubusercontent.com/Tinkerforge/generators/master/rust/logo_small.png")]
 
 //! Rust API bindings for [Tinkerforge](https://www.tinkerforge.com) bricks and bricklets.
-//! See also the additional documentation and examples [here](http://www.tinkerforge.com/en/doc/Software/API_Bindings_Rust.html)
+//! See also the additional documentation and examples [here](https://www.tinkerforge.com/en/doc/Software/API_Bindings_Rust.html)
 
 mod bindings;
 pub use crate::bindings::*;

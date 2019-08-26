@@ -154,7 +154,7 @@ class CDocDevice(common.Device):
 
         register_str = {
             'en': """
-.. c:function:: void {1}_register_callback({2} *{1}, int16_t callback_id, void *function, void *user_data)
+.. c:function:: void {1}_register_callback({2} *{1}, int16_t callback_id, void (*function)(void), void *user_data)
 
  Registers the given ``function`` with the given ``callback_id``. The
  ``user_data`` will be passed as the last parameter to the ``function``.
@@ -163,7 +163,7 @@ class CDocDevice(common.Device):
  listed :ref:`below <{0}_c_callbacks>`.
 """,
             'de': """
-.. c:function:: void {1}_register_callback({2} *{1}, int16_t callback_id, void *function, void *user_data)
+.. c:function:: void {1}_register_callback({2} *{1}, int16_t callback_id, void (*function)(void), void *user_data)
 
  Registriert die ``function`` für die gegebene ``callback_id``. Die ``user_data``
  werden der Funktion als letztes Parameter mit übergeben.
@@ -246,7 +246,7 @@ API
 
 Every function of the C/C++ bindings returns an integer which describes an
 error code. Data returned from the device, when a getter is called,
-is handled via call by reference. These parameters are labeled with the
+is handled via output parameters. These parameters are labeled with the
 ``ret_`` prefix.
 
 Possible error codes are:
@@ -282,7 +282,7 @@ API
 
 Jede Funktion der C/C++ Bindings gibt einen Integer zurück, welcher einen
 Fehlercode beschreibt. Vom Gerät zurückgegebene Daten werden, wenn eine
-Abfrage aufgerufen wurde, über Referenzparameter gehandhabt. Diese Parameter
+Abfrage aufgerufen wurde, über Ausgabeparameter gehandhabt. Diese Parameter
 sind mit dem ``ret_`` Präfix gekennzeichnet.
 
 Mögliche Fehlercodes sind:

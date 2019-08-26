@@ -3,7 +3,7 @@
 """
 Common Generator Library
 Copyright (C) 2012-2017 Matthias Bolte <matthias@tinkerforge.com>
-Copyright (C) 2012-2015 Olaf Lüke <olaf@tinkerforge.com>
+Copyright (C) 2012-2015, 2019 Olaf Lüke <olaf@tinkerforge.com>
 
 common.py: Common Library for generation of bindings and documentation
 
@@ -112,19 +112,40 @@ def strip_trailing_whitespace(text):
 
 def get_changelog_version(root_dir):
     r = re.compile(r'^\S+: (\d+)\.(\d+)\.(\d+) \(\S+\)')
-    last = None
+    versions = []
 
     with open(os.path.join(root_dir, 'changelog.txt'), 'r') as f:
         for line in f.readlines():
             m = r.match(line)
 
             if m is not None:
-                last = (m.group(1), m.group(2), m.group(3))
+                version = (int(m.group(1)), int(m.group(2)), int(m.group(3)))
 
-    if last == None:
+                if version[0] not in [1, 2]:
+                    raise GeneratorError('invalid major version in changelog {0}: {1}'.format(root_dir, version))
+
+                if len(versions) > 0:
+                    if versions[-1] >= version:
+                        raise GeneratorError('invalid version order in changelog {0}: {1} -> {2}'.format(root_dir, versions[-1], version))
+
+                    if versions[-1][0] == version[0] and versions[-1][1] == version[1] and versions[-1][2] + 1 != version[2]:
+                        raise GeneratorError('invalid version jump in changelog {0}: {1} -> {2}'.format(root_dir, versions[-1], version))
+
+                    if versions[-1][1] != version[1] and version[2] != 0:
+                        if (root_dir == 'javascript' or root_dir.endswith('/javascript')) and versions[-1] == (2, 0, 18) and version == (2, 1, 19):
+                            pass # ignore historical glitch
+                        else:
+                            raise GeneratorError('invalid version jump in changelog {0}: {1} -> {2}'.format(root_dir, versions[-1], version))
+
+                    if versions[-1][0] != version[0] and (version[1] != 0 or version[2] != 0):
+                        raise GeneratorError('invalid version jump in changelog {0}: {1} -> {2}'.format(root_dir, versions[-1], version))
+
+                versions.append(version)
+
+    if len(versions) == 0:
         raise GeneratorError('no version found in changelog: ' + root_dir)
 
-    return last
+    return (str(versions[-1][0]), str(versions[-1][1]), str(versions[-1][2]))
 
 def get_image_size(path):
     from PIL import Image
@@ -146,8 +167,31 @@ def make_rst_header(device, has_device_identifier_constant=True):
     date = datetime.datetime.now().strftime("%Y-%m-%d")
     full_title = '{0} - {1}'.format(bindings_display_name, device.get_long_display_name())
     full_title_underline = '='*len(full_title)
-    device_identifier_constant = {'en': '.. |device_identifier_constant| replace:: There is also a :ref:`constant <{0}_{1}_{2}_constants>` for the device identifier of this {3}.\n',
-                                  'de': '.. |device_identifier_constant| replace:: Es gibt auch eine :ref:`Konstante <{0}_{1}_{2}_constants>` für den Device Identifier dieses {3}.\n'}
+
+    brick_name = {
+        'en': 'this Brick',
+        'de': 'dieses Bricks'
+    }
+
+    bricklet_name = {
+        'en': 'this Bricklet',
+        'de': 'dieses Bricklets'
+    }
+
+    tng_name = {
+        'en': 'this TNG module',
+        'de': 'dieses TNG-Moduls'
+    }
+
+    if device.is_brick():
+        device_name = select_lang(brick_name)
+    elif device.is_tng():
+        device_name = select_lang(tng_name)
+    else:
+        device_name = select_lang(bricklet_name)
+
+    device_identifier_constant = {'en': '.. |device_identifier_constant| replace:: There is also a :ref:`constant <{0}_{1}_constants>` for the device identifier of {2}.\n',
+                                  'de': '.. |device_identifier_constant| replace:: Es gibt auch eine :ref:`Konstante <{0}_{1}_constants>` für den Device Identifier {2}.\n'}
 
     if device.is_released():
         orphan = ''
@@ -155,14 +199,13 @@ def make_rst_header(device, has_device_identifier_constant=True):
         orphan = ':orphan:\n'
 
     if has_device_identifier_constant:
-        device_identifier_constant = select_lang(device_identifier_constant).format(device.get_name().under,
-                                                                                    device.get_category().under,
+        device_identifier_constant = select_lang(device_identifier_constant).format(device.get_doc_rst_ref_name(),
                                                                                     ref_name,
-                                                                                    device.get_category().camel)
+                                                                                    device_name)
     else:
         device_identifier_constant = '.. |device_identifier_constant| unicode:: 0xA0\n   :trim:\n'
 
-    ref = '.. _{0}_{1}_{2}:\n'.format(device.get_name().under, device.get_category().under, ref_name)
+    ref = '.. _{0}_{1}:\n'.format(device.get_doc_rst_ref_name(), ref_name)
 
     return '{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n'.format(gen_text_rst.format(date),
                                                    orphan,
@@ -221,6 +264,11 @@ Bindings ist Teil deren allgemeine Beschreibung.
         'de': 'Dieses Bricklet'
     }
 
+    tng = {
+        'en': 'This TNG module',
+        'de': 'Dieses TNG-Modul'
+    }
+
     programming_language_name_link = {
         'en': 'of the :ref:`{0} API bindings <api_bindings_{1}>`',
         'de': 'der :ref:`{0} API Bindings <api_bindings_{1}>`'
@@ -232,13 +280,18 @@ Bindings ist Teil deren allgemeine Beschreibung.
     }
 
     brick_name = {
-        'en': 'the :ref:`{0} <{1}_brick>`',
-        'de': 'den :ref:`{0} <{1}_brick>`',
+        'en': 'the :ref:`{0} <{1}>`',
+        'de': 'den :ref:`{0} <{1}>`',
     }
 
     bricklet_name = {
-        'en': 'the :ref:`{0} <{1}_bricklet>`',
-        'de': 'das :ref:`{0} <{1}_bricklet>`',
+        'en': 'the :ref:`{0} <{1}>`',
+        'de': 'das :ref:`{0} <{1}>`',
+    }
+
+    tng_name = {
+        'en': 'the :ref:`{0} <{1}>`',
+        'de': 'das :ref:`{0} <{1}>`',
     }
 
     # format bindings name
@@ -253,16 +306,18 @@ Bindings ist Teil deren allgemeine Beschreibung.
     # format device name
     if device.is_brick():
         device_name = select_lang(brick_name)
+    elif device.is_tng():
+        device_name = select_lang(tng_name)
     else:
         device_name = select_lang(bricklet_name)
 
     device_name = device_name.format(device.get_long_display_name(),
-                                     device.get_name().under)
+                                     device.get_doc_rst_ref_name())
 
     s = select_lang(summary).format(bindings_name_link,
                                     device_name,
                                     device.get_long_display_name(),
-                                    device.get_name().under + '_' + device.get_category().under)
+                                    device.get_doc_rst_ref_name())
 
     if is_programming_language:
         s += select_lang(summary_install).format(device.get_generator().get_bindings_name(),
@@ -271,6 +326,8 @@ Bindings ist Teil deren allgemeine Beschreibung.
     if not device.is_released():
         if device.is_brick():
             d = brick
+        if device.is_tng():
+            d = tng
         else:
             d = bricklet
 
@@ -356,9 +413,8 @@ Der folgende Beispielcode ist `Public Domain (CC0 1.0)
     if is_picture:
         imp = imp_picture_scroll
 
-    ref = '.. _{0}_{1}_{2}_examples:\n'.format(device.get_name().under,
-                                               device.get_category().under,
-                                               bindings_name)
+    ref = '.. _{0}_{1}_examples:\n'.format(device.get_doc_rst_ref_name(),
+                                           bindings_name)
     examples = select_lang(ex).format(ref)
     files = find_device_examples(device, filename_regex)
     copy_files = []
@@ -376,7 +432,7 @@ Der folgende Beispielcode ist `Public Domain (CC0 1.0)
         else:
             language = language_from_filename(f[0])
 
-        include = '{0}_{1}_{2}_{3}'.format(device.get_name().camel, device.get_category().camel, include_name, f[0].replace(' ', '_'))
+        include = '{0}_{1}_{2}'.format(device.get_doc_rst_name(), include_name, f[0].replace(' ', '_'))
         copy_files.append((f[1], include))
         title = title_from_filename(f[0])
         url = url_format.format(device.get_git_name(), bindings_name, f[0].replace(' ', '%20'))
@@ -511,6 +567,7 @@ Die folgenden {0} sind für diese Funktion verfügbar:
     for constant_group in packet.get_constant_groups():
         if show_constant_group:
             constants.append(group_format_func(constant_group))
+
         for constant in constant_group.get_constants():
             if constant_group.get_type() == 'char':
                 value = char_format_func(constant.get_value())
@@ -683,14 +740,25 @@ def subgenerate(root_dir, language, generator_class, config_name):
 
     configs = sorted(os.listdir(config_path))
 
-    common_device_packets = copy.deepcopy(__import__('device_commonconfig').common_packets)
+    common_constant_groups = copy.deepcopy(__import__('device_commonconfig').common_constant_groups)
+    common_packets = copy.deepcopy(__import__('device_commonconfig').common_packets)
 
     brick_infos = []
     bricklet_infos = []
+    tng_infos = []
     device_identifiers = set()
 
     generator = generator_class(root_dir, config_name, language)
     generator.prepare()
+
+    def prepare_common_constant_groups(com, common_constant_groups):
+        features = com['features']
+
+        for common_constant_group in common_constant_groups:
+            if common_constant_group['feature'] not in features:
+                common_constant_group['to_be_removed'] = True
+
+        return filter(lambda x: 'to_be_removed' not in x, common_constant_groups)
 
     def prepare_common_packets(com, common_packets):
         features = com['features']
@@ -729,7 +797,8 @@ def subgenerate(root_dir, language, generator_class, config_name):
                 print(' * {0}'.format(config[:-10]))
 
             if 'common_included' not in com:
-                com['packets'].extend(prepare_common_packets(com, copy.deepcopy(common_device_packets)))
+                com['constant_groups'].extend(prepare_common_constant_groups(com, copy.deepcopy(common_constant_groups)))
+                com['packets'].extend(prepare_common_packets(com, copy.deepcopy(common_packets)))
                 com['common_included'] = True
 
             device = generator.get_device_class()(com, generator)
@@ -768,6 +837,28 @@ def subgenerate(root_dir, language, generator_class, config_name):
                                    device.get_description())
 
                     brick_infos.append(device_info)
+                elif device.is_tng():
+                    ref_name = 'tng_' + device.get_name().under
+                    hardware_doc_name = device.get_short_display_name().replace(' ', '_').replace('/', '_').replace('-', '').replace('2.0', 'V2').replace('3.0', 'V3')
+                    software_doc_prefix = 'TNG_' + device.get_name().camel
+                    firmware_url_part = device.get_name().under
+
+                    device_info = (device.get_device_identifier(),
+                                   device.get_long_display_name(),
+                                   device.get_short_display_name(),
+                                   ref_name,
+                                   hardware_doc_name,
+                                   software_doc_prefix,
+                                   device.get_git_name(),
+                                   firmware_url_part,
+                                   False,
+                                   device.is_released(),
+                                   device.is_documented(),
+                                   device.is_discontinued(),
+                                   True,
+                                   device.get_description())
+
+                    tng_infos.append(device_info)
                 else:
                     ref_name = device.get_name().under + '_bricklet'
                     hardware_doc_name = device.get_short_display_name().replace(' ', '_').replace('/', '_').replace('-', '').replace('2.0', 'V2').replace('3.0', 'V3')
@@ -974,27 +1065,19 @@ class Constant(object):
         return self.raw_data[1]
 
 class ConstantGroup(object):
-    def __init__(self, type_, raw_data, device):
-        self.type_ = type_
+    def __init__(self, raw_data, device):
+        assert isinstance(raw_data, dict)
+        check_name(raw_data['name'])
+
         self.raw_data = raw_data
         self.device = device
-        self.elements = []
+        self.name = FlavoredName(raw_data['name'])
         self.constants = []
 
-        if len(raw_data) != 2:
-            raise GeneratorError('Invalid ConstantGroup: ' + repr(raw_data))
-
-        check_name(raw_data[0])
-
-        self.name = FlavoredName(raw_data[0])
-
-        for raw_constant in raw_data[1]:
+        for raw_constant in raw_data['constants']:
             self.constants.append(self.get_generator().get_constant_class()(raw_constant, self))
 
-    def get_elements(self): # parents
-        return self.elements
-
-    def get_device(self):
+    def get_device(self): # parent
         return self.device
 
     def get_generator(self):
@@ -1004,13 +1087,21 @@ class ConstantGroup(object):
         return self.name.get(*args, **kwargs)
 
     def get_type(self):
-        return self.type_
+        return self.raw_data['type']
 
     def get_constants(self):
         return self.constants
 
-    def add_elements(self, elements):
-        self.elements += elements
+    def get_elements(self, packet):
+        elements = []
+
+        for element in packet.get_elements():
+            constant_group = element.get_constant_group()
+
+            if constant_group != None and constant_group.get_name().space == self.get_name().space:
+                elements.append(element)
+
+        return elements
 
 class Element(object):
     def __init__(self, raw_data, packet, level, role):
@@ -1028,8 +1119,16 @@ class Element(object):
             raise GeneratorError('Invalid Element: ' + repr(raw_data))
 
         if len(self.raw_data) > 4:
-            self.constant_group = self.get_generator().get_constant_group_class()(raw_data[1], raw_data[4], self.get_device())
-            self.constant_group.add_elements([self])
+            assert isinstance(self.raw_data[4], dict), self.raw_data[4]
+            assert len(set(self.raw_data[4].keys()) - set(['constant_group'])) == 0, self.raw_data[4]
+
+            constant_group_name = self.raw_data[4].get('constant_group')
+
+            if constant_group_name != None:
+                self.constant_group = self.get_device().get_constant_group(constant_group_name)
+
+                if self.constant_group.get_type() != self.get_type():
+                    raise GeneratorError("Element '{0}' Constant Group '{1}' type mismatch".format(self.get_name().space, constant_group_name))
 
     def get_packet(self): # parent
         return self.packet
@@ -1316,39 +1415,7 @@ class Packet(object):
         for element in self.elements:
             constant_group = element.get_constant_group()
 
-            if constant_group is None:
-                continue
-
-            for known_constant_group in self.constant_groups:
-                if constant_group.get_name().under != known_constant_group.get_name().under:
-                    continue
-
-                if constant_group.get_type() != known_constant_group.get_type():
-                    raise GeneratorError('Multiple instance of constant group {0} with different types' \
-                                         .format(constant_group.get_name().under))
-
-                for constant, known_constant in zip(constant_group.get_constants(), known_constant_group.get_constants()):
-                    a = known_constant.get_name().under
-                    b = constant.get_name().under
-
-                    if a != b:
-                        raise GeneratorError('Constant item name ({0} != {1}) mismatch in constant group {2}' \
-                                             .format(a, b, constant_group.get_name().under))
-
-                    a = known_constant.get_value()
-                    b = constant.get_value()
-
-                    if a != b:
-                        raise GeneratorError('Constant item value ({0} != {1}) mismatch in constant group {2}' \
-                                             .format(a, b, constant_group.get_name().under))
-
-                known_constant_group.add_elements(constant_group.get_elements())
-
-                constant_group = None
-
-                break
-
-            if constant_group is not None:
+            if constant_group != None and constant_group not in self.constant_groups:
                 self.constant_groups.append(constant_group)
 
     def get_device(self): # parent
@@ -1538,6 +1605,7 @@ class Device(object):
     def __init__(self, raw_data, generator):
         self.raw_data = raw_data
         self.generator = generator
+        self.constant_groups = []
         self.all_packets = []
         self.all_packets_without_doc_only = []
         self.all_function_packets = []
@@ -1549,6 +1617,16 @@ class Device(object):
 
         self.category = FlavoredName(raw_data['category'])
         self.name = FlavoredName(raw_data['name'])
+
+        for raw_constant_group in raw_data['constant_groups']:
+            constant_group = generator.get_constant_group_class()(raw_constant_group, self)
+            constant_group_name = constant_group.get_name().space
+
+            for other_constant_group in self.constant_groups:
+                if other_constant_group.get_name().space == constant_group_name:
+                    raise GeneratorError('Constant Group {0} is not unique'.format(constant_group_name))
+
+            self.constant_groups.append(constant_group)
 
         next_function_id = 1
 
@@ -1611,39 +1689,6 @@ class Device(object):
             else:
                 raise GeneratorError('Invalid packet type ' + packet.get_type())
 
-        self.constant_groups = []
-
-        for packet in self.all_packets:
-            for constant_group in packet.get_constant_groups():
-                for known_constant_group in self.constant_groups:
-                    if constant_group.get_name().under != known_constant_group.get_name().under:
-                        continue
-
-                    if constant_group.get_type() != known_constant_group.get_type():
-                        raise GeneratorError('Multiple instance of constant group {0} with different types' \
-                                             .format(constant_group.get_name().under))
-
-                    for constant, known_constant in zip(constant_group.get_constants(), known_constant_group.get_constants()):
-                        a = known_constant.get_name().under
-                        b = constant.get_name().under
-
-                        if a != b:
-                            raise GeneratorError('Constant name ({0} != {1}) mismatch in constant group {2}' \
-                                                 .format(a, b, constant_group.get_name().under))
-
-                        a = known_constant.get_value()
-                        b = constant.get_value()
-
-                        if a != b:
-                            raise GeneratorError('Constant value ({0} != {1}) mismatch in constant group {2}' \
-                                                 .format(a, b, constant_group.get_name().under))
-
-                    constant_group = None
-                    break
-
-                if constant_group != None:
-                    self.constant_groups.append(constant_group)
-
         for raw_example in raw_data['examples']:
             self.examples.append(generator.get_example_class()(raw_example, self))
 
@@ -1682,6 +1727,9 @@ class Device(object):
 
     def is_bricklet(self):
         return self.get_category().space == 'Bricklet'
+
+    def is_tng(self):
+        return self.get_category().space == 'TNG'
 
     def get_device_identifier(self):
         return self.raw_data['device_identifier']
@@ -1733,6 +1781,9 @@ class Device(object):
     def get_long_display_name(self):
         display_name = self.raw_data['display_name']
 
+        if self.is_tng():
+            return self.get_category().space + ' ' + display_name
+
         if display_name.endswith(' 2.0') or display_name.endswith(' 3.0'):
             parts = display_name.split(' ')
             parts.insert(-1, self.get_category().space)
@@ -1748,12 +1799,22 @@ class Device(object):
         return self.raw_data['description']
 
     def get_git_name(self):
+        if self.is_tng():
+            return self.get_category().dash + '-' + self.get_name().dash
+
         return self.get_name().dash + '-' + self.get_category().dash
 
     def get_git_dir(self):
         global_root_dir = os.path.normpath(os.path.join(self.get_generator().get_root_dir(), '..', '..'))
 
         return os.path.join(global_root_dir, self.get_git_name())
+
+    def get_constant_group(self, name):
+        for constant_group in self.constant_groups:
+            if constant_group.get_name().space == name:
+                return constant_group
+
+        raise GeneratorError("Unknown Constant Group '{0}'".format(name))
 
     def get_packets(self, type_=None):
         if type_ == None:
@@ -1803,13 +1864,17 @@ class Device(object):
 
         return ''.join(constants)
 
+    def get_doc_rst_name(self):
+        if self.is_tng():
+            return self.get_category().camel + '_' + self.get_name().camel
+
+        return self.get_name().camel + '_' + self.get_category().camel
+
     def get_doc_rst_path(self):
         if not self.get_generator().is_doc():
             raise GeneratorError("Invalid call in non-doc generator")
 
-        filename = '{0}_{1}_{2}.rst'.format(self.get_name().camel,
-                                            self.get_category().camel,
-                                            self.get_generator().get_doc_rst_filename_part())
+        filename = self.get_doc_rst_name() + '_' + self.get_generator().get_doc_rst_filename_part() + '.rst'
 
         return os.path.join(self.get_generator().get_doc_dir(),
                             self.get_generator().get_language(),
@@ -1818,6 +1883,9 @@ class Device(object):
     def get_doc_rst_ref_name(self):
         if not self.get_generator().is_doc():
             raise GeneratorError("Invalid call in non-doc generator")
+
+        if self.is_tng():
+            return self.get_category().under + '_' + self.get_name().under
 
         return self.get_name().under + '_' + self.get_category().under
 
@@ -2944,8 +3012,8 @@ class ZipGenerator(Generator):
             shutil.copy(zipname, self.get_root_dir())
 
 class ExamplesGenerator(Generator):
-    skip_existing_incomplete_example = False
-    forbid_execution = True
+    skip_existing_incomplete_example = True
+    forbid_execution = False
 
     def __init__(self, *args, **kwargs):
         Generator.__init__(self, *args, **kwargs)

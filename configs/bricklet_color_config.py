@@ -6,7 +6,7 @@
 
 # Color Bricklet communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 
 com = {
     'author': 'Ishraq Ibne Ashraf <ishraq@tinkerforge.com>',
@@ -22,13 +22,42 @@ com = {
     },
     'released': True,
     'documented': True,
-    'discontinued': False,
+    'discontinued': False, # selling remaining stock, replaced by CAN Bricklet 2.0
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
+
+com['constant_groups'].append({
+'name': 'Light',
+'type': 'uint8',
+'constants': [('On', 0),
+              ('Off', 1)]
+})
+
+com['constant_groups'].append({
+'name': 'Gain',
+'type': 'uint8',
+'constants': [('1x', 0),
+              ('4x', 1),
+              ('16x', 2),
+              ('60x', 3)]
+})
+
+com['constant_groups'].append({
+'name': 'Integration Time',
+'type': 'uint8',
+'constants': [('2ms', 0),
+              ('24ms', 1),
+              ('101ms', 2),
+              ('154ms', 3),
+              ('700ms', 4)]
+})
 
 com['packets'].append({
 'type': 'function',
@@ -101,7 +130,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Color` Callback ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Color` Callback wird nur ausgelöst wenn sich die Color seit der
+Der :cb:`Color` Callback wird nur ausgelöst, wenn sich die Color seit der
 letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -130,7 +159,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Color Callback Threshold',
-'elements': [('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min R', 'uint16', 1, 'in'),
              ('Max R', 'uint16', 1, 'in'),
              ('Min G', 'uint16', 1, 'in'),
@@ -170,10 +199,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn die Temperatur *außerhalb* des min und max Wertes ist"
- "'i'",    "Callback wird ausgelöst wenn die Temperatur *innerhalb* des min und max Wertes ist"
- "'<'",    "Callback wird ausgelöst wenn die Temperatur kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn die Temperatur größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn die Temperatur *außerhalb* des min und max Wertes ist"
+ "'i'",    "Callback wird ausgelöst, wenn die Temperatur *innerhalb* des min und max Wertes ist"
+ "'<'",    "Callback wird ausgelöst, wenn die Temperatur kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn die Temperatur größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0, 0, 0, 0, 0, 0, 0).
 """
@@ -183,7 +212,7 @@ Der Standardwert ist ('x', 0, 0, 0, 0, 0, 0, 0, 0).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Color Callback Threshold',
-'elements': [('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min R', 'uint16', 1, 'out'),
              ('Max R', 'uint16', 1, 'out'),
              ('Min G', 'uint16', 1, 'out'),
@@ -284,7 +313,7 @@ last triggering.
 Dieser Callback wird mit der Periode, wie gesetzt mit :func:`Set Color Callback Period`,
 ausgelöst. Der :word:`parameter` ist die Farbe des Sensors als RGBC.
 
-Der :cb:`Color` Callback wird nur ausgelöst wenn sich die Farbe seit der
+Der :cb:`Color` Callback wird nur ausgelöst, wenn sich die Farbe seit der
 letzten Auslösung geändert hat.
 """
 }]
@@ -311,7 +340,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Color Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist die Farbe des Sensors als RGBC.
 
@@ -359,8 +388,7 @@ com['packets'].append({
 'type': 'function',
 'name': 'Is Light On',
 # FIXME: should return bool, but cannot be fixed because the Bricklet returns 0 for "On"
-'elements': [('Light', 'uint8', 1, 'out', ('Light', [('On', 0),
-                                                     ('Off', 1)]))],
+'elements': [('Light', 'uint8', 1, 'out', {'constant_group': 'Light'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -383,15 +411,8 @@ Gibt den Zustand der LED zurück. Mögliche Werte sind:
 com['packets'].append({
 'type': 'function',
 'name': 'Set Config',
-'elements': [('Gain', 'uint8', 1, 'in', ('Gain', [('1x', 0),
-                                                  ('4x', 1),
-                                                  ('16x', 2),
-                                                  ('60x', 3)])),
-             ('Integration Time', 'uint8', 1, 'in', ('Integration Time', [('2ms', 0),
-                                                                          ('24ms', 1),
-                                                                          ('101ms', 2),
-                                                                          ('154ms', 3),
-                                                                          ('700ms', 4)]))],
+'elements': [('Gain', 'uint8', 1, 'in', {'constant_group': 'Gain'}),
+             ('Integration Time', 'uint8', 1, 'in', {'constant_group': 'Integration Time'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -459,15 +480,8 @@ Die Standardwerte sind 60x Verstärkung und 154ms Integrationszeit.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Config',
-'elements': [('Gain', 'uint8', 1, 'out', ('Gain', [('1x', 0),
-                                                   ('4x', 1),
-                                                   ('16x', 2),
-                                                   ('60x', 3)])),
-             ('Integration Time', 'uint8', 1, 'out', ('Integration Time', [('2ms', 0),
-                                                                           ('24ms', 1),
-                                                                           ('101ms', 2),
-                                                                           ('154ms', 3),
-                                                                           ('700ms', 4)]))],
+'elements': [('Gain', 'uint8', 1, 'out', {'constant_group': 'Gain'}),
+             ('Integration Time', 'uint8', 1, 'out', {'constant_group': 'Integration Time'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -496,7 +510,7 @@ set by :func:`Set Config`. To get the illuminance in Lux apply this formula::
  lux = illuminance * 700 / gain / integration_time
 
 To get a correct illuminance measurement make sure that the color
-values themself are not saturated. The color value (R, G or B)
+values themselves are not saturated. The color value (R, G or B)
 is saturated if it is equal to the maximum value of 65535.
 In that case you have to reduce the gain, see :func:`Set Config`.
 """,
@@ -528,7 +542,7 @@ com['packets'].append({
 Returns the color temperature in Kelvin.
 
 To get a correct color temperature measurement make sure that the color
-values themself are not saturated. The color value (R, G or B)
+values themselves are not saturated. The color value (R, G or B)
 is saturated if it is equal to the maximum value of 65535.
 In that case you have to reduce the gain, see :func:`Set Config`.
 """,
@@ -565,7 +579,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Illuminance` Callback ausgelöst
 wird. Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Illuminance` Callback wird nur ausgelöst wenn sich die
+Der :cb:`Illuminance` Callback wird nur ausgelöst, wenn sich die
 Beleuchtungsstärke seit der letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -612,7 +626,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Color Temperature` Callback
 ausgelöst wird. Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Color Temperature` Callback wird nur ausgelöst wenn sich die
+Der :cb:`Color Temperature` Callback wird nur ausgelöst, wenn sich die
 Farbtemperatur seit der letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -659,7 +673,7 @@ Dieser Callback wird mit der Periode, wie gesetzt mit :func:`Set Illuminance Cal
 ausgelöst. Der :word:`parameter` ist die Beleuchtungsstärke des Sensors.
 Siehe :func:`Get Illuminance` für eine Erklärung wie dieser zu interpretieren ist.
 
-Der :cb:`Illuminance` Callback wird nur ausgelöst wenn sich die
+Der :cb:`Illuminance` Callback wird nur ausgelöst, wenn sich die
 Beleuchtungsstärke seit der letzten Auslösung geändert hat.
 """
 }]
@@ -686,7 +700,7 @@ Dieser Callback wird mit der Periode, wie gesetzt mit
 :func:`Set Color Temperature Callback Period`, ausgelöst. Der :word:`parameter`
 ist die Farbtemperatur des Sensors in Kelvin.
 
-Der :cb:`Color Temperature` Callback wird nur ausgelöst wenn sich die
+Der :cb:`Color Temperature` Callback wird nur ausgelöst, wenn sich die
 Farbtemperatur seit der letzten Auslösung geändert hat.
 """
 }]

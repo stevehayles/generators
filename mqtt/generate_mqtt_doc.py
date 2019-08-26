@@ -36,10 +36,10 @@ class MQTTDocDevice(mqtt_common.MQTTDevice):
         def specializer(packet, high_level):
             if packet.get_type() == 'callback':
                 return ':mqtt:func:`register/{0}/<UID>/{1}`'.format(packet.get_device().get_mqtt_device_name(),
-                                                            packet.get_mqtt_name(skip=-2 if high_level else 0))
+                                                                    packet.get_mqtt_name(skip=-2 if high_level else 0))
             else:
                 return ':mqtt:func:`request/{0}/<UID>/{1}`'.format(packet.get_device().get_mqtt_device_name(),
-                                                   packet.get_mqtt_name(skip=-2 if high_level else 0))
+                                                                   packet.get_mqtt_name(skip=-2 if high_level else 0))
 
         return self.specialize_doc_rst_links(text, specializer, prefix='mqtt')
 
@@ -75,9 +75,9 @@ class MQTTDocDevice(mqtt_common.MQTTDevice):
                     'en': """If symbolic output is not disabled, the device identifier is mapped to the corresponding name in the format used in topics.
 
  The display name contains the {}'s name in a human readable form.""",
-                    'de': """Falls die symbolische Ausgabe nicht deaktiviert wurde, wird der device identifier auf den entsprechenden Namen im Format, welches die Topics verwenden, abgebildet.
+                    'de': """Falls die symbolische Ausgabe nicht deaktiviert wurde, wird der Device Identifier auf den entsprechenden Namen im Format, welches die Topics verwenden, abgebildet.
 
- Der display name enthält den Anzeigenamen des {}."""}
+ Der Display Name enthält den Anzeigenamen des {}."""}
                 desc += common.select_lang(get_id_desc).format(self.get_short_display_name())
 
             func = '{start}request/{struct_name}/<UID>/{func_name}\n\n {params}{returns}{desc}'.format(start=func_start, struct_name=self.get_mqtt_device_name(), func_name=name, params=params, returns = returns, desc=desc)
@@ -173,7 +173,7 @@ Mit diesem Suffix kann das Callback später deregistriert werden.
 API
 ---
 
-All published payload to an from the MQTT bindings is in the JSON format.
+All published payloads to and from the MQTT bindings are in JSON format.
 
 If an error occures, the bindings publish a JSON object containing the error message as attribute "_ERROR".
 It is published on the corresponding response topic: ``.../response/...`` for ``.../request/...`` and ``.../callback/...`` for ``.../register/...``.
@@ -187,7 +187,7 @@ It is published on the corresponding response topic: ``.../response/...`` for ``
 API
 ---
 
-Alle veröffentlichten Payloads an die und von den MQTT-Bindings sind im JSON format.
+Alle veröffentlichten Payloads an die und von den MQTT-Bindings sind im JSON Format.
 
 Falls ein Fehler auftritt, veröffentlichen die Bindings ein JSON-Objekt, das die Fehlermeldung als "_ERROR"-Attribut enthält.
 Das Objekt wird auf dem zugehörigen Antwort-Topic veröffentlicht: ``.../response/...`` für ``.../request/...`` und ``.../callback/...`` für ``.../register/...``.
@@ -298,20 +298,15 @@ class MQTTDocPacket(mqtt_common.MQTTPacket):
         const_func_id_fmt_func = lambda prefix, func_name, value: '* {0}Function{1} = {2}\n'.format(
                                                                   prefix, func_name.camel, value)
 
-
         def constant_group_func(group):
             splt = group.get_name().under.split('_')
 
             found = None
 
-            for elem in group.get_elements():
+            for elem in group.get_elements(self):
                 if elem.get_packet().get_name().under == self.get_name().under:
                     return elem.get_name().under
-                #to_search = []
-                #for word in reversed(splt):
-                #    to_search.append(word)
-                #    if elem.get_name().under == '_'.join(to_search):
-                #        return elem.get_name().under
+
             return group.get_name().under
 
         if self.get_name().space == 'Set Response Expected':
@@ -321,7 +316,6 @@ class MQTTDocPacket(mqtt_common.MQTTPacket):
             text += common.format_constants(prefix, self, constants, constant_format_func=const_fmt_func, show_constant_group=True, group_format_func=lambda g: "\n" + _for + " " + constant_group_func(g) + ":\n\n")
 
         text += common.format_since_firmware(self.get_device(), self)
-
         text = text.replace('|device_identifier_constant|\n', '')
 
         return common.shift_right(text, 1)

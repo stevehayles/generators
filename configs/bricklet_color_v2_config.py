@@ -6,7 +6,7 @@
 
 # Color Bricklet 2.0 communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 from commonconstants import add_callback_value_function
 
 com = {
@@ -21,16 +21,38 @@ com = {
         'en': 'Measures color (RGB value), illuminance and color temperature',
         'de': 'Misst Farbe (RGB Wert), Beleuchtungsstärke und Farbtemperatur'
     },
-    'released': False,
-    'documented': False,
+    'released': True,
+    'documented': True,
     'discontinued': False,
     'features': [
         'comcu_bricklet',
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
+
+com['constant_groups'].append({
+'name': 'Gain',
+'type': 'uint8',
+'constants': [('1x', 0),
+              ('4x', 1),
+              ('16x', 2),
+              ('60x', 3)]
+})
+
+com['constant_groups'].append({
+'name': 'Integration Time',
+'type': 'uint8',
+'constants': [('2ms', 0),
+              ('24ms', 1),
+              ('101ms', 2),
+              ('154ms', 3),
+              ('700ms', 4)]
+})
 
 com['packets'].append({
 'type': 'function',
@@ -65,7 +87,7 @@ to use the :cb:`Color` callback and set the period with
 Gibt die gemessene Farbe des Sensors zurück. Der Wertebereich ist von
 0 bis 65535.
 
-Die rot (r), grün (g), blau (b) und clear (c) werden mit vier
+Die rot (r), grün (g), blau (b) und clear (c) Farbanteile werden mit vier
 unterschiedlichen Fotodioden gemessen. Diese sind Empfindlich
 in unterschiedlichen Wellenlängen:
 
@@ -164,7 +186,7 @@ last triggering.
 Dieser Callback wird mit der Periode, wie gesetzt mit :func:`Set Color Callback Configuration`,
 ausgelöst. Der :word:`parameter` ist die Farbe des Sensors als RGBC.
 
-Der :cb:`Color` Callback wird nur ausgelöst wenn sich die Farbe seit der
+Der :cb:`Color` Callback wird nur ausgelöst, wenn sich die Farbe seit der
 letzten Auslösung geändert hat.
 """
 }]
@@ -174,28 +196,28 @@ illuminance_doc = {
 'en':
 """
 Returns the illuminance affected by the gain and integration time as
-set by :func:`Set Config`. To get the illuminance in Lux apply this formula::
+set by :func:`Set Configuration`. To get the illuminance in Lux apply this formula::
 
  lux = illuminance * 700 / gain / integration_time
 
 To get a correct illuminance measurement make sure that the color
-values themself are not saturated. The color value (R, G or B)
+values themselves are not saturated. The color value (R, G or B)
 is saturated if it is equal to the maximum value of 65535.
-In that case you have to reduce the gain, see :func:`Set Config`.
+In that case you have to reduce the gain, see :func:`Set Configuration`.
 """,
 'de':
 """
 Gibt die Beleuchtungsstärke beeinflusst durch die Verstärkung und die
 Integrationszeit zurück. Verstärkung und Integrationszeit können mit
-:func:`Set Config` eingestellt werden. Um die Beleuchtungsstärke in Lux zu
-ermitteln muss folgende Formel angewendet werden::
+:func:`Set Configuration` eingestellt werden. Um die Beleuchtungsstärke in Lux zu
+ermitteln, muss folgende Formel angewendet werden::
 
  lux = illuminance * 700 / gain / integration_time
 
 Für eine korrekte Messung der Beleuchtungsstärke muss sichergestellt
 sein, dass die Farbwerte (R, G oder B) nicht saturiert sind. Ein
-Farbwert ist saturiert wenn der Wert 65535 beträgt. In diesem Fall
-kann die Verstärkung per :func:`Set Config` reduziert werden.
+Farbwert ist saturiert, wenn der Wert 65535 beträgt. In diesem Fall
+kann die Verstärkung per :func:`Set Configuration` reduziert werden.
 """
 }
 
@@ -213,18 +235,18 @@ color_temperature_doc = {
 Returns the color temperature in Kelvin.
 
 To get a correct color temperature measurement make sure that the color
-values themself are not saturated. The color value (R, G or B)
+values themselves are not saturated. The color value (R, G or B)
 is saturated if it is equal to the maximum value of 65535.
-In that case you have to reduce the gain, see :func:`Set Config`.
+In that case you have to reduce the gain, see :func:`Set Configuration`.
 """,
 'de':
 """
 Gibt die Farbtemperatur in Kelvin zurück.
 
 Für eine korrekte Messung der Farbtemperatur muss sichergestellt
-sein das die Farbwerte (R, G oder B) nicht saturiert sind. Ein
-Farbwert ist saturiert wenn der Wert 65535 beträgt. In diesem Fall
-kann die Verstärkung per :func:`Set Config` reduziert werden.
+sein, dass die Farbwerte (R, G oder B) nicht saturiert sind. Ein
+Farbwert ist saturiert, wenn der Wert 65535 beträgt. In diesem Fall
+kann die Verstärkung per :func:`Set Configuration` reduziert werden.
 """
 }
 
@@ -272,22 +294,15 @@ Gibt den Wert zurück, wie von :func:`Set Light` gesetzt.
 
 com['packets'].append({
 'type': 'function',
-'name': 'Set Config',
-'elements': [('Gain', 'uint8', 1, 'in', ('Gain', [('1x', 0),
-                                                  ('4x', 1),
-                                                  ('16x', 2),
-                                                  ('60x', 3)])),
-             ('Integration Time', 'uint8', 1, 'in', ('Integration Time', [('2ms', 0),
-                                                                          ('24ms', 1),
-                                                                          ('101ms', 2),
-                                                                          ('154ms', 3),
-                                                                          ('700ms', 4)]))],
+'name': 'Set Configuration',
+'elements': [('Gain', 'uint8', 1, 'in', {'constant_group': 'Gain'}),
+             ('Integration Time', 'uint8', 1, 'in', {'constant_group': 'Integration Time'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
 """
 Sets the configuration of the sensor. Gain and integration time
-can be configured in this way.
+can be configured this way.
 
 For configuring the gain:
 
@@ -309,7 +324,7 @@ color from a higher distance.
 
 The integration time provides a trade-off between conversion time
 and accuracy. With a longer integration time the values read will
-be more accurate but it will take longer time to get the conversion
+be more accurate but it will take longer to get the conversion
 results.
 
 The default values are 60x gain and 154ms integration time.
@@ -334,12 +349,12 @@ Für die Konfiguration der Integrationszeit:
 * 3: 154ms
 * 4: 700ms
 
-Eine Erhöhung der Verstärkung ermöglicht es dem Sensor Farben aus größeren
+Eine Erhöhung der Verstärkung ermöglicht es dem Sensor, Farben aus größeren
 Entfernungen zu erkennen.
 
 Die Integrationszeit ist ein Trade-off zwischen Konvertierungszeit und
 Genauigkeit. Mit einer höheren Integrationszeit werden die Werte genauer,
-es dauert allerdings länger bis ein Resultat bereitsteht.
+es dauert allerdings länger, bis ein Resultat bereitsteht.
 
 Die Standardwerte sind 60x Verstärkung und 154ms Integrationszeit.
 """
@@ -348,25 +363,18 @@ Die Standardwerte sind 60x Verstärkung und 154ms Integrationszeit.
 
 com['packets'].append({
 'type': 'function',
-'name': 'Get Config',
-'elements': [('Gain', 'uint8', 1, 'out', ('Gain', [('1x', 0),
-                                                   ('4x', 1),
-                                                   ('16x', 2),
-                                                   ('60x', 3)])),
-             ('Integration Time', 'uint8', 1, 'out', ('Integration Time', [('2ms', 0),
-                                                                           ('24ms', 1),
-                                                                           ('101ms', 2),
-                                                                           ('154ms', 3),
-                                                                           ('700ms', 4)]))],
+'name': 'Get Configuration',
+'elements': [('Gain', 'uint8', 1, 'out', {'constant_group': 'Gain'}),
+             ('Integration Time', 'uint8', 1, 'out', {'constant_group': 'Integration Time'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
 """
-Returns the configuration as set by :func:`Set Config`.
+Returns the configuration as set by :func:`Set Configuration`.
 """,
 'de':
 """
-Gibt die Einstellungen zurück, wie von :func:`Set Config`
+Gibt die Einstellungen zurück, wie von :func:`Set Configuration`
 gesetzt.
 """
 }]

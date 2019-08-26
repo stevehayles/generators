@@ -20,10 +20,11 @@ com = {
     },
     'released': True,
     'documented': True,
-    'discontinued': False,
+    'discontinued': False, # selling remaining stock, replaced by Multi Touch Bricklet 2.0
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
@@ -177,7 +178,7 @@ This callback is triggered every time the touch state changes.
 Gibt den aktuellen Tastzustand zurück, siehe :func:`Get Touch State`
 für mehr Informationen über den Zustand.
 
-Dieser Callback wird ausgelöst wenn sich ein Tastzustand ändert.
+Dieser Callback wird ausgelöst, wenn sich ein Tastzustand ändert.
 """
 }]
 })

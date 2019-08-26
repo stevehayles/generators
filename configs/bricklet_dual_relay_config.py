@@ -24,6 +24,7 @@ com = {
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
@@ -166,7 +167,7 @@ parameter contain the relay (1 or 2) and the current state of the relay
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn ein Monoflop Timer abläuft (0 erreicht).
+Dieser Callback wird ausgelöst, wenn ein Monoflop Timer abläuft (0 erreicht).
 Die Parameter enthalten das auslösende Relais (1 oder 2) und den aktuellen Zustand
 des Relais (der Zustand nach dem Monoflop).
 """

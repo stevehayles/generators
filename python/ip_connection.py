@@ -535,6 +535,8 @@ class IPConnection(object):
         self.auto_reconnect = True
         self.auto_reconnect_allowed = False
         self.auto_reconnect_pending = False
+        self.auto_reconnect_internal = False
+        self.connect_failure_callback = None
         self.sequence_number_lock = threading.Lock()
         self.next_sequence_number = 0 # protected by sequence_number_lock
         self.authentication_lock = threading.Lock() # protects authentication handshake
@@ -619,7 +621,7 @@ class IPConnection(object):
         is not enabled at all on the Brick Daemon or the WIFI/Ethernet Extension.
 
         For more information about authentication see
-        http://www.tinkerforge.com/en/doc/Tutorials/Tutorial_Authentication/Tutorial.html
+        https://www.tinkerforge.com/en/doc/Tutorials/Tutorial_Authentication/Tutorial.html
         """
 
         secret_bytes = secret.encode('ascii')
@@ -787,16 +789,28 @@ class IPConnection(object):
                 tmp.settimeout(0.1)
             else:
                 tmp.settimeout(None)
-        except:
+        except Exception as e:
             def cleanup1():
-                # end callback thread
-                if not is_auto_reconnect:
-                    self.callback.queue.put((IPConnection.QUEUE_EXIT, None))
+                if self.auto_reconnect_internal:
+                    if not is_auto_reconnect and self.connect_failure_callback is not None:
+                        self.connect_failure_callback(e)
 
-                    if threading.current_thread() is not self.callback.thread:
-                        self.callback.thread.join()
+                    self.auto_reconnect_allowed = True
 
-                    self.callback = None
+                    # FIXME: don't misuse disconnected-callback here to trigger an auto-reconnect
+                    #        because not actual connection has been established yet
+                    self.callback.queue.put((IPConnection.QUEUE_META,
+                                             (IPConnection.CALLBACK_DISCONNECTED,
+                                              IPConnection.DISCONNECT_REASON_ERROR, None)))
+                else:
+                    # end callback thread
+                    if not is_auto_reconnect:
+                        self.callback.queue.put((IPConnection.QUEUE_EXIT, None))
+
+                        if threading.current_thread() is not self.callback.thread:
+                            self.callback.thread.join()
+
+                        self.callback = None
 
             cleanup1()
             raise
@@ -909,6 +923,10 @@ class IPConnection(object):
         # close socket
         self.socket.close()
         self.socket = None
+
+    def set_auto_reconnect_internal(self, auto_reconnect, connect_failure_callback):
+        self.auto_reconnect_internal = auto_reconnect
+        self.connect_failure_callback = connect_failure_callback
 
     def receive_loop(self, socket_id):
         if sys.hexversion < 0x03000000:

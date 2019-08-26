@@ -6,7 +6,7 @@
 
 # Linear Poti Bricklet communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
@@ -27,9 +27,12 @@ com = {
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
 
 com['packets'].append({
 'type': 'function',
@@ -118,7 +121,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Position` Callback ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Position` Callback wird nur ausgelöst wenn sich die Position seit der
+Der :cb:`Position` Callback wird nur ausgelöst, wenn sich die Position seit der
 letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -165,7 +168,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Analog Value` Callback ausgelöst
 wird. Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Analog Value` Callback wird nur ausgelöst wenn sich der Analogwert
+Der :cb:`Analog Value` Callback wird nur ausgelöst, wenn sich der Analogwert
 seit der letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -194,7 +197,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Position Callback Threshold',
-'elements': [('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min', 'uint16', 1, 'in'),
              ('Max', 'uint16', 1, 'in')],
 'since_firmware': [1, 0, 0],
@@ -228,10 +231,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn die Position *außerhalb* der min und max Werte ist"
- "'i'",    "Callback wird ausgelöst wenn die Position *innerhalb* der min und max Werte ist"
- "'<'",    "Callback wird ausgelöst wenn die Position kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn die Position größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn die Position *außerhalb* der min und max Werte ist"
+ "'i'",    "Callback wird ausgelöst, wenn die Position *innerhalb* der min und max Werte ist"
+ "'<'",    "Callback wird ausgelöst, wenn die Position kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn die Position größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0).
 """
@@ -241,7 +244,7 @@ Der Standardwert ist ('x', 0, 0).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Position Callback Threshold',
-'elements': [('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min', 'uint16', 1, 'out'),
              ('Max', 'uint16', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -261,7 +264,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Analog Value Callback Threshold',
-'elements': [('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min', 'uint16', 1, 'in'),
              ('Max', 'uint16', 1, 'in')],
 'since_firmware': [1, 0, 0],
@@ -295,10 +298,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn der Analogwert *außerhalb* der min und max Werte ist"
- "'i'",    "Callback wird ausgelöst wenn der Analogwert *innerhalb* der min und max Werte ist"
- "'<'",    "Callback wird ausgelöst wenn der Analogwert kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn der Analogwert größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn der Analogwert *außerhalb* der min und max Werte ist"
+ "'i'",    "Callback wird ausgelöst, wenn der Analogwert *innerhalb* der min und max Werte ist"
+ "'<'",    "Callback wird ausgelöst, wenn der Analogwert kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn der Analogwert größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0).
 """
@@ -308,7 +311,7 @@ Der Standardwert ist ('x', 0, 0).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Analog Value Callback Threshold',
-'elements': [('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min', 'uint16', 1, 'out'),
              ('Max', 'uint16', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -404,7 +407,7 @@ since the last triggering.
 Dieser Callback wird mit der Periode, wie gesetzt mit :func:`Set Position Callback Period`,
 ausgelöst. Der :word:`parameter` ist die Position des Linearpotentiometers.
 
-Der :cb:`Position` Callback wird nur ausgelöst wenn sich die Position seit der
+Der :cb:`Position` Callback wird nur ausgelöst, wenn sich die Position seit der
 letzten Auslösung geändert hat.
 """
 }]
@@ -430,7 +433,7 @@ since the last triggering.
 Dieser Callback wird mit der Periode, wie gesetzt mit :func:`Set Analog Value Callback Period`,
 ausgelöst. Der :word:`parameter` ist der Analogwert des Linearpotentiometers.
 
-Der :cb:`Analog Value` Callback wird nur ausgelöst wenn sich der Analogwert
+Der :cb:`Analog Value` Callback wird nur ausgelöst, wenn sich der Analogwert
 seit der letzten Auslösung geändert hat.
 """
 }]
@@ -453,7 +456,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Position Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist die Position des Linearpotentiometers.
 
@@ -480,7 +483,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Analog Value Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist der Analogwert des Linearpotentiometers.
 

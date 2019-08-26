@@ -6,7 +6,7 @@
 
 # Load Cell Bricklet communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
@@ -26,9 +26,27 @@ com = {
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
+
+com['constant_groups'].append({
+'name': 'Rate',
+'type': 'uint8',
+'constants': [('10Hz', 0),
+              ('80Hz', 1)]
+})
+
+com['constant_groups'].append({
+'name': 'Gain',
+'type': 'uint8',
+'constants': [('128x', 0),
+              ('64x', 1),
+              ('32x', 2)]
+})
 
 com['packets'].append({
 'type': 'function',
@@ -76,7 +94,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Weight` Callback ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Weight` Callback wird nur ausgelöst wenn sich das Gewicht seit der
+Der :cb:`Weight` Callback wird nur ausgelöst, wenn sich das Gewicht seit der
 letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -105,7 +123,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Weight Callback Threshold',
-'elements': [('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min', 'int32', 1, 'in'),
              ('Max', 'int32', 1, 'in')],
 'since_firmware': [1, 0, 0],
@@ -139,10 +157,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn das Gewicht *außerhalb* des min und max Wertes ist"
- "'i'",    "Callback wird ausgelöst wenn das Gewicht *innerhalb* des min und max Wertes ist"
- "'<'",    "Callback wird ausgelöst wenn das Gewicht kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn das Gewicht größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn das Gewicht *außerhalb* des min und max Wertes ist"
+ "'i'",    "Callback wird ausgelöst, wenn das Gewicht *innerhalb* des min und max Wertes ist"
+ "'<'",    "Callback wird ausgelöst, wenn das Gewicht kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn das Gewicht größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0).
 """
@@ -152,7 +170,7 @@ Der Standardwert ist ('x', 0, 0).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Weight Callback Threshold',
-'elements': [('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min', 'int32', 1, 'out'),
              ('Max', 'int32', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -384,11 +402,8 @@ Setzt das aktuell gemessene Gewicht als Leergewicht.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Configuration',
-'elements': [('Rate', 'uint8', 1, 'in', ('Rate', [('10Hz', 0),
-                                                  ('80Hz', 1)])),
-             ('Gain', 'uint8', 1, 'in', ('Gain', [('128x', 0),
-                                                  ('64x', 1),
-                                                  ('32x', 2)]))],
+'elements': [('Rate', 'uint8', 1, 'in', {'constant_group': 'Rate'}),
+             ('Gain', 'uint8', 1, 'in', {'constant_group': 'Gain'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -445,11 +460,8 @@ Die Standardwerte sind 10Hz für die Rate und 128x für den Gain.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Configuration',
-'elements': [('Rate', 'uint8', 1, 'out', ('Rate', [('10Hz', 0),
-                                                   ('80Hz', 1)])),
-             ('Gain', 'uint8', 1, 'out', ('Gain', [('128x', 0),
-                                                   ('64x', 1),
-                                                   ('32x', 2)]))],
+'elements': [('Rate', 'uint8', 1, 'out', {'constant_group': 'Rate'}),
+             ('Gain', 'uint8', 1, 'out', {'constant_group': 'Gain'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -483,7 +495,7 @@ last triggering.
 Dieser Callback wird mit der Periode, wie gesetzt mit :func:`Set Weight Callback Period`,
 ausgelöst. Der :word:`parameter` ist das Gewicht wie von der Wägezelle gemessen.
 
-Der :cb:`Weight` Callback wird nur ausgelöst wenn sich das Gewicht seit der
+Der :cb:`Weight` Callback wird nur ausgelöst, wenn sich das Gewicht seit der
 letzten Auslösung geändert hat.
 """
 }]
@@ -506,7 +518,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Weight Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist das Gewicht wie von der Wägezelle gemessen.
 

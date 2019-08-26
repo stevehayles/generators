@@ -19,12 +19,13 @@ com = {
         'de': 'HAT für Raspberry Pi Zero mit 4 Bricklet-Ports'
     },
     'released': True,
-    'documented': False,
+    'documented': True,
     'discontinued': False,
     'features': [
         'comcu_bricklet',
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
@@ -44,4 +45,9 @@ Returns the USB supply voltage of the Raspberry Pi in mV.
 Gibt die USB-Versorgungsspannung des Raspberry Pi in mV zurück.
 """
 }]
+})
+
+com['examples'].append({
+'name': 'Simple',
+'functions': [('getter', ('Get USB Voltage', 'voltage'), [(('Voltage', 'Voltage'), 'uint16', 1, 1000.0, 'V', None)], [])]
 })

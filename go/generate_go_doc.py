@@ -34,11 +34,13 @@ class GoDocDevice(go_common.GoDevice):
     def specialize_go_doc_function_links(self, text):
         def specializer(packet, high_level):
             if packet.get_type() == 'callback':
-                return ':go:func:`(*{0}) Register{1}Callback`'.format(packet.get_device().get_go_name(),
-                                                            packet.get_name(skip=-2 if high_level else 0).camel)
+                return ':go:func:`Register{1}Callback <(*{0}) Register{1}Callback>`' \
+                       .format(packet.get_device().get_go_name(),
+                               packet.get_name(skip=-2 if high_level else 0).camel)
             else:
-                return ':go:func:`(*{0}) {1}`'.format(packet.get_device().get_go_name(),
-                                                   packet.get_name(skip=-2 if high_level else 0).camel)
+                return ':go:func:`{1}() <(*{0}) {1}>`' \
+                       .format(packet.get_device().get_go_name(),
+                               packet.get_name(skip=-2 if high_level else 0).camel)
 
         return self.specialize_doc_rst_links(text, specializer, prefix='go')
 
@@ -70,18 +72,18 @@ class GoDocDevice(go_common.GoDevice):
     def get_go_callbacks(self):
         cb = {
         'en': """
-.. go:function:: func (*{device}) Register{callback_name_camel}Callback(func({result_type})) (registrationID uint64)
+.. go:function:: func (*{device}) Register{callback_name_camel}Callback(func({result_type})) (registrationId uint64)
 
  A callback can be registered for this event with the ``Register{callback_name_camel}Callback()`` function. This function returns the ID of the registered callback.
- An added callback can be removed with the ``Deregister{callback_name_camel}Callback(registrationID uint64)`` function.
+ An added callback can be removed with the ``Deregister{callback_name_camel}Callback(registrationId uint64)`` function.
 
 {desc}
 """,
             'de': """
-.. go:function:: func (*{device}) Register{callback_name_camel}Callback(func({result_type})) (registrationID uint64)
+.. go:function:: func (*{device}) Register{callback_name_camel}Callback(func({result_type})) (registrationId uint64)
 
  Ein Callback für dieses Event kann mit der Funktion ``Register{callback_name_camel}Callback()`` hinzugefügt werden. Diese gibt die ID des registrierten Callbacks zurück.
- Ein hinzugefügtes Callback kann mit der Funktion ``Deregister{callback_name_camel}Callback(registrationID uint64)`` wieder
+ Ein hinzugefügtes Callback kann mit der Funktion ``Deregister{callback_name_camel}Callback(registrationId uint64)`` wieder
  entfernt werden.
 
 {desc}
@@ -98,10 +100,10 @@ class GoDocDevice(go_common.GoDevice):
             else:
                 skip = 0
             cbs += common.select_lang(cb).format(device=device,
-                                                    callback_name_camel=packet.get_name(skip=skip).camel,
-                                                    callback_name_space=packet.get_name(skip=skip).space,
-                                                    result_type=result_type,
-                                                    desc=desc)
+                                                 callback_name_camel=packet.get_name(skip=skip).camel,
+                                                 callback_name_space=packet.get_name(skip=skip).space,
+                                                 result_type=result_type,
+                                                 desc=desc)
         return cbs
     def get_go_api(self):
         create_str = {
@@ -111,16 +113,16 @@ class GoDocDevice(go_common.GoDevice):
  Creates a new ``{bricklet_camel}`` object with the unique device ID ``uid`` and adds
  it to the IPConnection ``ipcon``:
 
- This device object can be used after the IP connection has been connected
+ This device object can be used after the IPConnection has been connected
  (see examples :ref:`above <{rst_ref_name}_go_examples>`).
 """,
             'de': """
 .. go:function:: func New{bricklet_camel}(uid string, ipcon *IPConnection) (device {bricklet_camel}, err error)
 
  Erzeugt ein neues ``{bricklet_camel}``-Objekt mit der eindeutigen Geräte ID ``uid`` und
- fügt es der IP-Connection ``ipcon`` hinzu:
+ fügt es der IPConnection ``ipcon`` hinzu:
 
- Dieses Geräteobjekt kann benutzt werden, nachdem die IP-Connection verbunden
+ Dieses Geräteobjekt kann benutzt werden, nachdem die IPConnection verbunden
  wurde (siehe Beispiele :ref:`oben <{rst_ref_name}_go_examples>`).
 """
         }
@@ -134,7 +136,7 @@ Callbacks
 
 Callbacks can be registered to receive
 time critical or recurring data from the device. The registration is done
-with the corresponding `Register*Callback` function, which returns a unique callback ID.
+with the corresponding ``Register*Callback`` function, which returns a unique callback ID.
 This ID can be used to deregister the callback later.
 
 .. note::
@@ -152,7 +154,7 @@ Callbacks
 
 Callbacks können registriert werden um zeitkritische
 oder wiederkehrende Daten vom Gerät zu erhalten. Die Registrierung kann
-mit der entsprechenden `Register*Callback`-Function durchgeführt werden,
+mit der entsprechenden ``Register*Callback``-Function durchgeführt werden,
 welche eine eindeutige Callback-ID zurück gibt. Mit dieser ID kann das Callback
 später deregistriert werden.
 
@@ -173,15 +175,15 @@ später deregistriert werden.
 API
 ---
 
-The {device_name_display}'s API is defined in the package ``github.com/Tinkerforge/go-api-bindings/{device_name_under}``
+The {device_name_display} API is defined in the package ``github.com/Tinkerforge/go-api-bindings/{device_name_under}``
 
 Nearly every function of the Go bindings can return an
-``BrickletError``, implementing the error interface. The error can have one of the following values:
+``DeviceError``, implementing the error interface. The error can have one of the following values:
 
-* BrickletErrorSuccess = 0
-* BrickletErrorInvalidParameter = 1
-* BrickletErrorFunctionNotSupported = 2
-* BrickletErrorUnknownError = 3
+* DeviceErrorSuccess = 0
+* DeviceErrorInvalidParameter = 1
+* DeviceErrorFunctionNotSupported = 2
+* DeviceErrorUnknownError = 3
 
 which correspond to the values returned from Bricks and Bricklets.
 
@@ -197,15 +199,15 @@ All functions listed below are thread-safe.
 API
 ---
 
-Die API des {device_name_display}s ist im Package ``github.com/Tinkerforge/go-api-bindings/{device_name_under}`` definiert.
+Die API des {device_name_display} ist im Package ``github.com/Tinkerforge/go-api-bindings/{device_name_under}`` definiert.
 
-Fast alle Funktionen der Go Bindings können einen ``BrickletError``, der das error-Interface implementiert,
+Fast alle Funktionen der Go Bindings können einen ``DeviceError``, der das error-Interface implementiert,
 zurückgeben. Dieser kann folgende Werte annehmen:
 
-* BrickletErrorSuccess = 0
-* BrickletErrorInvalidParameter = 1
-* BrickletErrorFunctionNotSupported = 2
-* BrickletErrorUnknownError = 3
+* DeviceErrorSuccess = 0
+* DeviceErrorInvalidParameter = 1
+* DeviceErrorFunctionNotSupported = 2
+* DeviceErrorUnknownError = 3
 
 welche den Werten entsprechen, die der Brick oder das Bricklet zurückgeben.
 
@@ -228,8 +230,9 @@ Constants
 
  This constant is used to identify a {device_name_display}.
 
- The :go:func:`(*{device_name_camel}) GetIdentity()` function and the :go:func:`(*IPConnection) RegisterEnumerateCallback()`
- callback of the IP Connection have a ``deviceIdentifier`` parameter to specify
+ The :go:func:`GetIdentity() <(*{device_name_camel}) GetIdentity>` function and
+ the :go:func:`(*IPConnection) RegisterEnumerateCallback`
+ callback of the IPConnection have a ``deviceIdentifier`` parameter to specify
  the Brick's or Bricklet's type.
 
 .. go:constant:: {device_name_under}.DeviceDisplayName
@@ -246,8 +249,9 @@ Konstanten
 
  Diese Konstante wird verwendet um {article} {device_name_display} zu identifizieren.
 
- Die :go:func:`(*{device_name_camel}) GetIdentity()` Funktion und der :go:func:`(*IPConnection) RegisterEnumerateCallback()`
- Callback der IP Connection haben ein ``deviceIdentifier`` Parameter um den Typ
+ Die :go:func:`GetIdentity() <(*{device_name_camel}) GetIdentity>` Funktion und
+ der :go:func:`(*IPConnection) RegisterEnumerateCallback`
+ Callback der IPConnection haben ein ``deviceIdentifier`` Parameter um den Typ
  des Bricks oder Bricklets anzugeben.
 
 .. go:constant:: {device_name_under}.DeviceDisplayName
@@ -279,7 +283,6 @@ Konstanten
         if self.is_brick():
             article = 'einen'
         api_str += common.select_lang(const_str).format(device_name_ref=self.get_doc_rst_ref_name(),
-                                                        #device_name_upper=self.get_name().upper,
                                                         device_name_camel=self.get_go_name(),
                                                         device_name_under=self.get_go_package(),
                                                         article=article,
@@ -289,7 +292,7 @@ Konstanten
                                               self.specialize_go_doc_function_links(common.select_lang(self.get_doc())),
                                               api_str,
                                               device_name_display=self.get_long_display_name(),
-                                              device_name_under = self.get_go_package())
+                                              device_name_under=self.get_go_package())
 
     def get_go_doc(self):
         docs_rs = {'en': 'Additional documentation can be found on `godoc.org <https://godoc.org/github.com/Tinkerforge/go-api-bindings/{device_name_under}>`_.\n',
@@ -297,7 +300,7 @@ Konstanten
 
         doc  = common.make_rst_header(self)
         doc += common.make_rst_summary(self)
-        doc += common.select_lang(docs_rs).format(device_name_under=self.get_name().under + "_" + self.get_category().under)
+        doc += common.select_lang(docs_rs).format(device_name_under=self.get_go_package())
         doc += self.get_go_examples()
         doc += self.get_go_api()
 

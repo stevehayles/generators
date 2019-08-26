@@ -69,7 +69,7 @@ extern "C" {
 #elif defined __GNUC__
 	#ifdef _WIN32
 		// workaround struct packing bug in GCC 4.7 on Windows
-		// http://gcc.gnu.org/bugzilla/show_bug.cgi?id=52991
+		// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=52991
 		#define ATTRIBUTE_PACKED __attribute__((gcc_struct, packed))
 	#else
 		#define ATTRIBUTE_PACKED __attribute__((packed))
@@ -121,7 +121,7 @@ typedef struct {
 		#endif
 		#if __GNUC_PREREQ(4, 6)
 			#define STATIC_ASSERT(condition, message) \
-				_Static_assert(condition, message)
+				_Static_assert(condition, message);
 		#else
 			#define STATIC_ASSERT(condition, message) // FIXME
 		#endif
@@ -129,13 +129,13 @@ typedef struct {
 		#define STATIC_ASSERT(condition, message) // FIXME
 	#endif
 
-	STATIC_ASSERT(sizeof(PacketHeader) == 8, "PacketHeader has invalid size");
-	STATIC_ASSERT(sizeof(Packet) == 80, "Packet has invalid size");
-	STATIC_ASSERT(sizeof(DeviceEnumerate_Broadcast) == 8, "DeviceEnumerate_Broadcast has invalid size");
-	STATIC_ASSERT(sizeof(DeviceEnumerate_Callback) == 34, "DeviceEnumerate_Callback has invalid size");
-	STATIC_ASSERT(sizeof(BrickDaemonGetAuthenticationNonce_Request) == 8, "BrickDaemonGetAuthenticationNonce_Request has invalid size");
-	STATIC_ASSERT(sizeof(BrickDaemonGetAuthenticationNonce_Response) == 12, "BrickDaemonGetAuthenticationNonce_Response has invalid size");
-	STATIC_ASSERT(sizeof(BrickDaemonAuthenticate_Request) == 32, "BrickDaemonAuthenticate_Request has invalid size");
+	STATIC_ASSERT(sizeof(PacketHeader) == 8, "PacketHeader has invalid size")
+	STATIC_ASSERT(sizeof(Packet) == 80, "Packet has invalid size")
+	STATIC_ASSERT(sizeof(DeviceEnumerate_Broadcast) == 8, "DeviceEnumerate_Broadcast has invalid size")
+	STATIC_ASSERT(sizeof(DeviceEnumerate_Callback) == 34, "DeviceEnumerate_Callback has invalid size")
+	STATIC_ASSERT(sizeof(BrickDaemonGetAuthenticationNonce_Request) == 8, "BrickDaemonGetAuthenticationNonce_Request has invalid size")
+	STATIC_ASSERT(sizeof(BrickDaemonGetAuthenticationNonce_Response) == 12, "BrickDaemonGetAuthenticationNonce_Response has invalid size")
+	STATIC_ASSERT(sizeof(BrickDaemonAuthenticate_Request) == 32, "BrickDaemonAuthenticate_Request has invalid size")
 #endif
 
 void millisleep(uint32_t msec) {
@@ -175,9 +175,9 @@ void millisleep(uint32_t msec) {
 #define SHA1_DIGEST_LENGTH 20
 
 typedef struct {
-    uint32_t state[5];
-    uint64_t count;
-    uint8_t buffer[SHA1_BLOCK_LENGTH];
+	uint32_t state[5];
+	uint64_t count;
+	uint8_t buffer[SHA1_BLOCK_LENGTH];
 } SHA1;
 
 #define rol(value, bits) (((value) << (bits)) | ((value) >> (32 - (bits))))
@@ -187,11 +187,11 @@ typedef struct {
 #define blk(i) (block[i&15] = rol(block[(i+13)&15]^block[(i+8)&15]^block[(i+2)&15]^block[i&15],1))
 
 // (R0+R1), R2, R3, R4 are the different operations (rounds) used in SHA1
-#define R0(v,w,x,y,z,i) z+=((w&(x^y))^y)+blk0(i)+0x5A827999+rol(v,5);w=rol(w,30);
-#define R1(v,w,x,y,z,i) z+=((w&(x^y))^y)+blk(i)+0x5A827999+rol(v,5);w=rol(w,30);
-#define R2(v,w,x,y,z,i) z+=(w^x^y)+blk(i)+0x6ED9EBA1+rol(v,5);w=rol(w,30);
-#define R3(v,w,x,y,z,i) z+=(((w|x)&y)|(w&x))+blk(i)+0x8F1BBCDC+rol(v,5);w=rol(w,30);
-#define R4(v,w,x,y,z,i) z+=(w^x^y)+blk(i)+0xCA62C1D6+rol(v,5);w=rol(w,30);
+#define R0(v,w,x,y,z,i) z+=((w&(x^y))^y)+blk0(i)+0x5A827999+rol(v,5);w=rol(w,30)
+#define R1(v,w,x,y,z,i) z+=((w&(x^y))^y)+blk(i)+0x5A827999+rol(v,5);w=rol(w,30)
+#define R2(v,w,x,y,z,i) z+=(w^x^y)+blk(i)+0x6ED9EBA1+rol(v,5);w=rol(w,30)
+#define R3(v,w,x,y,z,i) z+=(((w|x)&y)|(w&x))+blk(i)+0x8F1BBCDC+rol(v,5);w=rol(w,30)
+#define R4(v,w,x,y,z,i) z+=(w^x^y)+blk(i)+0xCA62C1D6+rol(v,5);w=rol(w,30)
 
 // hash a single 512-bit block. this is the core of the algorithm
 static uint32_t sha1_transform(SHA1 *sha1, const uint8_t buffer[SHA1_BLOCK_LENGTH]) {
@@ -391,8 +391,8 @@ static int read_uint32_non_blocking(const char *filename, uint32_t *value) {
 
 // this function is not meant to be called often,
 // this function is meant to provide a good random seed value
-uint32_t get_random_uint32(void) {
-	uint32_t r;
+static uint32_t get_random_uint32(void) {
+	uint32_t r = 0;
 	struct timeval tv;
 	uint32_t seconds;
 	uint32_t microseconds;
@@ -490,12 +490,13 @@ static void hmac_sha1(uint8_t *secret, int secret_length,
  *
  *****************************************************************************/
 
-#define BASE58_MAX_STR_SIZE 13
-
 static const char BASE58_ALPHABET[] = \
 	"123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
 
 #if 0
+
+#define BASE58_MAX_STR_SIZE 13
+
 static void base58_encode(uint64_t value, char *str) {
 	uint32_t mod;
 	char reverse_str[BASE58_MAX_STR_SIZE] = {'\0'};
@@ -519,6 +520,7 @@ static void base58_encode(uint64_t value, char *str) {
 		str[k] = '\0';
 	}
 }
+
 #endif
 
 // https://www.fefe.de/intof.html
@@ -1258,7 +1260,7 @@ void device_create(Device *device, const char *uid_str,
 
 	device_p->ref_count = 1;
 
-	device_p->uid = uid;
+	device_p->uid = (uint32_t)uid;
 
 	device_p->ipcon_p = ipcon_p;
 
@@ -1369,7 +1371,7 @@ int device_set_response_expected_all(DevicePrivate *device_p, bool response_expe
 }
 
 void device_register_callback(DevicePrivate *device_p, int16_t callback_id,
-                              void *function, void *user_data) {
+                              void (*function)(void), void *user_data) {
 	if (callback_id <= -DEVICE_NUM_FUNCTION_IDS || callback_id >= DEVICE_NUM_FUNCTION_IDS) {
 		return;
 	}
@@ -1569,7 +1571,7 @@ static void ipcon_dispatch_meta(IPConnectionPrivate *ipcon_p, Meta *meta) {
 
 	if (meta->function_id == IPCON_CALLBACK_CONNECTED) {
 		if (ipcon_p->registered_callbacks[IPCON_CALLBACK_CONNECTED] != NULL) {
-			*(void **)(&connected_callback_function) = ipcon_p->registered_callbacks[IPCON_CALLBACK_CONNECTED];
+			connected_callback_function = (ConnectedCallbackFunction)ipcon_p->registered_callbacks[IPCON_CALLBACK_CONNECTED];
 			user_data = ipcon_p->registered_callback_user_data[IPCON_CALLBACK_CONNECTED];
 
 			connected_callback_function(meta->parameter, user_data);
@@ -1604,7 +1606,7 @@ static void ipcon_dispatch_meta(IPConnectionPrivate *ipcon_p, Meta *meta) {
 		millisleep(100);
 
 		if (ipcon_p->registered_callbacks[IPCON_CALLBACK_DISCONNECTED] != NULL) {
-			*(void **)(&disconnected_callback_function) = ipcon_p->registered_callbacks[IPCON_CALLBACK_DISCONNECTED];
+			disconnected_callback_function = (DisconnectedCallbackFunction)ipcon_p->registered_callbacks[IPCON_CALLBACK_DISCONNECTED];
 			user_data = ipcon_p->registered_callback_user_data[IPCON_CALLBACK_DISCONNECTED];
 
 			disconnected_callback_function(meta->parameter, user_data);
@@ -1651,7 +1653,7 @@ static void ipcon_dispatch_packet(IPConnectionPrivate *ipcon_p, Packet *packet) 
 
 	if (packet->header.function_id == IPCON_CALLBACK_ENUMERATE) {
 		if (ipcon_p->registered_callbacks[IPCON_CALLBACK_ENUMERATE] != NULL) {
-			*(void **)(&enumerate_callback_function) = ipcon_p->registered_callbacks[IPCON_CALLBACK_ENUMERATE];
+			enumerate_callback_function = (EnumerateCallbackFunction)ipcon_p->registered_callbacks[IPCON_CALLBACK_ENUMERATE];
 			user_data = ipcon_p->registered_callback_user_data[IPCON_CALLBACK_ENUMERATE];
 			enumerate_callback = (DeviceEnumerate_Callback *)packet;
 
@@ -2376,7 +2378,7 @@ void ipcon_unwait(IPConnection *ipcon) {
 }
 
 void ipcon_register_callback(IPConnection *ipcon, int16_t callback_id,
-                             void *function, void *user_data) {
+                             void (*function)(void), void *user_data) {
 	IPConnectionPrivate *ipcon_p = ipcon->p;
 
 	if (callback_id <= -1 || callback_id >= IPCON_NUM_CALLBACK_IDS) {

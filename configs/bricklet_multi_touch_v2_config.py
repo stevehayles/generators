@@ -18,16 +18,26 @@ com = {
         'en': 'Capacitive touch sensor for 12 electrodes',
         'de': 'Kapazitiver Touch Sensor für 12 Elektroden'
     },
-    'released': False,
-    'documented': False,
+    'released': True,
+    'documented': True,
     'discontinued': False,
     'features': [
         'comcu_bricklet',
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append({
+'name': 'Touch LED Config',
+'type': 'uint8',
+'constants': [('Off', 0),
+              ('On', 1),
+              ('Show Heartbeat', 2),
+              ('Show Touch', 3)]
+})
 
 com['packets'].append({
 'type': 'function',
@@ -37,7 +47,7 @@ com['packets'].append({
 'doc': ['bf', {
 'en':
 """
-Returns the current touch state. The state is given as a array of 
+Returns the current touch state. The state is given as a array of
 bools.
 
 Element 0 to 11 represent the 12 electrodes and element 12 represents
@@ -52,6 +62,10 @@ is already counted as touched if a finger is nearly touching the
 electrode. This means that you can put a piece of paper or foil
 or similar on top of a electrode to build a touch panel with
 a professional look.
+
+If you want to get the value periodically, it is recommended to use the
+:cb:`Touch State` callback. You can set the callback configuration
+with :func:`Set Touch State Callback Configuration`.
 """,
 'de':
 """
@@ -70,6 +84,10 @@ Eine Elektrode wird schon als berührt gezählt wenn ein Finger sie
 beinahe berührt. Dadurch ist es möglich ein Stück Papier oder Folie
 über die Elektrode zu kleben um damit ein Touchpanel mit einem
 professionellen Aussehen zu bauen.
+
+Wenn der Wert periodisch benötigt wird, kann auch der :cb:`Touch State` Callback
+verwendet werden. Der Callback wird mit der Funktion
+:func:`Set Touch State Callback Configuration` konfiguriert.
 """
 }]
 })
@@ -152,7 +170,7 @@ a given period (see :func:`Set Touch State Callback Configuration`)
 Gibt den aktuellen Tastzustand zurück, siehe :func:`Get Touch State`
 für mehr Informationen über den Zustand.
 
-Dieser Callback wird ausgelöst wenn sich ein Tastzustand ändert mit
+Dieser Callback wird ausgelöst, wenn sich ein Tastzustand ändert mit
 der eingestellten Periode (siehe :func:`Set Touch State Callback Configuration`)
 """
 }]
@@ -303,10 +321,7 @@ Gibt die aktuelle Empfindlichkeit zurück, wie von
 com['packets'].append({
 'type': 'function',
 'name': 'Set Touch LED Config',
-'elements': [('Config', 'uint8', 1, 'in', ('Touch LED Config', [('Off', 0),
-                                                                ('On', 1),
-                                                                ('Show Heartbeat', 2),
-                                                                ('Show Touch', 3)]))],
+'elements': [('Config', 'uint8', 1, 'in', {'constant_group': 'Touch LED Config'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -320,7 +335,7 @@ The default value is 3 (show touch state).
 """
 Konfiguriert die Touch-LED. Die LED kann ausgeschaltet, eingeschaltet,
 im Herzschlagmodus betrieben werden. Zusätzlich gibt es die Option
-mit der LED den Touch-Zustand anzuzeigen (elektrode berührt = LED an).
+mit der LED den Touch-Zustand anzuzeigen (Elektrode berührt = LED an).
 
 Der Standardwert ist 3 (Touch-Zustand).
 """
@@ -330,10 +345,7 @@ Der Standardwert ist 3 (Touch-Zustand).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Touch LED Config',
-'elements': [('Config', 'uint8', 1, 'out', ('Touch LED Config', [('Off', 0),
-                                                                 ('On', 1),
-                                                                 ('Show Heartbeat', 2),
-                                                                 ('Show Touch', 3)]))],
+'elements': [('Config', 'uint8', 1, 'out', {'constant_group': 'Touch LED Config'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -349,11 +361,11 @@ Gibt die LED-Konfiguration zurück, wie von :func:`Set Touch LED Config` gesetzt
 
 com['examples'].append({
 'name': 'Simple',
-'functions': [('getter', ('Get Touch State', 'touch state'), [(('State', 'Touch State'), 'bool', 13, None, None, None)], [])],
+'functions': [('getter', ('Get Touch State', 'touch state'), [(('State', ['Electrode {}'.format(i) for i in range(0, 12)] + ['Proximity']), 'bool', 13, None, None, None)], [])],
 })
 
 com['examples'].append({
 'name': 'Callback',
-'functions': [('callback', ('Touch State', 'touch state'), [(('State', 'Touch State'), 'uint16', 1, None, None, None)], None, None),
+'functions': [('callback', ('Touch State', 'touch state'), [(('State', ['Electrode {}'.format(i) for i in range(0, 12)] + ['Proximity']), 'bool', 13, None, None, None)], None, None),
               ('callback_configuration', ('Touch State', 'touch state'), [], 10, True, None, [])],
 })

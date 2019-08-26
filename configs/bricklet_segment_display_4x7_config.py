@@ -24,6 +24,7 @@ com = {
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
@@ -175,7 +176,7 @@ finished.
 """,
 'de':
 """
-Diese Callback wird ausgelöst wenn der Zähler (siehe :func:`Start Counter`)
+Diese Callback wird ausgelöst, wenn der Zähler (siehe :func:`Start Counter`)
 fertig ist.
 """
 }]

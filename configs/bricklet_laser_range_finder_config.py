@@ -6,7 +6,7 @@
 
 # Laser Range Finder Bricklet communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
@@ -26,9 +26,29 @@ com = {
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
+
+com['constant_groups'].append({
+'name': 'Mode',
+'type': 'uint8',
+'constants': [('Distance', 0),
+              ('Velocity Max 13ms', 1),
+              ('Velocity Max 32ms', 2),
+              ('Velocity Max 64ms', 3),
+              ('Velocity Max 127ms', 4)]
+})
+
+com['constant_groups'].append({
+'name': 'Version',
+'type': 'uint8',
+'constants': [('1', 1),
+              ('3', 3)]
+})
 
 com['packets'].append({
 'type': 'function',
@@ -133,7 +153,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Distance` Callback ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Distance` Callback wird nur ausgelöst wenn sich der Entfernungswert
+Der :cb:`Distance` Callback wird nur ausgelöst, wenn sich der Entfernungswert
 seit der letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -180,7 +200,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Velocity` Callback ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Velocity` Callback wird nur ausgelöst wenn sich der
+Der :cb:`Velocity` Callback wird nur ausgelöst, wenn sich der
 Geschwindigkeitswert seit der letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -209,7 +229,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Distance Callback Threshold',
-'elements': [('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min', 'uint16', 1, 'in'),
              ('Max', 'uint16', 1, 'in')],
 'since_firmware': [1, 0, 0],
@@ -243,10 +263,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn der Entfernungswert *außerhalb* des min und max Wertes ist"
- "'i'",    "Callback wird ausgelöst wenn der Entfernungswert *innerhalb* des min und max Wertes ist"
- "'<'",    "Callback wird ausgelöst wenn der Entfernungswert kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn der Entfernungswert größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn der Entfernungswert *außerhalb* des min und max Wertes ist"
+ "'i'",    "Callback wird ausgelöst, wenn der Entfernungswert *innerhalb* des min und max Wertes ist"
+ "'<'",    "Callback wird ausgelöst, wenn der Entfernungswert kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn der Entfernungswert größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0).
 """
@@ -256,7 +276,7 @@ Der Standardwert ist ('x', 0, 0).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Distance Callback Threshold',
-'elements': [('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min', 'uint16', 1, 'out'),
              ('Max', 'uint16', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -276,7 +296,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Velocity Callback Threshold',
-'elements': [('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min', 'int16', 1, 'in'),
              ('Max', 'int16', 1, 'in')],
 'since_firmware': [1, 0, 0],
@@ -310,10 +330,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn der Geschwindigkeitswert *außerhalb* des min und max Wertes ist"
- "'i'",    "Callback wird ausgelöst wenn der Geschwindigkeitswert *innerhalb* des min und max Wertes ist"
- "'<'",    "Callback wird ausgelöst wenn der Geschwindigkeitswert kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn der Geschwindigkeitswert größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn der Geschwindigkeitswert *außerhalb* des min und max Wertes ist"
+ "'i'",    "Callback wird ausgelöst, wenn der Geschwindigkeitswert *innerhalb* des min und max Wertes ist"
+ "'<'",    "Callback wird ausgelöst, wenn der Geschwindigkeitswert kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn der Geschwindigkeitswert größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0).
 """
@@ -323,7 +343,7 @@ Der Standardwert ist ('x', 0, 0).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Velocity Callback Threshold',
-'elements': [('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min', 'int16', 1, 'out'),
              ('Max', 'int16', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -455,11 +475,7 @@ Gibt die Länge des gleitenden Mittelwerts zurück, wie von
 com['packets'].append({
 'type': 'function',
 'name': 'Set Mode',
-'elements': [('Mode', 'uint8', 1, 'in', ('Mode', [('Distance', 0),
-                                                  ('Velocity Max 13ms', 1),
-                                                  ('Velocity Max 32ms', 2),
-                                                  ('Velocity Max 64ms', 3),
-                                                  ('Velocity Max 127ms', 4)]))],
+'elements': [('Mode', 'uint8', 1, 'in', {'constant_group': 'Mode'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -511,11 +527,7 @@ Der Standardmodus ist 0 (Distanzmessung).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Mode',
-'elements': [('Mode', 'uint8', 1, 'out', ('Mode', [('Distance', 0),
-                                                   ('Velocity Max 13ms', 1),
-                                                   ('Velocity Max 32ms', 2),
-                                                   ('Velocity Max 64ms', 3),
-                                                   ('Velocity Max 127ms', 4)]))],
+'elements': [('Mode', 'uint8', 1, 'out', {'constant_group': 'Mode'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -606,7 +618,7 @@ since the last triggering.
 Dieser Callback wird mit der Periode, wie gesetzt mit :func:`Set Distance Callback Period`,
 ausgelöst. Der :word:`parameter` ist die Entfernungswert des Sensors.
 
-Der :cb:`Distance` Callback wird nur ausgelöst wenn sich der Entfernungswert
+Der :cb:`Distance` Callback wird nur ausgelöst, wenn sich der Entfernungswert
 seit der letzten Auslösung geändert hat.
 """
 }]
@@ -632,7 +644,7 @@ the last triggering.
 Dieser Callback wird mit der Periode, wie gesetzt mit :func:`Set Velocity Callback Period`,
 ausgelöst. Der :word:`parameter` ist die Geschwindigkeit des Sensors.
 
-Der :cb:`Velocity` Callback wird nur ausgelöst wenn sich der
+Der :cb:`Velocity` Callback wird nur ausgelöst, wenn sich der
 Geschwindigkeitswert seit der letzten Auslösung geändert hat.
 """
 }]
@@ -655,7 +667,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Distance Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist der Entfernungswert des Sensors.
 
@@ -682,7 +694,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Velocity Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist der Geschwindigkeitswert des Sensors.
 
@@ -695,8 +707,7 @@ mit :func:`Set Debounce Period` gesetzt, ausgelöst.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Sensor Hardware Version',
-'elements': [('Version', 'uint8', 1, 'out', ('Version', [('1', 1),
-                                                         ('3', 3)]))],
+'elements': [('Version', 'uint8', 1, 'out', {'constant_group': 'Version'})],
 'since_firmware': [2, 0, 3],
 'doc': ['af', {
 'en':
@@ -783,7 +794,7 @@ Der **Measurement Frequency** Parameter wird in Hz gesetzt. Er erzwingt eine fes
 Wenn der Wert auf 0 gesetzt wird, nutzt das Laser Range Finder Bricklet die optimale Frequenz je nach
 Konfiguration und aktuell gemessener Distanz. Da die Messrate in diesem Fall nicht fest ist, ist die
 Geschwindigkeitsmessung nicht stabil. Für eine stabile Geschwindigkeitsmessung sollte eine feste
-Messfrequenz eingestellt werden. Desto niedriger die Frequenz ist, desto größer ist die Auflösung
+Messfrequenz eingestellt werden. Je niedriger die Frequenz ist, desto größer ist die Auflösung
 der Geschwindigkeitsmessung. Der erlaubte Wertbereich ist 10Hz-500Hz (und 0 um die feste
 Messfrequenz auszustellen).
 

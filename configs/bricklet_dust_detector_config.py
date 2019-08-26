@@ -6,7 +6,7 @@
 
 # Dust Detector Bricklet communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
@@ -26,9 +26,12 @@ com = {
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
 
 com['packets'].append({
 'type': 'function',
@@ -76,7 +79,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Dust Density` Callback ausgelöst
 wird. Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Dust Density` Callback wird nur ausgelöst wenn sich die Staubdichte
+Der :cb:`Dust Density` Callback wird nur ausgelöst, wenn sich die Staubdichte
 seit der letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -105,7 +108,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Dust Density Callback Threshold',
-'elements': [('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min', 'uint16', 1, 'in'),
              ('Max', 'uint16', 1, 'in')],
 'since_firmware': [1, 0, 0],
@@ -139,10 +142,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn die Staubdichte *außerhalb* des min und max Wertes ist"
- "'i'",    "Callback wird ausgelöst wenn der Staubdichte *innerhalb* des min und max Wertes ist"
- "'<'",    "Callback wird ausgelöst wenn der Staubdichte kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn der Staubdichte größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn die Staubdichte *außerhalb* des min und max Wertes ist"
+ "'i'",    "Callback wird ausgelöst, wenn der Staubdichte *innerhalb* des min und max Wertes ist"
+ "'<'",    "Callback wird ausgelöst, wenn der Staubdichte kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn der Staubdichte größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0).
 """
@@ -152,7 +155,7 @@ Der Standardwert ist ('x', 0, 0).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Dust Density Callback Threshold',
-'elements': [('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min', 'uint16', 1, 'out'),
              ('Max', 'uint16', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -244,7 +247,7 @@ changed since the last triggering.
 Dieser Callback wird mit der Periode, wie gesetzt mit :func:`Set Dust Density Callback Period`,
 ausgelöst. Der :word:`parameter` ist die Staubdichte des Sensors.
 
-Der :cb:`Dust Density` Callback wird nur ausgelöst wenn sich die Staubdichte
+Der :cb:`Dust Density` Callback wird nur ausgelöst, wenn sich die Staubdichte
 seit der letzten Auslösung geändert hat.
 """
 }]
@@ -267,7 +270,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Dust Density Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist die Staubdichte des Sensors.
 

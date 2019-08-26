@@ -6,7 +6,7 @@
 
 # Sound Intensity Bricklet communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
@@ -26,9 +26,12 @@ com = {
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
 
 com['packets'].append({
 'type': 'function',
@@ -86,7 +89,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Intensity` Callback ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-The :cb:`Intensity` Callback wird nur ausgelöst wenn sich die Intensität seit
+The :cb:`Intensity` Callback wird nur ausgelöst, wenn sich die Intensität seit
 der letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -115,7 +118,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Intensity Callback Threshold',
-'elements': [('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min', 'uint16', 1, 'in'),
              ('Max', 'uint16', 1, 'in')],
 'since_firmware': [1, 0, 0],
@@ -149,10 +152,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn die Intensität *außerhalb* der min und max Werte ist"
- "'i'",    "Callback wird ausgelöst wenn die Intensität *innerhalb* der min und max Werte ist"
- "'<'",    "Callback wird ausgelöst wenn die Intensität kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn die Intensität größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn die Intensität *außerhalb* der min und max Werte ist"
+ "'i'",    "Callback wird ausgelöst, wenn die Intensität *innerhalb* der min und max Werte ist"
+ "'<'",    "Callback wird ausgelöst, wenn die Intensität kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn die Intensität größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0).
 """
@@ -162,7 +165,7 @@ Der Standardwert ist ('x', 0, 0).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Intensity Callback Threshold',
-'elements': [('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min', 'uint16', 1, 'out'),
              ('Max', 'uint16', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -254,7 +257,7 @@ since the last triggering.
 Dieser Callback wird mit der Periode, wie gesetzt mit :func:`Set Intensity Callback Period`,
 ausgelöst. Der :word:`parameter` ist gemessene Schallintensität.
 
-Der :cb:`Intensity` Callback wird nur ausgelöst wenn sich die Intensität seit
+Der :cb:`Intensity` Callback wird nur ausgelöst, wenn sich die Intensität seit
 der letzten Auslösung geändert hat.
 """
 }]
@@ -277,7 +280,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Intensity Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist die gemessene Schallintensität.
 

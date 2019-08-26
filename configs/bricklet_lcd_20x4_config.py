@@ -20,10 +20,11 @@ com = {
     },
     'released': True,
     'documented': True,
-    'discontinued': False,
+    'discontinued': False, # selling remaining stock, replaced by LCD 128x64 Bricklet
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
@@ -219,7 +220,7 @@ the number of the button (0 to 2 or 0 to 3 since hardware version 1.2).
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn eine Taste gedrückt wird. Der :word:`parameter`
+Dieser Callback wird ausgelöst, wenn eine Taste gedrückt wird. Der :word:`parameter`
 ist die Nummer der Taste (0 bis 2 oder 0 bis 3 seit Hardware Version 1.2).
 """
 }]
@@ -238,7 +239,7 @@ the number of the button (0 to 2 or 0 to 3 since hardware version 1.2).
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn eine Taste losgelassen wird. Der :word:`parameter`
+Dieser Callback wird ausgelöst, wenn eine Taste losgelassen wird. Der :word:`parameter`
 ist die Nummer der Taste (0 bis 2 oder 0 bis 3 seit Hardware Version 1.2).
 """
 }]

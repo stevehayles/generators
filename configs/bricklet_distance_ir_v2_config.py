@@ -6,7 +6,7 @@
 
 # Distance IR Bricklet 2.0 communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 from commonconstants import add_callback_value_function
 
 com = {
@@ -29,9 +29,29 @@ com = {
         'comcu_bricklet',
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
+
+com['constant_groups'].append({
+'name': 'Distance LED Config',
+'type': 'uint8',
+'constants': [('Off', 0),
+              ('On', 1),
+              ('Show Heartbeat', 2),
+              ('Show Distance', 3)]
+})
+
+com['constant_groups'].append({
+'name': 'Sensor Type',
+'type': 'uint8',
+'constants': [('2Y0A41', 0),
+              ('2Y0A21', 1),
+              ('2Y0A02', 2)]
+})
 
 distance_doc = {
 'en':
@@ -120,7 +140,7 @@ Setzt die Länge eines `gleitenden Mittelwerts <https://de.wikipedia.org/wiki/Gl
 für die Distanz.
 
 Wenn die Länge auf 1 gesetzt wird, ist die Mittelwertbildung deaktiviert.
-Desto kürzer die Länge des Mittelwerts ist, desto mehr Rauschen ist auf den Daten.
+Je kürzer die Länge des Mittelwerts ist, desto mehr Rauschen ist auf den Daten.
 
 Der Wertebereich liegt bei 1-1000.
 
@@ -153,10 +173,7 @@ Gibt die Moving Average-Konfiguration zurück, wie von :func:`Set Moving Average
 com['packets'].append({
 'type': 'function',
 'name': 'Set Distance LED Config',
-'elements': [('Config', 'uint8', 1, 'in', ('Distance LED Config', [('Off', 0),
-                                                                   ('On', 1),
-                                                                   ('Show Heartbeat', 2),
-                                                                   ('Show Distance', 3)]))],
+'elements': [('Config', 'uint8', 1, 'in', {'constant_group': 'Distance LED Config'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -180,10 +197,7 @@ Der Standardwert ist 3 (Distanzanzeige).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Distance LED Config',
-'elements': [('Config', 'uint8', 1, 'out', ('Distance LED Config', [('Off', 0),
-                                                                    ('On', 1),
-                                                                    ('Show Heartbeat', 2),
-                                                                    ('Show Distance', 3)]))],
+'elements': [('Config', 'uint8', 1, 'out', {'constant_group': 'Distance LED Config'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -200,9 +214,7 @@ Gibt die LED-Konfiguration zurück, wie von :func:`Set Distance LED Config` gese
 com['packets'].append({
 'type': 'function',
 'name': 'Set Sensor Type',
-'elements': [('Sensor', 'uint8', 1, 'in', ('Sensor Type', [('2Y0A41', 0),
-                                                           ('2Y0A21', 1),
-                                                           ('2Y0A02', 2)]))],
+'elements': [('Sensor', 'uint8', 1, 'in', {'constant_group': 'Sensor Type'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -233,9 +245,7 @@ sollte in einem externen Programm also nicht ausgeführt werden müssen.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Sensor Type',
-'elements': [('Sensor', 'uint8', 1, 'out', ('Sensor Type', [('2Y0A41', 0),
-                                                            ('2Y0A21', 1),
-                                                            ('2Y0A02', 2)]))],
+'elements': [('Sensor', 'uint8', 1, 'out', {'constant_group': 'Sensor Type'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':

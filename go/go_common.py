@@ -32,9 +32,15 @@ import common
 
 class GoDevice(common.Device):
     def get_go_name(self):
+        if self.is_tng():
+            return self.get_category().camel + self.get_name().camel
+
         return self.get_name().camel + self.get_category().camel
 
     def get_go_package(self):
+        if self.is_tng():
+            return self.get_category().under + "_" + self.get_name().under
+
         return self.get_name().under + "_" + self.get_category().under
 
     def specialize_go_doc_function_links(self, text):
@@ -43,10 +49,10 @@ class GoDevice(common.Device):
                 name = 'Register{0}Callback'.format(packet.get_name(skip=-2 if high_level else 0).camel)
             else:
                 name = packet.get_name(skip=-2 if high_level else 0).camel
-            result = name
-            return result
-        result_text = self.specialize_doc_rst_links(text, specializer)
-        return result_text
+
+            return name
+
+        return self.specialize_doc_rst_links(text, specializer)
 
 class GoPacket(common.Packet):
     def get_go_return_type(self, high_level=False):
@@ -58,7 +64,7 @@ class GoPacket(common.Packet):
                 written_elements = [elem for elem in self.get_elements(direction='out') if elem.get_level() == 'low' and elem.get_role() == 'stream_chunk_written']
 
                 if stream.has_short_write():
-                    returns.append("{} {}".format(written_elements[0].get_go_name(),"uint64"))
+                    returns.append("{} {}".format(written_elements[0].get_go_name(), "uint64"))
             elif self.get_high_level('stream_out') != None:
                 data = self.get_high_level('stream_out').get_data_element()
                 returns.insert(0, "{} []{}".format(data.get_go_name(), data.get_go_type(ignore_cardinality=True)))
@@ -86,8 +92,10 @@ class GoPacket(common.Packet):
 
     def get_return_type(self):
         returns = self.get_elements(direction='out')
+
         if len(returns) == 0:
             return "()"
+
         if len(returns) == 1:
             if self.has_high_level():
                 return self.get_go_type_name()
@@ -98,6 +106,7 @@ class GoPacket(common.Packet):
 
     def get_stream_info_return_type(self):
         returns = [elem for elem in self.get_elements(direction='out') if elem.get_level() == 'low']
+
         if len(returns) == 0:
             return "()"
         if len(returns) == 1:
@@ -113,7 +122,7 @@ class GoPacket(common.Packet):
 
         if self.get_name(skip).under.startswith('get_'):
             name = name[3:]
-        if self.get_name(skip).under.startswith('is_'):
+        elif self.get_name(skip).under.startswith('is_'):
             name = name[2:]
 
         return name
@@ -122,14 +131,15 @@ class GoPacket(common.Packet):
         filtered_returns = self.get_elements(direction='out') if not high_level_only else [ret for ret in self.get_elements(direction='out') if ret.get_level() != 'low']
         result = ["Clone"]
 
-        #String can be cloned, but not copied, so don't derive copy if the struct will contain strings
+        # String can be cloned, but not copied, so don't derive copy if the struct will contain strings
         if all("String" not in x.get_go_type() for x in filtered_returns):
             result.append("Copy")
 
-        #Arrays with more than 32 entries don't implement any traits except clone and copy
+        # Arrays with more than 32 entries don't implement any traits except clone and copy
         if all(x.get_cardinality() <= 32 for x in filtered_returns):
             result += ["Debug", "Default", "PartialEq"]
-            #Floats implement PartialEq only, as NaN != NaN
+
+            # Floats implement PartialEq only, as NaN != NaN
             if all("f" not in x.get_go_type() for x in filtered_returns):
                 result += ["Eq", "Hash"]
 
@@ -140,9 +150,7 @@ class GoPacket(common.Packet):
 
         # handle links
         text = text.replace(":ref:", "")
-
         text = re.sub("`([^<]+) <([^>]+)>`__", r"\g<2>", text)
-
 
         # handle tables
         lines = text.split('\n')
@@ -150,8 +158,10 @@ class GoPacket(common.Packet):
         in_table_head = False
         in_table_body = False
         col_count = 0
+
         for line in lines:
             line = line.replace('"', '')
+
             if line.strip() == '.. csv-table::':
                 in_table_head = True
             elif line.strip().startswith(':header: ') and in_table_head:
@@ -197,8 +207,10 @@ class GoElement(common.Element):
     def get_go_name(self):
         blacklist = ["break", "default", "func", "interface", "select", "case", "defer", "go", "map", "struct", "chan", "else", "goto", "package", "switch", "const", "fallthrough", "if", "range", "type", "continue", "for", "import", "return", "var"]
         name = self.get_name().headless
+
         if name in blacklist:
             return name + "_"
+
         return name
 
     def get_go_type(self, ignore_cardinality=False, ignore_constant_group=False):
@@ -210,8 +222,6 @@ class GoElement(common.Element):
             element_type = 'rune'
         elif self.get_type() == 'string':
             return 'string'
-        #elif self.get_type() in ('int8', 'int16', 'int32', 'int64', 'uint8', 'uint16', 'uint32', 'uint64'):
-        #    element_type = self.get_type()
         elif self.get_type() == 'bool':
             element_type = 'bool'
         elif self.get_type() == 'float':
@@ -225,6 +235,10 @@ class GoElement(common.Element):
             return "[]{}".format(element_type)
         else:
             return element_type
+
+class GoConstantGroup(common.ConstantGroup):
+    def get_go_type(self):
+        return get_go_type(self.get_type(), 1)
 
 go_types = {
     'int8':   'int8',

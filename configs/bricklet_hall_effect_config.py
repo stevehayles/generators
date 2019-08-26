@@ -24,9 +24,18 @@ com = {
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append({
+'name': 'Edge Type',
+'type': 'uint8',
+'constants': [('Rising', 0),
+              ('Falling', 1),
+              ('Both', 2)]
+})
 
 com['packets'].append({
 'type': 'function',
@@ -77,9 +86,7 @@ nach dem auslesen auf 0 zurückgesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Edge Count Config',
-'elements': [('Edge Type', 'uint8', 1, 'in', ('Edge Type', [('Rising', 0),
-                                                            ('Falling', 1),
-                                                            ('Both', 2)])),
+'elements': [('Edge Type', 'uint8', 1, 'in', {'constant_group': 'Edge Type'}),
              ('Debounce', 'uint8', 1, 'in')],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
@@ -136,9 +143,7 @@ Standardwerte: 0 (edge type) und 100ms (debounce).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Edge Count Config',
-'elements': [('Edge Type', 'uint8', 1, 'out', ('Edge Type', [('Rising', 0),
-                                                             ('Falling', 1),
-                                                             ('Both', 2)])),
+'elements': [('Edge Type', 'uint8', 1, 'out', {'constant_group': 'Edge Type'}),
              ('Debounce', 'uint8', 1, 'out')],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
@@ -223,7 +228,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Edge Count` Callback ausgelöst
 wird. Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Edge Count` Callback wird nur ausgelöst wenn sich die Flankenzählung
+Der :cb:`Edge Count` Callback wird nur ausgelöst, wenn sich die Flankenzählung
 seit der letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -297,7 +302,7 @@ Dieser Callback wird mit der Periode, wie gesetzt mit
 sind der aktuelle Zählerstand und der aktuelle Wert (siehe
 :func:`Get Value` and :func:`Get Edge Count`).
 
-Der :cb:`Edge Count` Callback wird nur ausgelöst wenn sich mindestens einer
+Der :cb:`Edge Count` Callback wird nur ausgelöst, wenn sich mindestens einer
 der beiden Werte seit der letzten Auslösung geändert hat.
 """
 }]

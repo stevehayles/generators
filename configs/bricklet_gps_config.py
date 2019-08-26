@@ -25,9 +25,27 @@ com = {
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append({
+'name': 'Fix',
+'type': 'uint8',
+'constants': [('No Fix', 1),
+              ('2D Fix', 2),
+              ('3D Fix', 3)]
+})
+
+com['constant_groups'].append({
+'name': 'Restart Type',
+'type': 'uint8',
+'constants': [('Hot Start', 0),
+              ('Warm Start', 1),
+              ('Cold Start', 2),
+              ('Factory Reset', 3)]
+})
 
 com['packets'].append({
 'type': 'function',
@@ -90,9 +108,7 @@ Diese Daten sind nur gültig wenn ein Fix vorhanden ist (siehe :func:`Get Status
 com['packets'].append({
 'type': 'function',
 'name': 'Get Status',
-'elements': [('Fix', 'uint8', 1, 'out', ('Fix', [('No Fix', 1),
-                                                 ('2D Fix', 2),
-                                                 ('3D Fix', 3)])),
+'elements': [('Fix', 'uint8', 1, 'out', {'constant_group': 'Fix'}),
              ('Satellites View', 'uint8', 1, 'out'),
              ('Satellites Used', 'uint8', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -225,10 +241,7 @@ Beispiel, 140713 bedeutet 14.05.13 als Datum und 195923568 bedeutet
 com['packets'].append({
 'type': 'function',
 'name': 'Restart',
-'elements': [('Restart Type', 'uint8', 1, 'in', ('Restart Type', [('Hot Start', 0),
-                                                                  ('Warm Start', 1),
-                                                                  ('Cold Start', 2),
-                                                                  ('Factory Reset', 3)]))],
+'elements': [('Restart Type', 'uint8', 1, 'in', {'constant_group': 'Restart Type'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -282,7 +295,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Coordinates` Callback ausgelöst
 wird. Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Coordinates` Callback wird nur ausgelöst wenn sich die Koordinaten
+Der :cb:`Coordinates` Callback wird nur ausgelöst, wenn sich die Koordinaten
 seit der letzten Auslösung geändert haben.
 
 Der Standardwert ist 0.
@@ -329,7 +342,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Status` Callback ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Status` Callback wird nur ausgelöst wenn sich der Status seit der
+Der :cb:`Status` Callback wird nur ausgelöst, wenn sich der Status seit der
 letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -376,7 +389,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Altitude` Callback ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Altitude` Callback wird nur ausgelöst wenn sich die Höhe seit der
+Der :cb:`Altitude` Callback wird nur ausgelöst, wenn sich die Höhe seit der
 letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -423,7 +436,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Motion` Callback ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Motion` Callback wird nur ausgelöst wenn sich die Bewegung seit der
+Der :cb:`Motion` Callback wird nur ausgelöst, wenn sich die Bewegung seit der
 letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -470,7 +483,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Date Time` Callback ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Date Time` Callback wird nur ausgelöst wenn sich das Datum oder die
+Der :cb:`Date Time` Callback wird nur ausgelöst, wenn sich das Datum oder die
 Zeit seit der letzten Auslösung geändert haben.
 
 Der Standardwert ist 0.
@@ -525,7 +538,7 @@ Dieser Callback wird mit der Periode, wie gesetzt mit
 :func:`Set Coordinates Callback Period`, ausgelöst. Die Parameter sind die
 gleichen wie die von :func:`Get Coordinates`.
 
-Der :cb:`Coordinates` Callback wird nur ausgelöst wenn sich die
+Der :cb:`Coordinates` Callback wird nur ausgelöst, wenn sich die
 Koordinaten seit der letzten Auslösung geändert haben und ein Fix vorhanden
 ist (siehe :func:`Get Status`).
 """
@@ -535,9 +548,7 @@ ist (siehe :func:`Get Status`).
 com['packets'].append({
 'type': 'callback',
 'name': 'Status',
-'elements': [('Fix', 'uint8', 1, 'out', ('Fix', [('No Fix', 1),
-                                                 ('2D Fix', 2),
-                                                 ('3D Fix', 3)])),
+'elements': [('Fix', 'uint8', 1, 'out', {'constant_group': 'Fix'}),
              ('Satellites View', 'uint8', 1, 'out'),
              ('Satellites Used', 'uint8', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -557,7 +568,7 @@ Dieser Callback wird mit der Periode, wie gesetzt mit
 :func:`Set Status Callback Period`, ausgelöst. Die Parameter sind die
 gleichen wie die von :func:`Get Status`.
 
-Der :cb:`Status` Callback wird nur ausgelöst wenn sich der
+Der :cb:`Status` Callback wird nur ausgelöst, wenn sich der
 Status seit der letzten Auslösung geändert hat.
 """
 }]
@@ -586,7 +597,7 @@ Dieser Callback wird mit der Periode, wie gesetzt mit
 :func:`Set Altitude Callback Period`, ausgelöst. Die Parameter sind die
 gleichen wie die von :func:`Get Altitude`.
 
-Der :cb:`Altitude` Callback wird nur ausgelöst wenn sich die
+Der :cb:`Altitude` Callback wird nur ausgelöst, wenn sich die
 Höhe seit der letzten Auslösung geändert hat und ein Fix vorhanden
 ist (siehe :func:`Get Status`).
 """
@@ -616,7 +627,7 @@ Dieser Callback wird mit der Periode, wie gesetzt mit
 :func:`Set Motion Callback Period`, ausgelöst. Die Parameter sind die
 gleichen wie die von :func:`Get Motion`.
 
-Der :cb:`Motion` Callback wird nur ausgelöst wenn sich die
+Der :cb:`Motion` Callback wird nur ausgelöst, wenn sich die
 Bewegung seit der letzten Auslösung geändert hat und ein Fix vorhanden
 ist (siehe :func:`Get Status`).
 """
@@ -645,7 +656,7 @@ Dieser Callback wird mit der Periode, wie gesetzt mit
 :func:`Set Date Time Callback Period`, ausgelöst. Die Parameter sind die
 gleichen wie die von :func:`Get Date Time`.
 
-Der :cb:`Date Time` Callback wird nur ausgelöst wenn sich das Datum oder die
+Der :cb:`Date Time` Callback wird nur ausgelöst, wenn sich das Datum oder die
 Zeit seit der letzten Auslösung geändert haben.
 """
 }]

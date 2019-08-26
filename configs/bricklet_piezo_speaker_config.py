@@ -24,15 +24,22 @@ com = {
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
 
+com['constant_groups'].append({
+'name': 'Beep Duration',
+'type': 'uint32',
+'constants': [('Off', 0),
+              ('Infinite', 4294967295)]
+})
+
 com['packets'].append({
 'type': 'function',
 'name': 'Beep',
-'elements': [('Duration', 'uint32', 1, 'in', ('Beep Duration', [('Off', 0),
-                                                                ('Infinite', 4294967295)])),
+'elements': [('Duration', 'uint32', 1, 'in', {'constant_group': 'Beep Duration'}),
              ('Frequency', 'uint16', 1, 'in')],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
@@ -156,7 +163,7 @@ This callback is triggered if a beep set by :func:`Beep` is finished
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn ein Piepton, wie von :func:`Beep` gesetzt,
+Dieser Callback wird ausgelöst, wenn ein Piepton, wie von :func:`Beep` gesetzt,
 beendet wurde.
 """
 }]
@@ -175,7 +182,7 @@ This callback is triggered if the playback of the morse code set by
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn die Wiedergabe des Morsecodes, wie von
+Dieser Callback wird ausgelöst, wenn die Wiedergabe des Morsecodes, wie von
 :func:`Morse Code` gesetzt, beendet wurde.
 """
 }]

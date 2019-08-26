@@ -18,7 +18,7 @@
 2019-03-11: 2.0.4 (b6f211c)
 - Don't try to translate lists
 
-2019-05-21: 2.0.5 (<unknown>)
+2019-05-21: 2.0.5 (a3d0573)
 - Add support for CO2 2.0, E-Paper 296x128, Hall Effect 2.0, Joystick 2.0,
   Laser Range Finder 2.0, Linear Poti 2.0, Piezo Speaker 2.0, RGB LED 2.0 and
   Segment Display 4x7 2.0 Bricklet and HAT and HAT Zero Brick
@@ -26,3 +26,12 @@
   to Air Quality Bricklet API
 - Properly check UIDs and report invalid UIDs
 - Add -v/--version parameter
+
+2019-06-11: 2.0.6 (6ec2351)
+- Fix JSON parsing in Python < 3.6
+
+2019-08-23: 2.0.7 (<unknown>)
+- Add support for Color 2.0, Compass, Distance US 2.0, Energy Monitor,
+  Multi Touch 2.0, Rotary Poti 2.0 and XMC1400 Breakout Bricklet
+- Add get/set_filter_configuration functions to Accelerometer Bricklet 2.0 API
+- Add conversion_time symbols to Voltage/Current Bricklet 2.0 API

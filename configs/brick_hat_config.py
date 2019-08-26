@@ -19,12 +19,13 @@ com = {
         'de': 'HAT für Raspberry Pi mit 8 Bricklet-Ports und Echtzeituhr'
     },
     'released': True,
-    'documented': False,
+    'documented': True,
     'discontinued': False,
     'features': [
         'comcu_bricklet',
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
@@ -43,17 +44,21 @@ com['packets'].append({
 """
 Sets the sleep mode.
 
+.. note::
+ Calling this function will cut the Raspberry Pi's power after Power Off Delay seconds.
+ You have to shut down the Operating System yourself, e.g. by calling 'sudo shutdown -h now'.
+
 Parameters:
 
-* Power Off Delay: Time before the RPi/Bricklets are powered off in seconds.
-* Power Off Duration: Duration that the RPi/Bricklets stay powered off in seconds.
-* Raspberry Pi Off: RPi if powereed off if set to true.
+* Power Off Delay: Time in seconds before the RPi/Bricklets are powered off.
+* Power Off Duration: Duration in seconds that the RPi/Bricklets stay powered off.
+* Raspberry Pi Off: RPi is powered off if set to true.
 * Bricklets Off: Bricklets are powered off if set to true.
 * Enable Sleep Indicator: If set to true, the status LED will blink in a 1s interval
-  during the whole power off duration. This will draw an additional 0.3mA.
+  during the whole power off duration. This will draw additional 0.3mA.
 
 Example: To turn RPi and Bricklets off in 5 seconds for 10 minutes with sleep
-indicator enabled call (5, 60*10, true, true, true).
+indicator enabled, call (5, 60*10, true, true, true).
 
 This function can also be used to implement a watchdog. To do this you can
 write a program that calls this function once per second in a loop with
@@ -64,11 +69,16 @@ the HAT will reset the RPi after 10 seconds.
 """
 Setzt den Schlaf-Modus.
 
+.. note::
+ Diese Funktion schaltet die Stromversorgung des Raspberry Pis nach Power Off Delay Sekunden ab.
+ Das Betriebssystem muss manuell heruntergefahren werden, zum Beispiel durch Ausführen von
+ 'sudo shutdown -h now'.
+
 Parameter:
 
-* Power Off Delay: Zeit bis der RPi/die Bricklets ausgeschaltet werden in Sekunden.
-* Power Off Duration: Dauer für die der RPi/die Bricklets ausgeschaltet bleiben in Sekunden.
-* Raspberry Pi Off: RPi wird ausgeschaltet falls auf *true* gesetzt.
+* Power Off Delay: Zeit in Sekunden bis der RPi/die Bricklets ausgeschaltet werden.
+* Power Off Duration: Dauer in Sekunden für die der RPi/die Bricklets ausgeschaltet bleiben.
+* Raspberry Pi Off: RPi wird ausgeschaltet, falls auf *true* gesetzt.
 * Bricklets Off: Bricklets werden ausgeschaltet falls auf *true* gesetzt.
 * Enable Sleep Indicator: Wenn dieser Parameter auf *true* gesetzt wird, blinkt
   die Status LED während der Schlafdauer mit einem Intervall von 1s. Dies verbraucht
@@ -78,9 +88,9 @@ Beispiel: Um den RPi und die Bricklets in 5 Sekunden für 10 Minuten mit aktivie
 Indicator-LED auszuschalten, rufe (5, 60*10, *true*, *true*, *true*) auf.
 
 Diese Funktion kann auch genutzt werden um einen Watchdog zu implementieren. Dazu
-kann ein Programm geschrieben werden welches in einer Schleife einmal pro Sekunde folgendes
+kann ein Programm geschrieben werden, welches in einer Schleife einmal pro Sekunde folgendes
 aufruft: (10, 2, *true*, *false*, *false*). Dies führt dazu, dass das HAT
-den RPi nach 10 Sekunden neustartet wenn dieser abgestürzt oder stecken geblieben ist.
+den RPi nach 10 Sekunden neustartet, wenn dieser abgestürzt oder stecken geblieben ist.
 """
 }]
 })
@@ -188,4 +198,14 @@ Es gibt drei mögliche Kombinationen:
   USB-Spannung fällt).
 """
 }]
+})
+
+com['examples'].append({
+'name': 'Sleep',
+'functions': [('setter', 'Set Sleep Mode', [('uint32', 2), ('uint32', 60*30), ('bool', True), ('bool', True), ('bool', True)], 'Turn Raspberry Pi and Bricklets off in 2 seconds for 30 minutes with sleep indicator enabled', None)]
+})
+
+com['examples'].append({
+'name': 'Print Voltages',
+'functions': [('getter', ('Get Voltages', 'get voltages'), [(('Voltage USB', 'Voltage USB'), 'uint16', 1, 1000.0, 'V', None), (('Voltage DC', 'Voltage DC'), 'uint16', 1, 1000.0, 'V', None)], [])]
 })

@@ -25,11 +25,73 @@ com = {
         'comcu_bricklet',
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
 
-COLOR = ('Color', [('White', False), ('Black', True)])
+com['constant_groups'].append({
+'name': 'Gesture',
+'type': 'uint8',
+'constants': [('Left To Right', 0),
+              ('Right To Left', 1),
+              ('Top To Bottom', 2),
+              ('Bottom To Top', 3)]
+})
+
+com['constant_groups'].append({
+'name': 'Color',
+'type': 'bool',
+'constants': [('White', False),
+              ('Black', True)]
+})
+
+com['constant_groups'].append({
+'name': 'Font',
+'type': 'uint8',
+'constants': [('6x8', 0),
+              ('6x16', 1),
+              ('6x24', 2),
+              ('6x32', 3),
+              ('12x16', 4),
+              ('12x24', 5),
+              ('12x32', 6),
+              ('18x24', 7),
+              ('18x32', 8),
+              ('24x32', 9)]
+})
+
+com['constant_groups'].append({
+'name': 'Direction',
+'type': 'uint8',
+'constants': [('Horizontal', 0),
+              ('Vertical', 1)]
+})
+
+com['constant_groups'].append({
+'name': 'Change Tab On',
+'type': 'uint8',
+'constants': [('Click', 1),
+              ('Swipe', 2),
+              ('Click And Swipe', 3)]
+})
+
+com['constant_groups'].append({
+'name': 'Graph Type',
+'type': 'uint8',
+'constants': [('Dot',  0),
+              ('Line', 1),
+              ('Bar',  2)]
+})
+
+com['constant_groups'].append({
+'name': 'Touch LED Config',
+'type': 'uint8',
+'constants': [('Off', 0),
+              ('On', 1),
+              ('Show Heartbeat', 2),
+              ('Show Touch', 3)]
+})
 
 com['packets'].append({
 'type': 'function',
@@ -146,10 +208,31 @@ com['packets'].append({
 'en':
 """
 Clears the complete content of the display.
+
+If automatic draw is enabled (default) the pixels are directly cleared.
+
+If automatic draw is disabled the the internal buffer is cleared and
+the buffer is transferred to the display only after :func:`Draw Buffered Frame`
+is called. This can be used to avoid flicker when drawing a complex frame in
+multiple steps.
+
+Automatic draw can be configured with the :func:`Set Display Configuration`
+function.
 """,
 'de':
 """
 Löscht den kompletten aktuellen Inhalt des Displays.
+
+Wenn Automatic Draw aktiviert ist (Standard), dann werden die Pixel direkt
+gelöscht.
+
+Wenn Automatic Draw deaktiviert ist, dann werden die Pixel im internen
+Buffer gelöscht der dann durch einen Aufruf von :func:`Draw Buffered Frame`
+auf dem Display angezeigt werden kann. Dadurch kann Flicker vermieden werden,
+wenn ein komplexes Bild in mehreren Schritten aufgebaut wird.
+
+Automatic Draw kann über die :func:`Set Display Configuration` Funktion
+eingestellt werden.
 """
 }]
 })
@@ -237,6 +320,18 @@ second line of the display.
 The display uses a special 5x7 pixel charset. You can view the characters
 of the charset in Brick Viewer.
 
+If automatic draw is enabled (default) the text is directly written to
+the screen. Only pixels that have actually changed are updated on the screen,
+the rest stays the same.
+
+If automatic draw is disabled the text is written to an internal buffer and
+the buffer is transferred to the display only after :func:`Draw Buffered Frame`
+is called. This can be used to avoid flicker when drawing a complex frame in
+multiple steps.
+
+Automatic draw can be configured with the :func:`Set Display Configuration`
+function.
+
 This function is a 1:1 replacement for the function with the same name
 in the LCD 20x4 Bricklet. You can draw text at a specific pixel position
 and with different font sizes with the :func:`Draw Text` function.
@@ -251,6 +346,18 @@ des Displays.
 
 Das Display nutzt einen speziellen 5x7 Pixel Zeichensatz. Der Zeichensatz
 kann mit Hilfe von Brick Viewer angezeigt werden.
+
+Wenn Automatic Draw aktiviert ist (Standard), dann wird der Text direkt auf
+den Display geschrieben. Nur Pixel die sich wirklich verändert haben werden
+auf dem Display aktualisiert.
+
+Wenn Automatic Draw deaktiviert ist, dann wird der Text in einen internen
+Buffer geschrieben der dann durch einen Aufruf von :func:`Draw Buffered Frame`
+auf dem Display angezeigt werden kann. Dadurch kann Flicker vermieden werden,
+wenn ein komplexes Bild in mehreren Schritten aufgebaut wird.
+
+Automatic Draw kann über die :func:`Set Display Configuration` Funktion
+eingestellt werden.
 
 Diese Funktion ist ein 1:1-Ersatz für die Funktion mit dem gleichen Namen
 im LCD 20x4 Bricklet. Mit der Funktion :func:`Draw Text` kann Text Pixelgenau
@@ -410,10 +517,7 @@ die gleichen wie die von :func:`Get Touch Position`.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Touch Gesture',
-'elements': [('Gesture', 'uint8', 1, 'out', ('Gesture', [('Left To Right', 0),
-                                                         ('Right To Left', 1),
-                                                         ('Top To Bottom', 2),
-                                                         ('Bottom To Top', 3)])),
+'elements': [('Gesture', 'uint8', 1, 'out', {'constant_group': 'Gesture'}),
              ('Duration', 'uint32', 1, 'out'),
              ('Pressure Max', 'uint16', 1, 'out'),
              ('X Start', 'uint16', 1, 'out'),
@@ -515,10 +619,7 @@ Gibt die Callback-Konfiguration zurück, wie mittels
 com['packets'].append({
 'type': 'callback',
 'name': 'Touch Gesture',
-'elements': [('Gesture', 'uint8', 1, 'out',  ('Gesture', [('Left To Right', 0),
-                                                          ('Right To Left', 1),
-                                                          ('Top To Bottom', 2),
-                                                          ('Bottom To Top', 3)])),
+'elements': [('Gesture', 'uint8', 1, 'out', {'constant_group': 'Gesture'}),
              ('Duration', 'uint32', 1, 'out'),
              ('Pressure Max', 'uint16', 1, 'out'),
              ('X Start', 'uint16', 1, 'out'),
@@ -550,7 +651,7 @@ com['packets'].append({
              ('Position Y Start', 'uint8', 1, 'in'),
              ('Position X End', 'uint8', 1, 'in'),
              ('Position Y End', 'uint8', 1, 'in'),
-             ('Color', 'bool', 1, 'in', COLOR)],
+             ('Color', 'bool', 1, 'in', {'constant_group': 'Color'})],
 'since_firmware': [2, 0, 2],
 'doc': ['bf', {
 'en':
@@ -576,7 +677,7 @@ com['packets'].append({
              ('Position X End', 'uint8', 1, 'in'),
              ('Position Y End', 'uint8', 1, 'in'),
              ('Fill', 'bool', 1, 'in'),
-             ('Color', 'bool', 1, 'in', COLOR)],
+             ('Color', 'bool', 1, 'in', {'constant_group': 'Color'})],
 'since_firmware': [2, 0, 2],
 'doc': ['bf', {
 'en':
@@ -606,17 +707,8 @@ com['packets'].append({
 'name': 'Draw Text',
 'elements': [('Position X', 'uint8', 1, 'in'),
              ('Position Y', 'uint8', 1, 'in'),
-             ('Font', 'uint8', 1, 'in',  ('Font', [('6x8', 0),
-                                                   ('6x16', 1),
-                                                   ('6x24', 2),
-                                                   ('6x32', 3),
-                                                   ('12x16', 4),
-                                                   ('12x24', 5),
-                                                   ('12x32', 6),
-                                                   ('18x24', 7),
-                                                   ('18x32', 8),
-                                                   ('24x32', 9)])),
-             ('Color', 'bool', 1, 'in', COLOR),
+             ('Font', 'uint8', 1, 'in', {'constant_group': 'Font'}),
+             ('Color', 'bool', 1, 'in', {'constant_group': 'Color'}),
              ('Text', 'string', 22, 'in')],
 'since_firmware': [2, 0, 2],
 'doc': ['bf', {
@@ -864,8 +956,7 @@ com['packets'].append({
              ('Position X', 'uint8', 1, 'in'),
              ('Position Y', 'uint8', 1, 'in'),
              ('Length', 'uint8', 1, 'in'),
-             ('Direction', 'uint8', 1, 'in', ('Direction', [('Horizontal', 0),
-                                                            ('Vertical', 1)])),
+             ('Direction', 'uint8', 1, 'in', {'constant_group': 'Direction'}),
              ('Value', 'uint8', 1, 'in')],
 'since_firmware': [2, 0, 2],
 'doc': ['bf', {
@@ -933,8 +1024,7 @@ com['packets'].append({
              ('Position X', 'uint8', 1, 'out'),
              ('Position Y', 'uint8', 1, 'out'),
              ('Length', 'uint8', 1, 'out'),
-             ('Direction', 'uint8', 1, 'out', ('Direction', [('Horizontal', 0),
-                                                             ('Vertical', 1)])),
+             ('Direction', 'uint8', 1, 'out', {'constant_group': 'Direction'}),
              ('Value', 'uint8', 1, 'out')],
 'since_firmware': [2, 0, 2],
 'doc': ['bf', {
@@ -1079,9 +1169,7 @@ die gleichen wie die von :func:`Get GUI Slider Value`.
 com['packets'].append({
 'type': 'function',
 'name': 'Set GUI Tab Configuration',
-'elements': [('Change Tab Config', 'uint8', 1, 'in', ('Change Tab On', [('Click', 1),
-                                                                        ('Swipe', 2),
-                                                                        ('Click And Swipe', 3)])),
+'elements': [('Change Tab Config', 'uint8', 1, 'in', {'constant_group': 'Change Tab On'}),
              ('Clear GUI', 'bool', 1, 'in')],
 'since_firmware': [2, 0, 2],
 'doc': ['bf', {
@@ -1113,9 +1201,7 @@ aktiviert.
 com['packets'].append({
 'type': 'function',
 'name': 'Get GUI Tab Configuration',
-'elements': [('Change Tab Config', 'uint8', 1, 'out', ('Change Tab On', [('Click', 1),
-                                                                         ('Swipe', 2),
-                                                                         ('Click And Swipe', 3)])),
+'elements': [('Change Tab Config', 'uint8', 1, 'out', {'constant_group': 'Change Tab On'}),
              ('Clear GUI', 'bool', 1, 'out')],
 'since_firmware': [2, 0, 2],
 'doc': ['bf', {
@@ -1380,9 +1466,7 @@ com['packets'].append({
 'type': 'function',
 'name': 'Set GUI Graph Configuration',
 'elements': [('Index', 'uint8', 1, 'in'),
-             ('Graph Type', 'uint8', 1, 'in', ('Graph Type', [('Dot',  0),
-                                                              ('Line', 1),
-                                                              ('Bar',  2)])),
+             ('Graph Type', 'uint8', 1, 'in', {'constant_group': 'Graph Type'}),
              ('Position X', 'uint8', 1, 'in'),
              ('Position Y', 'uint8', 1, 'in'),
              ('Width', 'uint8', 1, 'in'),
@@ -1445,9 +1529,7 @@ com['packets'].append({
 'name': 'Get GUI Graph Configuration',
 'elements': [('Index', 'uint8', 1, 'in'),
              ('Active', 'bool', 1, 'out'),
-             ('Graph Type', 'uint8', 1, 'out', ('Graph Type', [('Dot',  0),
-                                                               ('Line', 1),
-                                                               ('Bar',  2)])),
+             ('Graph Type', 'uint8', 1, 'out', {'constant_group': 'Graph Type'}),
              ('Position X', 'uint8', 1, 'out'),
              ('Position Y', 'uint8', 1, 'out'),
              ('Width', 'uint8', 1, 'out'),
@@ -1581,10 +1663,7 @@ Entfernt alle GUI-Elemente (Buttons, Slider, Graphen, Tabs).
 com['packets'].append({
 'type': 'function',
 'name': 'Set Touch LED Config',
-'elements': [('Config', 'uint8', 1, 'in', ('Touch LED Config', [('Off', 0),
-                                                                ('On', 1),
-                                                                ('Show Heartbeat', 2),
-                                                                ('Show Touch', 3)]))],
+'elements': [('Config', 'uint8', 1, 'in', {'constant_group': 'Touch LED Config'})],
 'since_firmware': [2, 0, 2],
 'doc': ['af', {
 'en':
@@ -1611,10 +1690,7 @@ Wenn das Bricklet sich im Bootlodermodus befindet ist die LED aus.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Touch LED Config',
-'elements': [('Config', 'uint8', 1, 'out', ('Touch LED Config', [('Off', 0),
-                                                                 ('On', 1),
-                                                                 ('Show Heartbeat', 2),
-                                                                 ('Show Touch', 3)]))],
+'elements': [('Config', 'uint8', 1, 'out', {'constant_group': 'Touch LED Config'})],
 'since_firmware': [2, 0, 2],
 'doc': ['af', {
 'en':
@@ -1650,9 +1726,9 @@ com['examples'].append({
 
 com['examples'].append({
 'name': 'GUI',
-'functions': [('callback', ('GUI Button Pressed', 'gui button pressed'), [(('Index', 'Index'), 'uint8', 1, None, None, None), (('Pressed', 'Pressed'), 'bool', 1, None, None, None)], None, None),
-              ('callback', ('GUI Slider Value', 'gui slider value'), [(('Index', 'Index'), 'uint8', 1, None, None, None), (('Value', 'Value'), 'uint8', 1, None, None, None)], None, None),
-              ('callback', ('GUI Tab Selected', 'gui tab selected'), [(('Index', 'Index'), 'int8', 1, None, None, None)], None, None),
+'functions': [('callback', ('GUI Button Pressed', 'GUI button pressed'), [(('Index', 'Index'), 'uint8', 1, None, None, None), (('Pressed', 'Pressed'), 'bool', 1, None, None, None)], None, None),
+              ('callback', ('GUI Slider Value', 'GUI slider value'), [(('Index', 'Index'), 'uint8', 1, None, None, None), (('Value', 'Value'), 'uint8', 1, None, None, None)], None, None),
+              ('callback', ('GUI Tab Selected', 'GUI tab selected'), [(('Index', 'Index'), 'int8', 1, None, None, None)], None, None),
 
               ('setter', 'Clear Display', [], 'Clear display', None),
               ('setter', 'Remove All GUI', [], None, None),
@@ -1669,10 +1745,9 @@ com['examples'].append({
               ('setter', 'Set GUI Tab Text', [('uint8', 3), ('string', 'Tab D')], None, None),
               ('setter', 'Set GUI Tab Text', [('uint8', 4), ('string', 'Tab E')], None, None),
 
-              ('callback_configuration', ('GUI Button Pressed', 'gui button pressed'), [], 100, True, None, []),
-              ('callback_configuration', ('GUI Slider Value', 'gui slider value'), [], 100, True, None, []),
-              ('callback_configuration', ('GUI Tab Selected', 'gui tab selected'), [], 100, True, None, [])]
-
+              ('callback_configuration', ('GUI Button Pressed', 'GUI button pressed'), [], 100, True, None, []),
+              ('callback_configuration', ('GUI Slider Value', 'GUI slider value'), [], 100, True, None, []),
+              ('callback_configuration', ('GUI Tab Selected', 'GUI tab selected'), [], 100, True, None, [])]
 })
 
 # FIXME: add pixel-matrix example

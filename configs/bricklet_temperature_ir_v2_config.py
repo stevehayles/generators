@@ -6,7 +6,7 @@
 
 # Temperature IR Bricklet 2.0 communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 from commonconstants import add_callback_value_function
 
 com = {
@@ -29,9 +29,12 @@ com = {
         'comcu_bricklet',
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
 
 ambient_temperature_doc = {
 'en':
@@ -40,20 +43,12 @@ Returns the ambient temperature of the sensor. The value
 has a range of -400 to 1250 and is given in °C/10,
 e.g. a value of 423 means that an ambient temperature of 42.3 °C is
 measured.
-
-If you want to get the ambient temperature periodically, it is recommended
-to use the :cb:`Ambient Temperature` callback and set the period with
-:func:`Set Ambient Temperature Callback Configuration`.
 """,
 'de':
 """
 Gibt die Umgebungstemperatur des Sensors zurück. Der Wertebereich ist von
 -400 bis 1250 und wird in °C/10 angegeben, z.B. bedeutet
 ein Wert von 423 eine gemessene Umgebungstemperatur von 42,3 °C.
-
-Wenn die Umgebungstemperatur periodisch abgefragt werden soll, wird empfohlen
-den :cb:`Ambient Temperature` Callback zu nutzen und die Periode mit
-:func:`Set Ambient Temperature Callback Configuration` vorzugeben.
 """
 }
 
@@ -77,10 +72,6 @@ on the surface of the object.
 The temperature of different materials is dependent on their `emissivity
 <https://en.wikipedia.org/wiki/Emissivity>`__. The emissivity of the material
 can be set with :func:`Set Emissivity`.
-
-If you want to get the object temperature periodically, it is recommended
-to use the :cb:`Object Temperature` callback and set the period with
-:func:`Set Object Temperature Callback Configuration`.
 """,
 'de':
 """
@@ -93,10 +84,6 @@ des Objektes.
 Die Temperatur von unterschiedlichen Materialien ist abhängig von ihrem
 `Emissionsgrad <https://de.wikipedia.org/wiki/Emissionsgrad>`__. Der
 Emissionsgrad des Materials kann mit :func:`Set Emissivity` gesetzt werden.
-
-Wenn die Objekttemperatur periodisch abgefragt werden soll, wird empfohlen
-den :cb:`Object Temperature` Callback zu nutzen und die Periode mit
-:func:`Set Object Temperature Callback Configuration` vorzugeben.
 """
 }
 
@@ -122,7 +109,7 @@ used to calculate the surface temperature as returned by
 
 The emissivity is usually given as a value between 0.0 and 1.0. A list of
 emissivities of different materials can be found
-`here <http://www.infrared-thermography.com/material.htm>`__.
+`here <https://www.infrared-thermography.com/material.htm>`__.
 
 The parameter of :func:`Set Emissivity` has to be given with a factor of
 65535 (16-bit). For example: An emissivity of 0.1 can be set with the
@@ -146,7 +133,7 @@ welcher zur Berechnung der Oberflächentemperatur benutzt wird, wie von
 
 Der Emissionsgrad wird normalerweise als Wert zwischen 0,0 und 1,0 angegeben.
 Eine Liste von Emissionsgraden unterschiedlicher Materialien ist
-`hier <http://www.infrared-thermography.com/material.htm>`__ zu finden.
+`hier <https://www.infrared-thermography.com/material.htm>`__ zu finden.
 
 Der Parameter von :func:`Set Emissivity` muss mit eine Faktor von 65535 (16-Bit)
 vorgegeben werden. Beispiel: Ein Emissionsgrad von 0,1 kann mit dem Wert

@@ -25,9 +25,52 @@ com = {
         'comcu_bricklet',
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append({
+'name': 'Restart Type',
+'type': 'uint8',
+'constants': [('Hot Start', 0),
+              ('Warm Start', 1),
+              ('Cold Start', 2),
+              ('Factory Reset', 3)]
+})
+
+com['constant_groups'].append({
+'name': 'Satellite System',
+'type': 'uint8',
+'constants': [('GPS', 0),
+              ('GLONASS', 1),
+              ('Galileo', 2)]
+})
+
+com['constant_groups'].append({
+'name': 'Fix',
+'type': 'uint8',
+'constants': [('No Fix', 1),
+              ('2D Fix', 2),
+              ('3D Fix', 3)]
+})
+
+com['constant_groups'].append({
+'name': 'Fix LED Config',
+'type': 'uint8',
+'constants': [('Off', 0),
+              ('On', 1),
+              ('Show Heartbeat', 2),
+              ('Show Fix', 3),
+              ('Show PPS', 4)]
+})
+
+com['constant_groups'].append({
+'name': 'SBAS',
+'type': 'uint8',
+'constants': [('Enabled', 0),
+              ('Disabled', 1)]
+})
 
 com['packets'].append({
 'type': 'function',
@@ -175,10 +218,7 @@ Beispiel, 140713 bedeutet 14.05.13 als Datum und 195923568 bedeutet
 com['packets'].append({
 'type': 'function',
 'name': 'Restart',
-'elements': [('Restart Type', 'uint8', 1, 'in', ('Restart Type', [('Hot Start', 0),
-                                                                  ('Warm Start', 1),
-                                                                  ('Cold Start', 2),
-                                                                  ('Factory Reset', 3)]))],
+'elements': [('Restart Type', 'uint8', 1, 'in', {'constant_group': 'Restart Type'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -214,14 +254,10 @@ Verfügung:
 com['packets'].append({
 'type': 'function',
 'name': 'Get Satellite System Status Low Level',
-'elements': [('Satellite System', 'uint8', 1, 'in', ('Satellite System', [('GPS', 0),
-                                                                          ('GLONASS', 1),
-                                                                          ('Galileo', 2)])),
+'elements': [('Satellite System', 'uint8', 1, 'in', {'constant_group': 'Satellite System'}),
              ('Satellite Numbers Length', 'uint8', 1, 'out'),
              ('Satellite Numbers Data', 'uint8', 12, 'out'),
-             ('Fix', 'uint8', 1, 'out', ('Fix', [('No Fix', 1),
-                                                 ('2D Fix', 2),
-                                                 ('3D Fix', 3)])),
+             ('Fix', 'uint8', 1, 'out', {'constant_group': 'Fix'}),
              ('PDOP', 'uint16', 1, 'out'),
              ('HDOP', 'uint16', 1, 'out'),
              ('VDOP', 'uint16', 1, 'out')],
@@ -268,9 +304,7 @@ keine gültige Satellitennummer und kann ignoriert werden.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Satellite Status',
-'elements': [('Satellite System', 'uint8', 1, 'in', ('Satellite System', [('GPS', 0),
-                                                                          ('GLONASS', 1),
-                                                                          ('Galileo', 2)])),
+'elements': [('Satellite System', 'uint8', 1, 'in', {'constant_group': 'Satellite System'}),
              ('Satellite Number', 'uint8', 1, 'in'), # 1-32, for GLONASS 1-32 correspond to satellite 65-96
              ('Elevation', 'int16', 1, 'out'),       # 0-90°
              ('Azimuth', 'int16', 1, 'out'),         # 0-359°
@@ -313,11 +347,7 @@ Galileo wird noch nicht unterstützt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Fix LED Config',
-'elements': [('Config', 'uint8', 1, 'in', ('Fix LED Config', [('Off', 0),
-                                                              ('On', 1),
-                                                              ('Show Heartbeat', 2),
-                                                              ('Show Fix', 3),
-                                                              ('Show PPS', 4)]))],
+'elements': [('Config', 'uint8', 1, 'in', {'constant_group': 'Fix LED Config'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -348,11 +378,7 @@ Wenn das Bricklet sich im Bootlodermodus befindet ist die LED aus.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Fix LED Config',
-'elements': [('Config', 'uint8', 1, 'out', ('Fix LED Config', [('Off', 0),
-                                                               ('On', 1),
-                                                               ('Show Heartbeat', 2),
-                                                               ('Show Fix', 3),
-                                                               ('Show PPS', 4)]))],
+'elements': [('Config', 'uint8', 1, 'out', {'constant_group': 'Fix LED Config'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -387,7 +413,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Coordinates` Callback ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Coordinates` Callback wird nur ausgelöst wenn sich die Koordinaten seit der
+Der :cb:`Coordinates` Callback wird nur ausgelöst, wenn sich die Koordinaten seit der
 letzten Auslösung geändert haben.
 
 Der Standardwert ist 0.
@@ -434,7 +460,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Status` Callback ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Status` Callback wird nur ausgelöst wenn sich der Status seit der
+Der :cb:`Status` Callback wird nur ausgelöst, wenn sich der Status seit der
 letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -481,7 +507,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Altitude` Callback ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Altitude` Callback wird nur ausgelöst wenn sich die Höhe seit der
+Der :cb:`Altitude` Callback wird nur ausgelöst, wenn sich die Höhe seit der
 letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -528,7 +554,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Motion` Callback ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Motion` Callback wird nur ausgelöst wenn sich die Bewegung seit der
+Der :cb:`Motion` Callback wird nur ausgelöst, wenn sich die Bewegung seit der
 letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -575,7 +601,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Date Time` Callback ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Date Time` Callback wird nur ausgelöst wenn sich das Datum oder die
+Der :cb:`Date Time` Callback wird nur ausgelöst, wenn sich das Datum oder die
 Zeit seit der letzten Auslösung geändert haben.
 
 Der Standardwert ist 0.
@@ -656,7 +682,7 @@ Dieser Callback wird mit der Periode, wie gesetzt mit
 :func:`Set Coordinates Callback Period`, ausgelöst. Die Parameter sind die
 gleichen wie die von :func:`Get Coordinates`.
 
-Der :cb:`Coordinates` Callback wird nur ausgelöst wenn sich die
+Der :cb:`Coordinates` Callback wird nur ausgelöst, wenn sich die
 Koordinaten seit der letzten Auslösung geändert haben und ein Fix vorhanden
 ist (siehe :func:`Get Status`).
 """
@@ -685,7 +711,7 @@ Dieser Callback wird mit der Periode, wie gesetzt mit
 :func:`Set Status Callback Period`, ausgelöst. Die Parameter sind die
 gleichen wie die von :func:`Get Status`.
 
-Der :cb:`Status` Callback wird nur ausgelöst wenn sich der
+Der :cb:`Status` Callback wird nur ausgelöst, wenn sich der
 Status seit der letzten Auslösung geändert hat.
 """
 }]
@@ -714,7 +740,7 @@ Dieser Callback wird mit der Periode, wie gesetzt mit
 :func:`Set Altitude Callback Period`, ausgelöst. Die Parameter sind die
 gleichen wie die von :func:`Get Altitude`.
 
-Der :cb:`Altitude` Callback wird nur ausgelöst wenn sich die
+Der :cb:`Altitude` Callback wird nur ausgelöst, wenn sich die
 Höhe seit der letzten Auslösung geändert hat und ein Fix vorhanden
 ist (siehe :func:`Get Status`).
 """
@@ -744,7 +770,7 @@ Dieser Callback wird mit der Periode, wie gesetzt mit
 :func:`Set Motion Callback Period`, ausgelöst. Die Parameter sind die
 gleichen wie die von :func:`Get Motion`.
 
-Der :cb:`Motion` Callback wird nur ausgelöst wenn sich die
+Der :cb:`Motion` Callback wird nur ausgelöst, wenn sich die
 Bewegung seit der letzten Auslösung geändert hat und ein Fix vorhanden
 ist (siehe :func:`Get Status`).
 """
@@ -773,7 +799,7 @@ Dieser Callback wird mit der Periode, wie gesetzt mit
 :func:`Set Date Time Callback Period`, ausgelöst. Die Parameter sind die
 gleichen wie die von :func:`Get Date Time`.
 
-Der :cb:`Date Time` Callback wird nur ausgelöst wenn sich das Datum oder die
+Der :cb:`Date Time` Callback wird nur ausgelöst, wenn sich das Datum oder die
 Zeit seit der letzten Auslösung geändert haben.
 """
 }]
@@ -782,8 +808,7 @@ Zeit seit der letzten Auslösung geändert haben.
 com['packets'].append({
 'type': 'function',
 'name': 'Set SBAS Config',
-'elements': [('SBAS Config', 'uint8', 1, 'in', ('SBAS', [('Enabled', 0),
-                                                         ('Disabled', 1)]))],
+'elements': [('SBAS Config', 'uint8', 1, 'in', {'constant_group': 'SBAS'})],
 'since_firmware': [2, 0, 2],
 'doc': ['af', {
 'en':
@@ -808,8 +833,7 @@ Standardmäßig ist SBAS aktiviert und die Aktualisierungsrate 5Hz.
 com['packets'].append({
 'type': 'function',
 'name': 'Get SBAS Config',
-'elements': [('SBAS Config', 'uint8', 1, 'out', ('SBAS', [('Enabled', 0),
-                                                          ('Disabled', 1)]))],
+'elements': [('SBAS Config', 'uint8', 1, 'out', {'constant_group': 'SBAS'})],
 
 'since_firmware': [2, 0, 2],
 'doc': ['af', {

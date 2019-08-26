@@ -6,7 +6,7 @@
 
 # Pressure Bricklet communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 
 com = {
     'author': 'Matthias Bolte <matthias@tinkerforge.com>',
@@ -26,9 +26,20 @@ com = {
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
+
+com['constant_groups'].append({
+'name': 'Sensor Type',
+'type': 'uint8',
+'constants': [('MPX5500', 0),
+              ('MPXV5004', 1),
+              ('MPX4115A', 2)]
+})
 
 com['packets'].append({
 'type': 'function',
@@ -103,7 +114,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Pressure` Callback ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Pressure` Callback wird nur ausgelöst wenn sich der Druck seit der
+Der :cb:`Pressure` Callback wird nur ausgelöst, wenn sich der Druck seit der
 letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -150,7 +161,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Analog Value` Callback ausgelöst
 wird. Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Analog Value` Callback wird nur ausgelöst wenn sich der Analogwert
+Der :cb:`Analog Value` Callback wird nur ausgelöst, wenn sich der Analogwert
 seit der letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -179,7 +190,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Pressure Callback Threshold',
-'elements': [('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min', 'int32', 1, 'in'),
              ('Max', 'int32', 1, 'in')],
 'since_firmware': [1, 0, 0],
@@ -213,10 +224,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn der Druck *außerhalb* des min und max Wertes ist"
- "'i'",    "Callback wird ausgelöst wenn der Druck *innerhalb* des min und max Wertes ist"
- "'<'",    "Callback wird ausgelöst wenn der Druck kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn der Druck größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn der Druck *außerhalb* des min und max Wertes ist"
+ "'i'",    "Callback wird ausgelöst, wenn der Druck *innerhalb* des min und max Wertes ist"
+ "'<'",    "Callback wird ausgelöst, wenn der Druck kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn der Druck größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0).
 """
@@ -226,7 +237,7 @@ Der Standardwert ist ('x', 0, 0).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Pressure Callback Threshold',
-'elements': [('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min', 'int32', 1, 'out'),
              ('Max', 'int32', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -246,7 +257,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Analog Value Callback Threshold',
-'elements': [('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min', 'int32', 1, 'in'),
              ('Max', 'int32', 1, 'in')],
 'since_firmware': [1, 0, 0],
@@ -280,10 +291,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn der Analogwert *außerhalb* des min und max Wertes ist"
- "'i'",    "Callback wird ausgelöst wenn der Analogwert *innerhalb* des min und max Wertes ist"
- "'<'",    "Callback wird ausgelöst wenn der Analogwert kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn der Analogwert größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn der Analogwert *außerhalb* des min und max Wertes ist"
+ "'i'",    "Callback wird ausgelöst, wenn der Analogwert *innerhalb* des min und max Wertes ist"
+ "'<'",    "Callback wird ausgelöst, wenn der Analogwert kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn der Analogwert größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0).
 """
@@ -293,7 +304,7 @@ Der Standardwert ist ('x', 0, 0).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Analog Value Callback Threshold',
-'elements': [('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min', 'int32', 1, 'out'),
              ('Max', 'int32', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -372,9 +383,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Sensor Type',
-'elements': [('Sensor', 'uint8', 1, 'in', ('Sensor Type', [('MPX5500', 0),
-                                                           ('MPXV5004', 1),
-                                                           ('MPX4115A', 2)]))],
+'elements': [('Sensor', 'uint8', 1, 'in', {'constant_group': 'Sensor Type'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -403,9 +412,7 @@ Der Standardwert ist 0.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Sensor Type',
-'elements': [('Sensor', 'uint8', 1, 'out', ('Sensor Type', [('MPX5500', 0),
-                                                            ('MPXV5004', 1),
-                                                            ('MPX4115A', 2)]))],
+'elements': [('Sensor', 'uint8', 1, 'out', {'constant_group': 'Sensor Type'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -492,7 +499,7 @@ since the last triggering.
 Dieser Callback wird mit der Periode, wie gesetzt mit :func:`Set Pressure Callback Period`,
 ausgelöst. Der :word:`parameter` ist der gemessene Druck des Sensors.
 
-Der :cb:`Pressure` Callback wird nur ausgelöst wenn sich der Druck seit der
+Der :cb:`Pressure` Callback wird nur ausgelöst, wenn sich der Druck seit der
 letzten Auslösung geändert hat.
 """
 }]
@@ -518,7 +525,7 @@ since the last triggering.
 Dieser Callback wird mit der Periode, wie gesetzt mit :func:`Set Analog Value Callback Period`,
 ausgelöst. Der :word:`parameter` ist der Analogwert des Sensors.
 
-Der :cb:`Analog Value` Callback wird nur ausgelöst wenn sich der Analogwert
+Der :cb:`Analog Value` Callback wird nur ausgelöst, wenn sich der Analogwert
 seit der letzten Auslösung geändert hat.
 """
 }]
@@ -541,7 +548,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Pressure Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist der gemessene Druck des Sensors.
 
@@ -568,7 +575,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Analog Value Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist der Analogwert des Sensors.
 

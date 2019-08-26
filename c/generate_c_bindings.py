@@ -206,7 +206,7 @@ extern "C" {{
 #elif defined __GNUC__
 	#ifdef _WIN32
 		// workaround struct packing bug in GCC 4.7 on Windows
-		// http://gcc.gnu.org/bugzilla/show_bug.cgi?id=52991
+		// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=52991
 		#define ATTRIBUTE_PACKED __attribute__((gcc_struct, packed))
 	#else
 		#define ATTRIBUTE_PACKED __attribute__((packed))
@@ -726,7 +726,7 @@ int {device_name_under}_{name_under}({device_name_camel} *{device_name_under}{hi
             return '\n'
 
         template = """
-void {0}_register_callback({1} *{0}, int16_t callback_id, void *function, void *user_data) {{
+void {0}_register_callback({1} *{0}, int16_t callback_id, void (*function)(void), void *user_data) {{
 	device_register_callback({0}->p, callback_id, function, user_data);
 }}
 """
@@ -743,7 +743,7 @@ static void {device_name_under}_callback_wrapper_{name_under}(DevicePrivate *dev
 	HighLevelCallback *high_level_callback = &device_p->high_level_callbacks[-{device_name_upper}_CALLBACK_{name_upper}];
 	{stream_length_type} {stream_name_under}_chunk_length = {stream_length} - {stream_name_under}_chunk_offset;
 
-	*(void **)(&callback_function) = device_p->registered_callbacks[DEVICE_NUM_FUNCTION_IDS + {device_name_upper}_CALLBACK_{name_upper}];
+	callback_function = ({name_camel}_CallbackFunction)device_p->registered_callbacks[DEVICE_NUM_FUNCTION_IDS + {device_name_upper}_CALLBACK_{name_upper}];
 
 	if ({stream_name_under}_chunk_length > {chunk_cardinality}) {{
 		{stream_name_under}_chunk_length = {chunk_cardinality};
@@ -798,7 +798,7 @@ static void {device_name_under}_callback_wrapper_{name_under}(DevicePrivate *dev
 	{name_camel}_CallbackFunction callback_function;
 	void *user_data = device_p->registered_callback_user_data[DEVICE_NUM_FUNCTION_IDS + {device_name_upper}_CALLBACK_{name_upper}];
 
-	*(void **)(&callback_function) = device_p->registered_callbacks[DEVICE_NUM_FUNCTION_IDS + {device_name_upper}_CALLBACK_{name_upper}];
+	callback_function = ({name_camel}_CallbackFunction)device_p->registered_callbacks[DEVICE_NUM_FUNCTION_IDS + {device_name_upper}_CALLBACK_{name_upper}];
 
 	if (callback_function != NULL) {{
 		callback_function({high_level_parameters}user_data);
@@ -840,96 +840,102 @@ static void {device_name_under}_callback_wrapper_{name_under}(DevicePrivate *dev
 
         # normal and low-level
         template_normal = """
-static void {0}_callback_wrapper_{1}(DevicePrivate *device_p, Packet *packet) {{
-	{3}_CallbackFunction callback_function;
-	void *user_data = device_p->registered_callback_user_data[DEVICE_NUM_FUNCTION_IDS + {7}];{9}{10}{8}
+static void {device_name_under}_callback_wrapper_{packet_name_under}(DevicePrivate *device_p, Packet *packet) {{
+	{packet_name_camel}_CallbackFunction callback_function;
+	void *user_data = device_p->registered_callback_user_data[DEVICE_NUM_FUNCTION_IDS + {fid}];{loop_index_decl}{bool_unpack_decls}{alignment_copies}{callback_packet_decl}
 
-	*(void **)(&callback_function) = device_p->registered_callbacks[DEVICE_NUM_FUNCTION_IDS + {7}];
+	callback_function = ({packet_name_camel}_CallbackFunction)device_p->registered_callbacks[DEVICE_NUM_FUNCTION_IDS + {fid}];
 
 	if (callback_function == NULL) {{
 		return;
 	}}
-{6}{11}
-	callback_function({5}{4}user_data);
+{endian_conversions}{bool_unpacks}
+	callback_function({callback_args}{callback_args_comma}user_data);
 }}
 """
         template_low_level = """
-static void {0}_callback_wrapper_{1}(DevicePrivate *device_p, Packet *packet) {{
-	{3}_CallbackFunction callback_function;
-	void *user_data = device_p->registered_callback_user_data[DEVICE_NUM_FUNCTION_IDS + {7}];{9}{10}{8}
+static void {device_name_under}_callback_wrapper_{packet_name_under}(DevicePrivate *device_p, Packet *packet) {{
+	{packet_name_camel}_CallbackFunction callback_function;
+	void *user_data = device_p->registered_callback_user_data[DEVICE_NUM_FUNCTION_IDS + {fid}];{loop_index_decl}{bool_unpack_decls}{alignment_copies}{callback_packet_decl}
 
-	*(void **)(&callback_function) = device_p->registered_callbacks[DEVICE_NUM_FUNCTION_IDS + {7}];
-{6}{11}
-	{0}_callback_wrapper_{12}(device_p, {5});
+	callback_function = ({packet_name_camel}_CallbackFunction)device_p->registered_callbacks[DEVICE_NUM_FUNCTION_IDS + {fid}];
+{endian_conversions}{bool_unpacks}
+	{device_name_under}_callback_wrapper_{ll_packet_name_under}(device_p, {callback_args});
 
 	if (callback_function != NULL) {{
-		callback_function({5}{4}user_data);
+		callback_function({callback_args}{callback_args_comma}user_data);
 	}}
 }}
 """
-
         for packet in self.get_packets('callback'):
-            a = self.get_name().under
-            b = packet.get_name().under
-            c = self.get_name().camel
-            d = packet.get_name().camel
-            e = ''
-            f_list = []
+            callback_arg_list = []
 
             for element in packet.get_elements():
                 if element.get_type() == 'bool':
-                    f_list.append('unpacked_{0}'.format(element.get_name().under))
+                    callback_arg_list.append('unpacked_{0}'.format(element.get_name().under))
                 else:
-                    f_list.append('callback->{0}'.format(element.get_name().under))
-
-            f = ', '.join(f_list)
-
-            if len(f_list) > 0:
-                e = ', '
+                    callback_arg_list.append('callback->{0}'.format(element.get_name().under))
 
             endian_list = []
-            i = ''
-            variables = ''
-            unpacks = ''
+            loop_index_decl = ''
+            bool_unpack_decls = ''
+            bool_unpacks = ''
+
+            # GCC 9.1 upwards warns (correctly) if a pointer to a member of a packed struct is accessed.
+            # Such code is only generated for arrays of types > 1 byte in callback wrappers.
+            # Fortunately all those arrays are accessed anyway by the little endian conversion.
+            # Assigning the converted values into an aligned array fixes the issue.
+            alignment_copy_list = []
 
             for element in packet.get_elements():
                 if element.get_type() == 'bool':
                     if element.get_cardinality() > 1:
-                        i = '\n\tint i;'
-                        variables += '\n\tbool unpacked_{0}[{1}];'.format(element.get_name().under, element.get_cardinality())
-                        unpacks += '\tfor (i = 0; i < {1}; i++) unpacked_{0}[i] = (callback->{0}[i / 8] & (1 << (i % 8))) != 0;\n' \
+                        loop_index_decl = '\n\tint i;'
+                        bool_unpack_decls += '\n\tbool unpacked_{0}[{1}];'.format(element.get_name().under, element.get_cardinality())
+                        bool_unpacks += '\tfor (i = 0; i < {1}; i++) unpacked_{0}[i] = (callback->{0}[i / 8] & (1 << (i % 8))) != 0;\n' \
                                     .format(element.get_name().under, element.get_cardinality())
                     else:
-                        variables += '\n\tbool unpacked_{0};'.format(element.get_name().under)
-                        unpacks += '\tunpacked_{0} = callback->{0} != 0;\n'.format(element.get_name().under)
+                        bool_unpack_decls += '\n\tbool unpacked_{0};'.format(element.get_name().under)
+                        bool_unpacks += '\tunpacked_{0} = callback->{0} != 0;\n'.format(element.get_name().under)
                 elif element.get_item_size() > 1:
                     if element.get_cardinality() > 1:
-                        i = '\n\tint i;'
-                        endian_list.append('\tfor (i = 0; i < {2}; i++) callback->{0}[i] = leconvert_{1}_from(callback->{0}[i]);' \
+                        template = "\t{type} aligned_{name}[{size}];"
+                        alignment_copy_list.append(template.format(type=element.get_c_type('default'), name=element.get_name().under, size=element.get_cardinality()))
+                        callback_arg_list = [elem if elem != "callback->" + element.get_name().under else "aligned_" + element.get_name().under for elem in callback_arg_list]
+                        loop_index_decl = '\n\tint i;'
+                        endian_list.append('\tfor (i = 0; i < {2}; i++) aligned_{0}[i] = leconvert_{1}_from(callback->{0}[i]);' \
                                            .format(element.get_name().under, element.get_type(), element.get_cardinality()))
                     else:
                         endian_list.append('\tcallback->{0} = leconvert_{1}_from(callback->{0});'.format(element.get_name().under, element.get_type()))
 
-            endian = '\n'.join(endian_list)
-
-            if len(endian) > 0:
-                endian = '\n' + endian + '\n'
-
-            fid = '{0}_CALLBACK_{1}'.format(self.get_name().upper,
-                                            packet.get_name().upper)
-            if len(f_list) > 0:
-                cb = '\n\t{0}_Callback *callback = ({0}_Callback *)packet;'.format(d)
+            if len(callback_arg_list) > 0:
+                callback_packet_decl = '\n\t{0}_Callback *callback = ({0}_Callback *)packet;'.format(packet.get_name().camel)
             else:
-                cb = '\n\t(void)packet;'
+                callback_packet_decl = '\n\t(void)packet;'
 
             if packet.get_high_level('stream_out') != None:
                 template = template_low_level
-                llname = packet.get_name(skip=-2).under
+                ll_packet_name_under = packet.get_name(skip=-2).under
             else:
                 template = template_normal
-                llname = ''
+                ll_packet_name_under = ''
 
-            functions += template.format(a, b, c, d, e, f, endian, fid, cb, i, variables, unpacks, llname)
+            fid = '{0}_CALLBACK_{1}'.format(self.get_name().upper, packet.get_name().upper)
+
+            functions += template.format(device_name_under=self.get_name().under,
+                                         packet_name_under=packet.get_name().under,
+                                         device_name_camel=self.get_name().camel,
+                                         packet_name_camel=packet.get_name().camel,
+                                         callback_args=', '.join(callback_arg_list),
+                                         callback_args_comma=', ' if len(callback_arg_list) > 0 else '',
+                                         endian_conversions=common.wrap_non_empty('\n', '\n'.join(endian_list), '\n'),
+                                         fid=fid,
+                                         callback_packet_decl=callback_packet_decl,
+                                         loop_index_decl=loop_index_decl,
+                                         bool_unpack_decls=bool_unpack_decls,
+                                         bool_unpacks=bool_unpacks,
+                                         ll_packet_name_under=ll_packet_name_under,
+                                         alignment_copies=common.wrap_non_empty('\n', '\n'.join(alignment_copy_list), '\n'))
 
         return functions
 
@@ -1124,7 +1130,7 @@ int {device_name_under}_{function_name}({device_name_camel} *{device_name_under}
  * Registers the given \\c function with the given \\c callback_id. The
  * \\c user_data will be passed as the last parameter to the \\c function.
  */
-void {0}_register_callback({1} *{0}, int16_t callback_id, void *function, void *user_data);
+void {0}_register_callback({1} *{0}, int16_t callback_id, void (*function)(void), void *user_data);
 """
         return template.format(self.get_name().under, self.get_name().camel, self.get_category().camel)
 

@@ -6,7 +6,7 @@
 
 # PTC Bricklet 2.0 communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 from commonconstants import add_callback_value_function
 
 com = {
@@ -28,9 +28,27 @@ com = {
         'comcu_bricklet',
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
+
+com['constant_groups'].append({
+'name': 'Filter Option',
+'type': 'uint8',
+'constants': [('50Hz', 0),
+              ('60Hz', 1)]
+})
+
+com['constant_groups'].append({
+'name': 'Wire Mode',
+'type': 'uint8',
+'constants': [('2', 2),
+              ('3', 3),
+              ('4', 4)]
+})
 
 temperature_doc = {
 'en':
@@ -87,8 +105,7 @@ add_callback_value_function(
 com['packets'].append({
 'type': 'function',
 'name': 'Set Noise Rejection Filter',
-'elements': [('Filter', 'uint8', 1, 'in', ('Filter Option', [('50Hz', 0),
-                                                             ('60Hz', 1)]))],
+'elements': [('Filter', 'uint8', 1, 'in', {'constant_group': 'Filter Option'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -115,8 +132,7 @@ Der Standardwert ist 0 = 50Hz.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Noise Rejection Filter',
-'elements': [('Filter', 'uint8', 1, 'out', ('Filter Option', [('50Hz', 0),
-                                                              ('60Hz', 1)]))],
+'elements': [('Filter', 'uint8', 1, 'out', {'constant_group': 'Filter Option'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -169,9 +185,7 @@ Der Callback wird mit der Funktion
 com['packets'].append({
 'type': 'function',
 'name': 'Set Wire Mode',
-'elements': [('Mode', 'uint8', 1, 'in', ('Wire Mode', [('2', 2),
-                                                       ('3', 3),
-                                                       ('4', 4)]))],
+'elements': [('Mode', 'uint8', 1, 'in', {'constant_group': 'Wire Mode'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -196,9 +210,7 @@ Der Standardwert ist 2 = 2-Leiter.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Wire Mode',
-'elements': [('Mode', 'uint8', 1, 'out', ('Wire Mode', [('2', 2),
-                                                        ('3', 3),
-                                                        ('4', 4)]))],
+'elements': [('Mode', 'uint8', 1, 'out', {'constant_group': 'Wire Mode'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -242,7 +254,7 @@ Setzt die Länge eines `gleitenden Mittelwerts <https://de.wikipedia.org/wiki/Gl
 für den Widerstand und die Temperatur.
 
 Wenn die Länge auf 1 gesetzt wird, ist die Mittelwertbildung deaktiviert.
-Desto kürzer die Länge des Mittelwerts ist, desto mehr Rauschen ist auf den Daten.
+Je kürzer die Länge des Mittelwerts ist, desto mehr Rauschen ist auf den Daten.
 
 Der Wertebereich liegt bei 1-1000.
 
@@ -291,7 +303,7 @@ By default this callback is disabled.
 'de':
 """
 Wenn dieser Callback aktiviert ist, wird der :cb:`Sensor Connected` Callback
-jedes mal ausgelöst wenn ein Pt-Sensor verbunden/getrennt wird.
+jedes mal ausgelöst, wenn ein Pt-Sensor verbunden/getrennt wird.
 
 Standardmäßig ist dieser Callback deaktiviert.
 """

@@ -8,7 +8,7 @@
 
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
-    'api_version': [2, 0, 0],
+    'api_version': [2, 0, 1],
     'category': 'Bricklet',
     'device_identifier': 2130,
     'name': 'Accelerometer V2',
@@ -25,9 +25,69 @@ com = {
         'comcu_bricklet',
         'bricklet_get_identity'
      ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append({
+'name': 'Data Rate',
+'type': 'uint8',
+'constants': [('0 781Hz', 0),
+              ('1 563Hz', 1),
+              ('3 125Hz', 2),
+              ('6 2512Hz', 3),
+              ('12 5Hz', 4),
+              ('25Hz', 5),
+              ('50Hz', 6),
+              ('100Hz', 7),
+              ('200Hz', 8),
+              ('400Hz', 9),
+              ('800Hz', 10),
+              ('1600Hz', 11),
+              ('3200Hz', 12),
+              ('6400Hz', 13),
+              ('12800Hz', 14),
+              ('25600Hz', 15)]
+})
+
+com['constant_groups'].append({
+'name': 'Full Scale',
+'type': 'uint8',
+'constants': [('2g', 0),
+              ('4g', 1),
+              ('8g', 2)]
+})
+
+com['constant_groups'].append({
+'name': 'Info LED Config',
+'type': 'uint8',
+'constants': [('Off', 0),
+              ('On', 1),
+              ('Show Heartbeat', 2)]
+})
+
+com['constant_groups'].append({
+'name': 'Resolution',
+'type': 'uint8',
+'constants': [('8bit', 0),
+              ('16bit', 1)]
+})
+
+com['constant_groups'].append({
+'name': 'IIR Bypass',
+'type': 'uint8',
+'constants': [('Applied', 0),
+              ('Bypassed', 1)]
+})
+
+com['constant_groups'].append({
+'name': 'Low Pass Filter',
+'type': 'uint8',
+'constants': [('Ninth', 0),
+              ('Half', 1)]
+})
+
 
 com['packets'].append({
 'type': 'function',
@@ -61,25 +121,8 @@ den :cb:`Acceleration` Callback zu nutzen und die Periode mit
 com['packets'].append({
 'type': 'function',
 'name': 'Set Configuration',
-'elements': [('Data Rate', 'uint8', 1, 'in', ('Data Rate', [('0 781Hz', 0),
-                                                            ('1 563Hz', 1),
-                                                            ('3 125Hz', 2),
-                                                            ('6 2512Hz', 3),
-                                                            ('12 5Hz', 4),
-                                                            ('25Hz', 5),
-                                                            ('50Hz', 6),
-                                                            ('100Hz', 7),
-                                                            ('200Hz', 8),
-                                                            ('400Hz', 9),
-                                                            ('800Hz', 10),
-                                                            ('1600Hz', 11),
-                                                            ('3200Hz', 12),
-                                                            ('6400Hz', 13),
-                                                            ('12800Hz', 14),
-                                                            ('25600Hz', 15)])),
-             ('Full Scale', 'uint8', 1, 'in', ('Full Scale', [('2g', 0),
-                                                              ('4g', 1),
-                                                              ('8g', 2)]))],
+'elements': [('Data Rate', 'uint8', 1, 'in', {'constant_group': 'Data Rate'}),
+             ('Full Scale', 'uint8', 1, 'in', {'constant_group': 'Full Scale'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -114,25 +157,8 @@ Die Standardwerte sind 100Hz Datenrate und -2g bis +2g Wertebereich.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Configuration',
-'elements': [('Data Rate', 'uint8', 1, 'out', ('Data Rate', [('0 781Hz', 0),
-                                                             ('1 563Hz', 1),
-                                                             ('3 125Hz', 2),
-                                                             ('6 2512Hz', 3),
-                                                             ('12 5Hz', 4),
-                                                             ('25Hz', 5),
-                                                             ('50Hz', 6),
-                                                             ('100Hz', 7),
-                                                             ('200Hz', 8),
-                                                             ('400Hz', 9),
-                                                             ('800Hz', 10),
-                                                             ('1600Hz', 11),
-                                                             ('3200Hz', 12),
-                                                             ('6400Hz', 13),
-                                                             ('12800Hz', 14),
-                                                             ('25600Hz', 15)])),
-             ('Full Scale', 'uint8', 1, 'out', ('Full Scale', [('2g', 0),
-                                                               ('4g', 1),
-                                                               ('8g', 2)]))],
+'elements': [('Data Rate', 'uint8', 1, 'out', {'constant_group': 'Data Rate'}),
+             ('Full Scale', 'uint8', 1, 'out', {'constant_group': 'Full Scale'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -215,9 +241,7 @@ Gibt die Callback-Konfiguration zurück, wie mittels
 com['packets'].append({
 'type': 'function',
 'name': 'Set Info LED Config',
-'elements': [('Config', 'uint8', 1, 'in', ('Info LED Config', [('Off', 0),
-                                                               ('On', 1),
-                                                               ('Show Heartbeat', 2)]))],
+'elements': [('Config', 'uint8', 1, 'in', {'constant_group': 'Info LED Config'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -236,9 +260,7 @@ Die LED kann ausgeschaltet, eingeschaltet oder im Herzschlagmodus betrieben werd
 com['packets'].append({
 'type': 'function',
 'name': 'Get Info LED Config',
-'elements': [('Config', 'uint8', 1, 'out', ('Info LED Config', [('Off', 0),
-                                                                ('On', 1),
-                                                                ('Show Heartbeat', 2)]))],
+'elements': [('Config', 'uint8', 1, 'out', {'constant_group': 'Info LED Config'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -283,8 +305,7 @@ com['packets'].append({
 'elements': [('Enable X', 'bool', 1, 'in'),
              ('Enable Y', 'bool', 1, 'in'),
              ('Enable Z', 'bool', 1, 'in'),
-             ('Resolution', 'uint8', 1, 'in', ('Resolution', [('8bit', 0),
-                                                              ('16bit', 1)]))],
+             ('Resolution', 'uint8', 1, 'in', {'constant_group': 'Resolution'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -301,8 +322,26 @@ the :cb:`Continuous Acceleration 8 Bit` callback is activated. If at least
 one of the axis is enabled and the resolution is set to 16 bit,
 the :cb:`Continuous Acceleration 16 Bit` callback is activated.
 
+The returned values are raw ADC data. If you want to put this data into
+a FFT to determine the occurrences of specific frequencies we recommend
+that you use the data as is. It has all of the ADC noise in it. This noise
+looks like pure noise at first glance, but it might still have some frequnecy
+information in it that can be utilized by the FFT.
+
+Otherwise you have to use the following formulas that depend on the configured
+resolution (8/16 bit) and the full scale range (see :func:`Set Configuration`) to calculate
+the data in g/10000 (same unit that is returned by :func:`Get Acceleration`):
+
+* 16 bit, full scale 2G: acceleration = value*625/1024
+* 16 bit, full scale 4G: acceleration = value*1250/1024
+* 16 bit, full scale 8G: acceleration = value*2500/1024
+
 If a resolution of 8 bit is used, only the 8 most significant bits will be
-transferred. This means that the unit changes from g/10000 to g*256/10000.
+transferred, so you can use the following formulas:
+
+* 8 bit, full scale 2G:  acceleration = value*256*625/1024
+* 8 bit, full scale 4G:  acceleration = value*256*1250/1024
+* 8 bit, full scale 8G:  acceleration = value*256*2500/1024
 
 If no axis is enabled, both callbacks are disabled. If one of the continuous
 callbacks is enabled, the :cb:`Acceleration` callback is disabled.
@@ -332,8 +371,27 @@ wird der :cb:`Continuous Acceleration 8 Bit`-Callback aktiviert.
 Wenn mindestens eine Achse aktiviert ist mit 16-Bit Auflösung,
 wird der :cb:`Continuous Acceleration 16 Bit`-Callback aktiviert.
 
-Bei einer Auflösung von 8-Bit werden nur die 8 höchstwertigen Bits übertragen.
-Daher ändert sich die Einheit von g/10000 auf g*256/10000.
+Die zurückgegebenen Werte sind Rohwerte des AD-Wandlers. Wenn die Daten mit einem
+FFT genutzt werden sollen um Vorkomnisse from Frequenzen zu bestimmen empfehlen wir
+die Rohwerte direkt zu nutzen. Die Rohwerte beinhalten das Rauschen des AD-Wandlers,
+in diesem Rauschen können allerdings Frequenzinformation enthalten sein die für
+einen FFT relevant seien können.
+
+Andernfalls können die folgenden Formeln benutzt werden um die Daten wieder
+in der Einheit g/10000 (gleiche Einheit wie von :func:`Get Acceleration` zurückgegeben)
+umzuwandeln. Die Formeln hängen ab von der eingestelleten Auflösung (8/16-Bit) und dem
+eingestellten Wertebereich (siehe :func:`Set Configuration`):
+
+* 16-Bit, Wertebereich 2G: Beschleunigung = Rohwert*625/1024
+* 16-Bit, Wertebereich 4G: Beschleunigung = Rohwert*1250/1024
+* 16-Bit, Wertebereich 8G: Beschleunigung = Rohwert*2500/1024
+
+Bei einer Auflösung von 8-Bit werden nur die 8 höchstwertigen Bits übertragen, daher
+sehen die Formeln wie folgt aus:
+
+* 8-Bit, Wertebereich 2G:  Beschleunigung = Rohwert*256*625/1024
+* 8-Bit, Wertebereich 4G:  Beschleunigung = Rohwert*256*1250/1024
+* 8-Bit, Wertebereich 8G:  Beschleunigung = Rohwert*256*2500/1024
 
 Wenn keine Achse aktiviert is, sind beide Callbacks deaktiviert. Wenn einer der
 "Continuous Callbacks" genutzt wird, wird der :cb:`Acceleration`-Callback
@@ -359,8 +417,7 @@ com['packets'].append({
 'elements': [('Enable X', 'bool', 1, 'out'),
              ('Enable Y', 'bool', 1, 'out'),
              ('Enable Z', 'bool', 1, 'out'),
-             ('Resolution', 'uint8', 1, 'out', ('Resolution', [('8bit', 0),
-                                                               ('16bit', 1)]))],
+             ('Resolution', 'uint8', 1, 'out', {'constant_group': 'Resolution'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -388,7 +445,19 @@ Returns 30 acceleration values with 16 bit resolution. The data rate can
 be configured with :func:`Set Configuration` and this callback can be
 enabled with :func:`Set Continuous Acceleration Configuration`.
 
-The unit of the values is g/10000.
+The returned values are raw ADC data. If you want to put this data into
+a FFT to determine the occurrences of specific frequencies we recommend
+that you use the data as is. It has all of the ADC noise in it. This noise
+looks like pure noise at first glance, but it might still have some frequnecy
+information in it that can be utilized by the FFT.
+
+Otherwise you have to use the following formulas that depend on the
+full scale range (see :func:`Set Configuration`) to calculate
+the data in g/10000 (same unit that is returned by :func:`Get Acceleration`):
+
+* Full scale 2G: acceleration = value*625/1024
+* Full scale 4G: acceleration = value*1250/1024
+* Full scale 8G: acceleration = value*2500/1024
 
 The data is formated in the sequence "x, y, z, x, y, z, ..." depending on
 the enabled axis. Examples:
@@ -405,7 +474,20 @@ kann mit der Funktion :func:`Set Configuration` eingestellt werden und
 der Callback kann per :func:`Set Continuous Acceleration Configuration`
 aktiviert werden.
 
-Die Einheit der Werte ist g/10000.
+Die zurückgegebenen Werte sind Rohwerte des AD-Wandlers. Wenn die Daten mit einem
+FFT genutzt werden sollen um Vorkomnisse from Frequenzen zu bestimmen empfehlen wir
+die Rohwerte direkt zu nutzen. Die Rohwerte beinhalten das Rauschen des AD-Wandlers,
+in diesem Rauschen können allerdings Frequenzinformation enthalten sein die für
+einen FFT relevant seien können.
+
+Andernfalls können die folgenden Formeln benutzt werden um die Daten wieder
+in der Einheit g/10000 (gleiche Einheit wie von :func:`Get Acceleration` zurückgegeben)
+umzuwandeln. Die Formeln hängen ab von dem
+eingestellten Wertebereich (siehe :func:`Set Configuration`):
+
+* Wertebereich 2G: Beschleunigung = Rohwert*625/1024
+* Wertebereich 4G: Beschleunigung = Rohwert*1250/1024
+* Wertebereich 8G: Beschleunigung = Rohwert*2500/1024
 
 Die Daten sind in der Sequenz "x, y, z, x, y, z, ..." formatiert, abhängig
 von den aktivierten Achsen. Beispiele:
@@ -430,7 +512,19 @@ Returns 30 acceleration values with 8 bit resolution. The data rate can
 be configured with :func:`Set Configuration` and this callback can be
 enabled with :func:`Set Continuous Acceleration Configuration`.
 
-The unit of the values is g*256/10000.
+The returned values are raw ADC data. If you want to put this data into
+a FFT to determine the occurrences of specific frequencies we recommend
+that you use the data as is. It has all of the ADC noise in it. This noise
+looks like pure noise at first glance, but it might still have some frequnecy
+information in it that can be utilized by the FFT.
+
+Otherwise you have to use the following formulas that depend on the
+full scale range (see :func:`Set Configuration`) to calculate
+the data in g/10000 (same unit that is returned by :func:`Get Acceleration`):
+
+* Full scale 2G:  acceleration = value*256*625/1024
+* Full scale 4G:  acceleration = value*256*1250/1024
+* Full scale 8G:  acceleration = value*256*2500/1024
 
 The data is formated in the sequence "x, y, z, x, y, z, ..." depending on
 the enabled axis. Examples:
@@ -447,7 +541,20 @@ kann mit der Funktion :func:`Set Configuration` eingestellt werden und
 der Callback kann per :func:`Set Continuous Acceleration Configuration`
 aktiviert werden.
 
-Die Einheit der Werte ist g*256/10000.
+Die zurückgegebenen Werte sind Rohwerte des AD-Wandlers. Wenn die Daten mit einem
+FFT genutzt werden sollen um Vorkomnisse from Frequenzen zu bestimmen empfehlen wir
+die Rohwerte direkt zu nutzen. Die Rohwerte beinhalten das Rauschen des AD-Wandlers,
+in diesem Rauschen können allerdings Frequenzinformation enthalten sein die für
+einen FFT relevant seien können.
+
+Andernfalls können die folgenden Formeln benutzt werden um die Daten wieder
+in der Einheit g/10000 (gleiche Einheit wie von :func:`Get Acceleration` zurückgegeben)
+umzuwandeln. Die Formeln hängen ab von dem
+eingestellten Wertebereich (siehe :func:`Set Configuration`):
+
+* Wertebereich 2G:  Beschleunigung = Rohwert*256*625/1024
+* Wertebereich 4G:  Beschleunigung = Rohwert*256*1250/1024
+* Wertebereich 8G:  Beschleunigung = Rohwert*256*2500/1024
 
 Die Daten sind in der Sequenz "x, y, z, x, y, z, ..." formatiert, abhängig
 von den aktivierten Achsen. Beispiele:
@@ -456,6 +563,64 @@ von den aktivierten Achsen. Beispiele:
 * x, z aktiviert: "x, z, ... 30x ..., x, z"
 * y aktiviert: "y, ... 60x ..., y"
 
+"""
+}]
+})
+
+com['packets'].append({
+'type': 'function',
+'name': 'Set Filter Configuration',
+'elements': [('IIR Bypass', 'uint8', 1, 'in', {'constant_group': 'IIR Bypass'}),
+             ('Low Pass Filter', 'uint8', 1, 'in', {'constant_group': 'Low Pass Filter'})],
+'since_firmware': [2, 0, 2],
+'doc': ['af', {
+'en':
+"""
+Configures IIR Bypass filter mode and low pass filter roll off corner frequency.
+
+The filter can be applied or bypassed and the corner frequency can be
+half or a ninth of the output data rate.
+
+.. image:: /Images/Bricklets/bricklet_accelerometer_v2_filter.png
+   :scale: 100 %
+   :alt: Accelerometer filter
+   :align: center
+   :target: ../../_images/Bricklets/bricklet_accelerometer_v2_filter.png
+
+By default filtering is applied and the filter corner frequency is a ninth of the output data rate.
+""",
+'de':
+"""
+Konfiguriert den IIR Bypass Filter Modus und die Low Pass Filter Roll Off Corner Frequenz.
+
+Der Filter kann angewendet oder umgangen werden und die Frequenz kann die halbe ein ein Neuntel
+der Ausgabe-Datenrate sein.
+
+.. image:: /Images/Bricklets/bricklet_accelerometer_v2_filter.png
+   :scale: 100 %
+   :alt: Accelerometer filter
+   :align: center
+   :target: ../../_images/Bricklets/bricklet_accelerometer_v2_filter.png
+
+Standardmäßig wird der Filter angewendet und die Frequenz ist ein Neuntel der Ausgabe-Datenrate.
+"""
+}]
+})
+
+com['packets'].append({
+'type': 'function',
+'name': 'Get Filter Configuration',
+'elements': [('IIR Bypass', 'uint8', 1, 'out', {'constant_group': 'IIR Bypass'}),
+             ('Low Pass Filter', 'uint8', 1, 'out', {'constant_group': 'Low Pass Filter'})],
+'since_firmware': [2, 0, 2],
+'doc': ['af', {
+'en':
+"""
+Returns the configuration as set by :func:`Set Filter Configuration`.
+""",
+'de':
+"""
+Gibt die Konfiguration zurück, wie von :func:`Set Filter Configuration` gesetzt.
 """
 }]
 })

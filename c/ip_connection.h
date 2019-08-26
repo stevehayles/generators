@@ -142,7 +142,7 @@ typedef struct {
 #elif defined __GNUC__
 	#ifdef _WIN32
 		// workaround struct packing bug in GCC 4.7 on Windows
-		// http://gcc.gnu.org/bugzilla/show_bug.cgi?id=52991
+		// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=52991
 		#define ATTRIBUTE_PACKED __attribute__((gcc_struct, packed))
 	#else
 		#define ATTRIBUTE_PACKED __attribute__((packed))
@@ -208,6 +208,7 @@ typedef void (*DisconnectedCallbackFunction)(uint8_t disconnect_reason,
 
 #ifdef IPCON_EXPOSE_INTERNALS
 
+typedef void (*CallbackFunction)(void);
 typedef void (*CallbackWrapperFunction)(DevicePrivate *device_p, Packet *packet);
 
 #endif
@@ -247,7 +248,7 @@ struct _DevicePrivate {
 
 	Mutex stream_mutex;
 
-	void *registered_callbacks[DEVICE_NUM_FUNCTION_IDS * 2];
+	CallbackFunction registered_callbacks[DEVICE_NUM_FUNCTION_IDS * 2];
 	void *registered_callback_user_data[DEVICE_NUM_FUNCTION_IDS * 2];
 	CallbackWrapperFunction callback_wrappers[DEVICE_NUM_FUNCTION_IDS];
 	HighLevelCallback high_level_callbacks[DEVICE_NUM_FUNCTION_IDS];
@@ -296,7 +297,7 @@ int device_set_response_expected_all(DevicePrivate *device_p, bool response_expe
  * \internal
  */
 void device_register_callback(DevicePrivate *device_p, int16_t callback_id,
-                              void *function, void *user_data);
+                              void (*function)(void), void *user_data);
 
 /**
  * \internal
@@ -407,7 +408,7 @@ struct _IPConnectionPrivate {
 	Mutex devices_ref_mutex; // protects DevicePrivate.ref_count
 	Table devices;
 
-	void *registered_callbacks[IPCON_NUM_CALLBACK_IDS];
+	CallbackFunction registered_callbacks[IPCON_NUM_CALLBACK_IDS];
 	void *registered_callback_user_data[IPCON_NUM_CALLBACK_IDS];
 
 	Mutex socket_mutex;
@@ -481,7 +482,7 @@ int ipcon_disconnect(IPConnection *ipcon);
  * is not enabled at all on the Brick Daemon or the WIFI/Ethernet Extension.
  *
  * For more information about authentication see
- * http://www.tinkerforge.com/en/doc/Tutorials/Tutorial_Authentication/Tutorial.html
+ * https://www.tinkerforge.com/en/doc/Tutorials/Tutorial_Authentication/Tutorial.html
  */
 int ipcon_authenticate(IPConnection *ipcon, const char secret[64]);
 
@@ -572,7 +573,7 @@ void ipcon_unwait(IPConnection *ipcon);
  * \c user_data will be passed as the last parameter to the \c function.
  */
 void ipcon_register_callback(IPConnection *ipcon, int16_t callback_id,
-                             void *function, void *user_data);
+                             void (*function)(void), void *user_data);
 
 #ifdef IPCON_EXPOSE_INTERNALS
 

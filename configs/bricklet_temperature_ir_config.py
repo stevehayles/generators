@@ -6,7 +6,7 @@
 
 # Temperature IR Bricklet communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
@@ -26,9 +26,12 @@ com = {
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
 
 com['packets'].append({
 'type': 'function',
@@ -115,7 +118,7 @@ used to calculate the surface temperature as returned by
 
 The emissivity is usually given as a value between 0.0 and 1.0. A list of
 emissivities of different materials can be found
-`here <http://www.infrared-thermography.com/material.htm>`__.
+`here <https://www.infrared-thermography.com/material.htm>`__.
 
 The parameter of :func:`Set Emissivity` has to be given with a factor of
 65535 (16-bit). For example: An emissivity of 0.1 can be set with the
@@ -127,6 +130,8 @@ value 6553, an emissivity of 0.5 with the value 32767 and so on.
 
 The default emissivity is 1.0 (value of 65535) and the minimum emissivity the
 sensor can handle is 0.1 (value of 6553).
+
+The emissivity is stored in non-volatile memory and will still be used after a restart or power cycle of the Bricklet.
 """,
 'de':
 """
@@ -136,7 +141,7 @@ welcher zur Berechnung der Oberflächentemperatur benutzt wird, wie von
 
 Der Emissionsgrad wird normalerweise als Wert zwischen 0,0 und 1,0 angegeben.
 Eine Liste von Emissionsgraden unterschiedlicher Materialien ist
-`hier <http://www.infrared-thermography.com/material.htm>`__ zu finden.
+`hier <https://www.infrared-thermography.com/material.htm>`__ zu finden.
 
 Der Parameter von :func:`Set Emissivity` muss mit eine Faktor von 65535 (16-Bit)
 vorgegeben werden. Beispiel: Ein Emissionsgrad von 0,1 kann mit dem Wert
@@ -148,6 +153,8 @@ vorgegeben werden. Beispiel: Ein Emissionsgrad von 0,1 kann mit dem Wert
 
 Der Standard Emissionsgrad ist 1,0 (Wert von 65535) und der minimale
 Emissionsgrad welcher der Sensor verarbeiten kann ist 0,1 (Wert von 6553).
+
+Der Emissionsgrad wird in nicht-flüchtigem Speicher gespeichert und wird auch noch einem Neustart weiter genutzt.
 """
 }]
 })
@@ -190,7 +197,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Ambient Temperature` Callback
 ausgelöst wird. Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Ambient Temperature` Callback wird nur ausgelöst wenn sich die
+Der :cb:`Ambient Temperature` Callback wird nur ausgelöst, wenn sich die
 Temperatur seit der letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -237,7 +244,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Object Temperature` Callback
 ausgelöst wird. Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Object Temperature` Callback wird nur ausgelöst wenn sich die
+Der :cb:`Object Temperature` Callback wird nur ausgelöst, wenn sich die
 Temperatur seit der letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -266,7 +273,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Ambient Temperature Callback Threshold',
-'elements': [('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min', 'int16', 1, 'in'),
              ('Max', 'int16', 1, 'in')],
 'since_firmware': [1, 0, 0],
@@ -300,10 +307,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn die Umgebungstemperatur *außerhalb* des min und max Wertes ist"
- "'i'",    "Callback wird ausgelöst wenn die Umgebungstemperatur *innerhalb* des min und max Wertes ist"
- "'<'",    "Callback wird ausgelöst wenn die Umgebungstemperatur kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn die Umgebungstemperatur größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn die Umgebungstemperatur *außerhalb* des min und max Wertes ist"
+ "'i'",    "Callback wird ausgelöst, wenn die Umgebungstemperatur *innerhalb* des min und max Wertes ist"
+ "'<'",    "Callback wird ausgelöst, wenn die Umgebungstemperatur kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn die Umgebungstemperatur größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0).
 """
@@ -313,7 +320,7 @@ Der Standardwert ist ('x', 0, 0).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Ambient Temperature Callback Threshold',
-'elements': [('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min', 'int16', 1, 'out'),
              ('Max', 'int16', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -333,7 +340,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Object Temperature Callback Threshold',
-'elements': [('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min', 'int16', 1, 'in'),
              ('Max', 'int16', 1, 'in')],
 'since_firmware': [1, 0, 0],
@@ -367,10 +374,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn die Objekttemperatur *außerhalb* des min und max Wertes ist"
- "'i'",    "Callback wird ausgelöst wenn die Objekttemperatur *innerhalb* des min und max Wertes ist"
- "'<'",    "Callback wird ausgelöst wenn die Objekttemperatur kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn die Objekttemperatur größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn die Objekttemperatur *außerhalb* des min und max Wertes ist"
+ "'i'",    "Callback wird ausgelöst, wenn die Objekttemperatur *innerhalb* des min und max Wertes ist"
+ "'<'",    "Callback wird ausgelöst, wenn die Objekttemperatur kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn die Objekttemperatur größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0).
 """
@@ -380,7 +387,7 @@ Der Standardwert ist ('x', 0, 0).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Object Temperature Callback Threshold',
-'elements': [('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min', 'int16', 1, 'out'),
              ('Max', 'int16', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -476,7 +483,7 @@ temperature has changed since the last triggering.
 Dieser Callback wird mit der Periode, wie gesetzt mit :func:`Set Ambient Temperature Callback Period`,
 ausgelöst. Der :word:`parameter` ist die Temperatur des Sensors.
 
-Der :cb:`Ambient Temperature` Callback wird nur ausgelöst wenn sich die
+Der :cb:`Ambient Temperature` Callback wird nur ausgelöst, wenn sich die
 Temperatur seit der letzten Auslösung geändert hat.
 """
 }]
@@ -503,7 +510,7 @@ Dieser Callback wird mit der Periode, wie gesetzt mit
 :func:`Set Object Temperature Callback Period`, ausgelöst. Der
 :word:`parameter` ist die Objekttemperatur des Sensors.
 
-Der :cb:`Object Temperature` Callback wird nur ausgelöst wenn sich die
+Der :cb:`Object Temperature` Callback wird nur ausgelöst, wenn sich die
 Objekttemperatur seit der letzten Auslösung geändert hat.
 """
 }]
@@ -526,7 +533,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Ambient Temperature Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist die Umgebungstemperatur des Sensors.
 
@@ -553,7 +560,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Object Temperature Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist die Objekttemperatur des Sensors.
 

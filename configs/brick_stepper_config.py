@@ -30,9 +30,30 @@ com = {
         'eeprom_bricklet_host',
         'comcu_bricklet_host'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append({
+'name': 'Step Mode',
+'type': 'uint8',
+'constants': [('Full Step', 1),
+              ('Half Step', 2),
+              ('Quarter Step', 4),
+              ('Eighth Step', 8)]
+})
+
+com['constant_groups'].append({
+'name': 'State',
+'type': 'uint8',
+'constants': [('Stop', 1),
+              ('Acceleration', 2),
+              ('Run', 3),
+              ('Deacceleration', 4),
+              ('Direction Change To Forward', 5),
+              ('Direction Change To Backward', 6)]
+})
 
 com['packets'].append({
 'type': 'function',
@@ -347,10 +368,7 @@ hat, wird 1500 zurückgegeben.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Step Mode',
-'elements': [('Mode', 'uint8', 1, 'in', ('Step Mode', [('Full Step', 1),
-                                                       ('Half Step', 2),
-                                                       ('Quarter Step', 4),
-                                                       ('Eighth Step', 8)]))],
+'elements': [('Mode', 'uint8', 1, 'in', {'constant_group': 'Step Mode'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -387,10 +405,7 @@ Der Standardwert ist 8 (Achtelschritt).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Step Mode',
-'elements': [('Mode', 'uint8', 1, 'out', ('Step Mode', [('Full Step', 1),
-                                                        ('Half Step', 2),
-                                                        ('Quarter Step', 4),
-                                                        ('Eighth Step', 8)]))],
+'elements': [('Mode', 'uint8', 1, 'out', {'constant_group': 'Step Mode'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -663,7 +678,7 @@ Changing the decay mode is only possible if synchronous rectification
 is enabled (see :func:`Set Sync Rect`).
 
 For a good explanation of the different decay modes see
-`this <http://ebldc.com/?p=86/>`__ blog post by Avayan.
+`this <https://ebldc.com/?p=86/>`__ blog post by Avayan.
 
 A good decay mode is unfortunately different for every motor. The best
 way to work out a good decay mode for your stepper motor, if you can't
@@ -693,7 +708,7 @@ Eine Änderung des Decay Modus ist nur möglich wenn die Synchrongleichrichtung
 aktiviert ist (siehe :func:`Set Sync Rect`).
 
 Für eine gute Erläuterung der verschiedenen Decay Modi siehe
-`diesen <http://ebldc.com/?p=86/>`__ Blogeintrag (Englisch) von Avayan oder
+`diesen <https://ebldc.com/?p=86/>`__ Blogeintrag (Englisch) von Avayan oder
 `diesen <http://www.schrittmotor-blog.de/stromregelung-von-schrittmotoren-auf-das-abschalten-kommt-es-an/>`__
 Blogeintrag (Deutsch) von T. Ostermann.
 
@@ -793,7 +808,7 @@ in mV.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn die Eingangsspannung unter den, mittels
+Dieser Callback wird ausgelöst, wenn die Eingangsspannung unter den, mittels
 :func:`Set Minimum Voltage` gesetzten, Schwellwert sinkt. Der :word:`parameter`
 ist die aktuelle Spannung in mV.
 """
@@ -1042,18 +1057,8 @@ externe Spannung und der aktuelle Stromverbrauch des Schrittmotors.
 com['packets'].append({
 'type': 'callback',
 'name': 'New State',
-'elements': [('State New',      'uint8', 1, 'out', ('State', [('Stop', 1),
-                                                              ('Acceleration', 2),
-                                                              ('Run', 3),
-                                                              ('Deacceleration', 4),
-                                                              ('Direction Change To Forward', 5),
-                                                              ('Direction Change To Backward', 6)])),
-             ('State Previous', 'uint8', 1, 'out', ('State', [('Stop', 1),
-                                                              ('Acceleration', 2),
-                                                              ('Run', 3),
-                                                              ('Deacceleration', 4),
-                                                              ('Direction Change To Forward', 5),
-                                                              ('Direction Change To Backward', 6)]))],
+'elements': [('State New', 'uint8', 1, 'out', {'constant_group': 'State'}),
+             ('State Previous', 'uint8', 1, 'out', {'constant_group': 'State'})],
 'since_firmware': [1, 1, 6],
 'doc': ['c', {
 'en':
@@ -1063,7 +1068,7 @@ It returns the new state as well as the previous state.
 """,
 'de':
 """
-Dieser Callback wird immer dann ausgelöst wenn der Stepper Brick einen
+Dieser Callback wird immer dann ausgelöst, wenn der Stepper Brick einen
 neuen Zustand erreicht. Es wird sowohl der neue wie auch der alte Zustand
 zurückgegeben.
 """

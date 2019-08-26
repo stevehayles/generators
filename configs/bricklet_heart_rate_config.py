@@ -6,7 +6,7 @@
 
 # Heart Rate Bricklet communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 
 com = {
     'author': 'Ishraq Ibne Ashraf <ishraq@tinkerforge.com>',
@@ -26,9 +26,19 @@ com = {
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
+
+com['constant_groups'].append({
+'name': 'Beat State',
+'type': 'uint8',
+'constants': [('Falling', 0),
+              ('Rising', 1)]
+})
 
 com['packets'].append({
 'type': 'function',
@@ -76,7 +86,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Heart Rate` Callback ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Heart Rate` Callback wird nur ausgelöst wenn sich die
+Der :cb:`Heart Rate` Callback wird nur ausgelöst, wenn sich die
 Herzschlagfrequenz seit der letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -105,7 +115,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Heart Rate Callback Threshold',
-'elements': [('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min', 'uint16', 1, 'in'),
              ('Max', 'uint16', 1, 'in')],
 'since_firmware': [1, 0, 0],
@@ -139,10 +149,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn die Herzschlagfrequenz *außerhalb* des min und max Wertes ist"
- "'i'",    "Callback wird ausgelöst wenn die Herzschlagfrequenz *innerhalb* des min und max Wertes ist"
- "'<'",    "Callback wird ausgelöst wenn die Herzschlagfrequenz kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn die Herzschlagfrequenz größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn die Herzschlagfrequenz *außerhalb* des min und max Wertes ist"
+ "'i'",    "Callback wird ausgelöst, wenn die Herzschlagfrequenz *innerhalb* des min und max Wertes ist"
+ "'<'",    "Callback wird ausgelöst, wenn die Herzschlagfrequenz kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn die Herzschlagfrequenz größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0).
 """
@@ -152,7 +162,7 @@ Der Standardwert ist ('x', 0, 0).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Heart Rate Callback Threshold',
-'elements': [('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min', 'uint16', 1, 'out'),
              ('Max', 'uint16', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -245,7 +255,7 @@ Dieser Callback wird mit der Periode, wie gesetzt mit
 :func:`Set Heart Rate Callback Period`, ausgelöst. Der :word:`parameter` ist
 die Herzschlagfrequenz des Sensors.
 
-Der :cb:`Heart Rate` Callback wird nur ausgelöst wenn sich die
+Der :cb:`Heart Rate` Callback wird nur ausgelöst, wenn sich die
 Herzschlagfrequenz seit der letzten Auslösung geändert hat.
 """
 }]
@@ -268,7 +278,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Heart Rate Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist die Herzschlagfrequenz des Sensors.
 
@@ -281,8 +291,7 @@ mit :func:`Set Debounce Period` gesetzt, ausgelöst.
 com['packets'].append({
 'type': 'callback',
 'name': 'Beat State Changed',
-'elements': [('State', 'uint8', 1, 'out', ('Beat State', [('Falling', 0),
-                                                          ('Rising', 1)]))],
+'elements': [('State', 'uint8', 1, 'out', {'constant_group': 'Beat State'})],
 'since_firmware': [1, 0, 0],
 'doc': ['c', {
 'en':

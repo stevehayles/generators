@@ -6,18 +6,6 @@
 
 # RS485 Bricklet communication config
 
-EXCEPTION_CODE_CONSTANTS =  ('Exception Code', [('Timeout', -1),
-                                                ('Success', 0),
-                                                ('Illegal Function', 1),
-                                                ('Illegal Data Address', 2),
-                                                ('Illegal Data Value', 3),
-                                                ('Slave Device Failure', 4),
-                                                ('Acknowledge', 5),
-                                                ('Slave Device Busy', 6),
-                                                ('Memory Parity Error', 8),
-                                                ('Gateway Path Unavailable', 10),
-                                                ('Gateway Target Device Failed To Respond', 11)])
-
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
     'api_version': [2, 0, 0],
@@ -37,9 +25,83 @@ com = {
         'comcu_bricklet',
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append({
+'name': 'Parity',
+'type': 'uint8',
+'constants': [('None', 0),
+              ('Odd', 1),
+              ('Even', 2)]
+})
+
+com['constant_groups'].append({
+'name': 'Stopbits',
+'type': 'uint8',
+'constants': [('1', 1),
+              ('2', 2)]
+})
+
+com['constant_groups'].append({
+'name': 'Wordlength',
+'type': 'uint8',
+'constants': [('5', 5),
+              ('6', 6),
+              ('7', 7),
+              ('8', 8)]
+})
+
+com['constant_groups'].append({
+'name': 'Duplex',
+'type': 'uint8',
+'constants': [('Half', 0),
+              ('Full', 1)]
+})
+
+com['constant_groups'].append({
+'name': 'Mode',
+'type': 'uint8',
+'constants': [('RS485', 0),
+              ('Modbus Master RTU', 1),
+              ('Modbus Slave RTU', 2)]
+})
+
+com['constant_groups'].append({
+'name': 'Communication LED Config',
+'type': 'uint8',
+'constants': [('Off', 0),
+              ('On', 1),
+              ('Show Heartbeat', 2),
+              ('Show Communication', 3)]
+})
+
+com['constant_groups'].append({
+'name': 'Error LED Config',
+'type': 'uint8',
+'constants': [('Off', 0),
+              ('On', 1),
+              ('Show Heartbeat', 2),
+              ('Show Error', 3)]
+})
+
+com['constant_groups'].append({
+'name': 'Exception Code',
+'type': 'int8',
+'constants': [('Timeout', -1),
+              ('Success', 0),
+              ('Illegal Function', 1),
+              ('Illegal Data Address', 2),
+              ('Illegal Data Value', 3),
+              ('Slave Device Failure', 4),
+              ('Acknowledge', 5),
+              ('Slave Device Busy', 6),
+              ('Memory Parity Error', 8),
+              ('Gateway Path Unavailable', 10),
+              ('Gateway Target Device Failed To Respond', 11)]
+})
 
 com['packets'].append({
 'type': 'function',
@@ -170,17 +232,10 @@ com['packets'].append({
 'type': 'function',
 'name': 'Set RS485 Configuration',
 'elements': [('Baudrate', 'uint32', 1, 'in'),
-             ('Parity', 'uint8', 1, 'in', ('Parity', [('None', 0),
-                                                      ('Odd', 1),
-                                                      ('Even', 2)])),
-             ('Stopbits', 'uint8', 1, 'in', ('Stopbits', [('1', 1),
-                                                          ('2', 2)])),
-             ('Wordlength', 'uint8', 1, 'in', ('Wordlength', [('5', 5),
-                                                              ('6', 6),
-                                                              ('7', 7),
-                                                              ('8', 8)])),
-             ('Duplex', 'uint8', 1, 'in', ('Duplex', [('Half', 0),
-                                                      ('Full', 1)]))],
+             ('Parity', 'uint8', 1, 'in', {'constant_group': 'Parity'}),
+             ('Stopbits', 'uint8', 1, 'in', {'constant_group': 'Stopbits'}),
+             ('Wordlength', 'uint8', 1, 'in', {'constant_group': 'Wordlength'}),
+             ('Duplex', 'uint8', 1, 'in', {'constant_group': 'Duplex'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -215,17 +270,10 @@ com['packets'].append({
 'type': 'function',
 'name': 'Get RS485 Configuration',
 'elements': [('Baudrate', 'uint32', 1, 'out'),
-             ('Parity', 'uint8', 1, 'out', ('Parity', [('None', 0),
-                                                       ('Odd', 1),
-                                                       ('Even', 2)])),
-             ('Stopbits', 'uint8', 1, 'out', ('Stopbits', [('1', 1),
-                                                           ('2', 2)])),
-             ('Wordlength', 'uint8', 1, 'out', ('Wordlength', [('5', 5),
-                                                               ('6', 6),
-                                                               ('7', 7),
-                                                               ('8', 8)])),
-             ('Duplex', 'uint8', 1, 'out', ('Duplex', [('Half', 0),
-                                                       ('Full', 1)]))],
+             ('Parity', 'uint8', 1, 'out', {'constant_group': 'Parity'}),
+             ('Stopbits', 'uint8', 1, 'out', {'constant_group': 'Stopbits'}),
+             ('Wordlength', 'uint8', 1, 'out', {'constant_group': 'Wordlength'}),
+             ('Duplex', 'uint8', 1, 'out', {'constant_group': 'Duplex'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -288,9 +336,7 @@ Gibt die Konfiguration zurück, wie von :func:`Set Modbus Configuration` gesetzt
 com['packets'].append({
 'type': 'function',
 'name': 'Set Mode',
-'elements': [('Mode', 'uint8', 1, 'in',('Mode', [('RS485', 0),
-                                                 ('Modbus Master RTU', 1),
-                                                 ('Modbus Slave RTU', 2)]))],
+'elements': [('Mode', 'uint8', 1, 'in', {'constant_group': 'Mode'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -308,8 +354,8 @@ The default is: RS485 mode.
 Setzt den Modus des Bricklets. Verfügbare Optionen sind
 
 * RS485,
-* Modbus Master RTU und
-* Modbus Slave RTU.
+* Modbus-Master-RTU und
+* Modbus-Slave-RTU.
 
 Der Standardmodus ist RS485.
 """
@@ -319,9 +365,7 @@ Der Standardmodus ist RS485.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Mode',
-'elements': [('Mode', 'uint8', 1, 'out',('Mode', [('RS485', 0),
-                                                  ('Modbus Master RTU', 1),
-                                                  ('Modbus Slave RTU', 2)]))],
+'elements': [('Mode', 'uint8', 1, 'out', {'constant_group': 'Mode'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -338,10 +382,7 @@ Gibt die Konfiguration zurück, wie von :func:`Set Mode` gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Communication LED Config',
-'elements': [('Config', 'uint8', 1, 'in', ('Communication LED Config', [('Off', 0),
-                                                                        ('On', 1),
-                                                                        ('Show Heartbeat', 2),
-                                                                        ('Show Communication', 3)]))],
+'elements': [('Config', 'uint8', 1, 'in', {'constant_group': 'Communication LED Config'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -368,10 +409,7 @@ Wenn das Bricklet sich im Bootlodermodus befindet ist die LED aus.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Communication LED Config',
-'elements': [('Config', 'uint8', 1, 'out', ('Communication LED Config', [('Off', 0),
-                                                                         ('On', 1),
-                                                                         ('Show Heartbeat', 2),
-                                                                         ('Show Communication', 3)]))],
+'elements': [('Config', 'uint8', 1, 'out', {'constant_group': 'Communication LED Config'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -388,10 +426,7 @@ Gibt die Konfiguration zurück, wie von :func:`Set Communication LED Config` ges
 com['packets'].append({
 'type': 'function',
 'name': 'Set Error LED Config',
-'elements': [('Config', 'uint8', 1, 'in', ('Error LED Config', [('Off', 0),
-                                                                ('On', 1),
-                                                                ('Show Heartbeat', 2),
-                                                                ('Show Error', 3)]))],
+'elements': [('Config', 'uint8', 1, 'in', {'constant_group': 'Error LED Config'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -425,10 +460,7 @@ Wenn das Bricklet sich im Bootlodermodus befindet ist die LED aus.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Error LED Config',
-'elements': [('Config', 'uint8', 1, 'out', ('Error LED Config', [('Off', 0),
-                                                                 ('On', 1),
-                                                                 ('Show Heartbeat', 2),
-                                                                 ('Show Error', 3)]))],
+'elements': [('Config', 'uint8', 1, 'out', {'constant_group': 'Error LED Config'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -646,7 +678,7 @@ com['packets'].append({
 'type': 'function',
 'name': 'Modbus Slave Report Exception',
 'elements': [('Request ID', 'uint8', 1, 'in'),
-             ('Exception Code', 'int8', 1, 'in', EXCEPTION_CODE_CONSTANTS)],
+             ('Exception Code', 'int8', 1, 'in', {'constant_group': 'Exception Code'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -718,7 +750,7 @@ In Modbus master mode this function can be used to read coils from a slave. This
 function creates a Modbus function code 1 request.
 
 * Slave Address: Address of the target Modbus slave.
-* Starting Address: Starting address of the read.
+* Starting Address: Number of the first coil to read. For backwards compatibility reasons this parameter is called Starting Address. It is not an address, but instead a coil number in the range of 1 to 65536.
 * Count: Number of coils to read.
 
 Upon success the function will return a non-zero request ID which will represent
@@ -735,11 +767,11 @@ is indeed for a particular request.
 Im Modbus-Master Modus kann diese Funktion genutzt werden um Coils vom Slave zu lesen.
 
 * Slave Addresss: Adresse des Modbus-Slave
-* Starting Address: Startadresse der Leseoperation
+* Starting Address: Nummer der ersten zu lesenden Coil. Aus Gründen der Rückwärtskompatibilität heißt dieser Parameter Starting Address, ist aber keine Addresse, sondern eine eins-basierte Coil-Nummer zwischen 1 und 65536.
 * Count: Anzahl der zu lesenden Coils.
 
 Nach erfolgreichen ausführen der Leseoperation gibt diese funktion eine Request ID
-zurück die nicht Null ist. Im Falle eines Fehlers wird eine Null als Request ID
+zurück die nicht 0 ist. Im Falle eines Fehlers wird eine 0 als Request ID
 zurückgegeben.
 
 Falls kein Fehler auftritt, wird auch der :cb:`Modbus Master Read Coils Response` Callback
@@ -800,7 +832,7 @@ In Modbus master mode this function can be used to read holding registers from a
 This function creates a Modbus function code 3 request.
 
 * Slave Address: Address of the target Modbus slave.
-* Starting Address: Starting address of the read.
+* Starting Address: Number of the first holding register to read. For backwards compatibility reasons this parameter is called Starting Address. It is not an address, but instead a holding register number in the range of 1 to 65536. The prefix digit 4 (for holding register) is implicit and must be omitted.
 * Count: Number of holding registers to read.
 
 Upon success the function will return a non-zero request ID which will represent
@@ -818,12 +850,16 @@ Im Modbus-Master Modus kann diese Funktion genutzt werden un eine Read Holding R
 an einen Modbus-Slave zu senden (Modbus Funktionscode 3).
 
 * Slave Address: Addresse des anzusprechenden Modbus-Slave.
-* Starting Address: Startadresse der Leseeoperation.
-* Count: Anzahl der zu schreibenden Register.
+* Starting Address: Nummer des ersten zu lesenden Holding Registers. Aus Gründen der Rückwärtskompatibilität heißt dieser Parameter Starting Address, ist aber keine Addresse, sondern eine eins-basierte Holding-Register-Nummer zwischen 1 und 65536. Die Präfixziffer 4 (für Holding Register) ist implizit und muss ausgelassen werden.
+* Count: Anzahl der zu lesenden Register.
+
+Nach erfolgreichem Ausführen der Leseoperation gibt diese Funktion eine Request ID
+zurück, die nicht 0 ist. Im Falle eines Fehlers wird eine 0 als Request ID
+zurückgegeben.
 
 Falls kein Fehler auftritt, wird auch der :cb:`Modbus Master Read Holding Registers Response` Callback
 aufgerufen. In diesem Callback wird einer Request ID übergeben. Falls der Callback
-eine Antwortet auf diese Anfrage ist, stimmt die Request ID mit der in dieser Funktion
+eine Antwort auf diese Anfrage ist, stimmt die Request ID mit der in dieser Funktion
 zurückgegeben Request ID überein.
 """
 }]
@@ -873,7 +909,7 @@ In Modbus master mode this function can be used to write a single coil of a slav
 This function creates a Modbus function code 5 request.
 
 * Slave Address: Address of the target Modbus slave.
-* Coil Address: Address of the coil.
+* Coil Address: Number of the coil to be written. For backwards compatibility reasons, this parameter is called Starting Address. It is not an address, but instead a coil number in the range of 1 to 65536.
 * Coil Value: Value to be written.
 
 Upon success the function will return a non-zero request ID which will represent
@@ -891,10 +927,10 @@ Im Modbus-Master Modus kann diese Funktion genutzt werden un eine einzelne Coil 
 Modbus-Slave zu schreiben (Modbus Funktionscode 5).
 
 * Slave Address: Addresse des anzusprechenden Modbus-Slave.
-* Coil Address: Adresse der Coil
+* Coil Address: Nummer der zu schreibenden Coil. Aus Gründen der Rückwärtskompatibilität heißt dieser Parameter Starting Address, ist aber keine Addresse, sondern eine eins-basierte Coil-Nummer zwischen 1 und 65536.
 * Coil Value: Zu schreibender Wert
 
-Falls kein Fehler auftritt, wird auch der :cb:`Modbus Master Read Holding Registers Response` Callback
+Falls kein Fehler auftritt, wird auch der :cb:`Modbus Master Write Single Coil Response` Callback
 aufgerufen. In diesem Callback wird einer Request ID übergeben. Falls der Callback
 eine Antwort auf diese Anfrage ist, stimmt die Request ID mit der in dieser Funktion
 zurückgegeben Request ID überein.
@@ -945,11 +981,11 @@ com['packets'].append({
 'doc': ['af', {
 'en':
 """
-In Modbus master mode this function can be used to write a single register of a
+In Modbus master mode this function can be used to write a single holding register of a
 slave. This function creates a Modbus function code 6 request.
 
 * Slave Address: Address of the target Modbus slave.
-* Register Address: Address of the register.
+* Register Address: Number of the holding register to be written. For backwards compatibility reasons, this parameter is called Starting Address. It is not an address, but instead a holding register number in the range of 1 to 65536. The prefix digit 4 (for holding register) is implicit and must be omitted.
 * Register Value: Value to be written.
 
 Upon success the function will return a non-zero request ID which will represent
@@ -967,7 +1003,7 @@ Im Modbus-Master Modus kann diese Funktion genutzt werden un ein einzelnes Regis
 Modbus-Slave zu schreiben (Modbus Funktionscode 6).
 
 * Slave Address: Addresse des anzusprechenden Modbus-Slave.
-* Register Address: Adresse des Registers
+* Register Address: Nummer des zu schreibenden Holding Registers. Aus Gründen der Rückwärtskompatibilität heißt dieser Parameter Starting Address, ist aber keine Addresse, sondern eine eins-basierte Holding-Register-Nummer zwischen 1 und 65536. Die Präfixziffer 4 (für Holding Register) ist implizit und muss ausgelassen werden.
 * Register Value: Zu schreibender Wert
 
 Falls kein Fehler auftritt, wird auch der :cb:`Modbus Master Write Single Register Response` Callback
@@ -1027,7 +1063,7 @@ In Modbus master mode this function can be used to write multiple coils of a sla
 This function creates a Modbus function code 15 request.
 
 * Slave Address: Address of the target Modbus slave.
-* Starting Address: Starting address of the write.
+* Starting Address: Number of the first coil to write. For backwards compatibility reasons, this parameter is called Starting Address.It is not an address, but instead a coil number in the range of 1 to 65536.
 
 Upon success the function will return a non-zero request ID which will represent
 the current request initiated by the Modbus master. In case of failure the returned
@@ -1044,7 +1080,7 @@ Im Modbus-Master Modus kann diese Funktion genutzt werden un eine mehrere Coils 
 Modbus-Slave zu schreiben (Modbus Funktionscode 15).
 
 * Slave Address: Addresse des anzusprechenden Modbus-Slave.
-* Starting Address: Startadresse der Schreibeoperation
+* Starting Address: Nummer der ersten zu schreibenden Coil. Aus Gründen der Rückwärtskompatibilität heißt dieser Parameter Starting Address, ist aber keine Addresse, sondern eine eins-basierte Coil-Nummer zwischen 1 und 65536.
 
 Falls kein Fehler auftritt, wird auch der :cb:`Modbus Master Write Multiple Coils Response` Callback
 aufgerufen. In diesem Callback wird einer Request ID übergeben. Falls der Callback
@@ -1103,7 +1139,7 @@ In Modbus master mode this function can be used to write multiple registers of a
 This function creates a Modbus function code 16 request.
 
 * Slave Address: Address of the target Modbus slave.
-* Starting Address: Starting Address of the write.
+* Starting Address: Number of the first holding register to write. For backwards compatibility reasons, this parameter is called Starting Address. It is not an address, but instead a holding register number in the range of 1 to 65536. The prefix digit 4 (for holding register) is implicit and must be omitted.
 
 Upon success the function will return a non-zero request ID which will represent
 the current request initiated by the Modbus master. In case of failure the returned
@@ -1116,11 +1152,11 @@ particular request.
 """,
 'de':
 """
-Im Modbus-Master Modus kann diese Funktion genutzt werden un eine mehrere Register eines
+Im Modbus-Master Modus kann diese Funktion genutzt werden um ein oder mehrere Holding Register eines
 Modbus-Slave zu schreiben (Modbus Funktionscode 16).
 
 * Slave Address: Addresse des anzusprechenden Modbus-Slave.
-* Starting Address: Startadresse der Schreibeoperation
+* Starting Address: Nummer des ersten zu schreibenden Holding Registers. Aus Gründen der Rückwärtskompatibilität heißt dieser Parameter Starting Address, ist aber keine Addresse, sondern eine eins-basierte Holding-Register-Nummer zwischen 1 und 65536. Die Präfixziffer 4 (für Holding Register) ist implizit und muss ausgelassen werden.
 
 Falls kein Fehler auftritt, wird auch der :cb:`Modbus Master Write Multiple Registers Response` Callback
 aufgerufen. In diesem Callback wird einer Request ID übergeben. Falls der Callback
@@ -1183,7 +1219,7 @@ In Modbus master mode this function can be used to read discrete inputs from a s
 This function creates a Modbus function code 2 request.
 
 * Slave Address: Address of the target Modbus slave.
-* Starting Address: Starting address of the read.
+* Starting Address: Number of the first discrete input to read. For backwards compatibility reasons, this parameter is called Starting Address. It is not an address, but instead a discrete input number in the range of 1 to 65536. The prefix digit 1 (for discrete input) is implicit and must be omitted.
 * Count: Number of discrete inputs to read.
 
 Upon success the function will return a non-zero request ID which will represent
@@ -1201,13 +1237,15 @@ Im Modbus-Master Modus kann diese Funktion genutzt werden un eine Read Discrete 
 an einen Modbus-Slave zu senden (Modbus Funktionscode 2).
 
 * Slave Address: Addresse des anzusprechenden Modbus-Slave.
-* Starting Address: Startadresse der Leseeoperation.
+* Starting Address: Nummer des ersten zu lesenden Discrete Inputs. Aus Gründen der Rückwärtskompatibilität heißt dieser Parameter Starting Address, ist aber keine Addresse, sondern eine eins-basierte Discrete-Input-Nummer zwischen 1 und 65536. Die Präfixziffer 1 (für Discrete Input) ist implizit und muss ausgelassen werden.
 * Count: Anzahl der zu lesenden Register.
 
 Falls kein Fehler auftritt, wird auch der :cb:`Modbus Master Read Discrete Inputs Response` Callback
 aufgerufen. In diesem Callback wird einer Request ID übergeben. Falls der Callback
 eine Antwortet auf diese Anfrage ist, stimmt die Request ID mit der in dieser Funktion
 zurückgegeben Request ID überein.
+
+Im Falle eines Fehlers wird eine 0 als Request ID zurückgegeben.
 """
 }]
 })
@@ -1262,7 +1300,7 @@ In Modbus master mode this function can be used to read input registers from a s
 This function creates a Modbus function code 4 request.
 
 * Slave Address: Address of the target Modbus slave.
-* Starting Address: Starting address of the read.
+* Starting Address: Number of the first input register to read. For backwards compatibility reasons, this parameter is called Starting Address. It is not an address, but instead an input register number in the range of 1 to 65536. The prefix digit 3 (for input register) is implicit and must be omitted.
 * Count: Number of input registers to read.
 
 Upon success the function will return a non-zero request ID which will represent
@@ -1280,13 +1318,15 @@ Im Modbus-Master Modus kann diese Funktion genutzt werden un eine Read Input-Anf
 an einen Modbus-Slave zu senden (Modbus Funktionscode 4).
 
 * Slave Address: Addresse des anzusprechenden Modbus-Slave.
-* Starting Address: Startadresse der Leseeoperation.
+* Starting Address: Nummer der ersten zu lesenden Input Registers. Aus Gründen der Rückwärtskompatibilität heißt dieser Parameter Starting Address, ist aber keine Addresse, sondern eine eins-basierte Input-Register-Nummer zwischen 1 und 65536. Die Präfixziffer 3 (für Input Register) ist implizit und muss ausgelassen werden.
 * Count: Anzahl der zu lesenden Register.
 
 Falls kein Fehler auftritt, wird auch der :cb:`Modbus Master Read Input Registers Response` Callback
 aufgerufen. In diesem Callback wird einer Request ID übergeben. Falls der Callback
 eine Antwortet auf diese Anfrage ist, stimmt die Request ID mit der in dieser Funktion
 zurückgegeben Request ID überein.
+
+Im Falle eines Fehlers wird eine 0 als Request ID zurückgegeben.
 """
 }]
 })
@@ -1347,8 +1387,9 @@ com['packets'].append({
 """
 This callback is called only in Modbus slave mode when the slave receives a
 valid request from a Modbus master to read coils. The :word:`parameters` are
-request ID of the request, the starting address and the number of coils to
-be read as received by the request.
+request ID of the request, the number of the first coil to be read and the number of coils to
+be read as received by the request. The number of the first coil is called starting address for backwards compatibility reasons.
+It is not an address, but instead a coil number in the range of 1 to 65536.
 
 To send a response of this request use :func:`Modbus Slave Answer Read Coils Request`.
 """,
@@ -1356,8 +1397,9 @@ To send a response of this request use :func:`Modbus Slave Answer Read Coils Req
 """
 Dieser Callback wird im Modbus-Slave Modus aufgerufen, wenn der Slave eine
 gültige Anfrage eines Masters zum lesen von Coils erhält. Die :word:`parameters`
-sind die Request ID der Anfrage, die Startadresse und die Anzahl der zu lesenden
-Coils.
+sind die Request ID der Anfrage, die Nummer der ersten zu lesenden Coil und die Anzahl der zu lesenden
+Coils. Die Nummer der ersten Coil heißt aus Rückwärtskompatiblitätsgründen starting address.
+Sie ist keine Adresse, sondern eine eins-basierte Coil-Nummer zwischen 1 und 65536.
 
 Eine Antwort auf diese Anfrage kann mit der Funktion
 :func:`Modbus Slave Answer Read Coils Request` gesendet werden.
@@ -1369,7 +1411,7 @@ com['packets'].append({
 'type': 'callback',
 'name': 'Modbus Master Read Coils Response Low Level',
 'elements': [('Request ID', 'uint8', 1, 'out'),
-             ('Exception Code', 'int8', 1, 'out', EXCEPTION_CODE_CONSTANTS),
+             ('Exception Code', 'int8', 1, 'out', {'constant_group': 'Exception Code'}),
              ('Coils Length', 'uint16', 1, 'out'),
              ('Coils Chunk Offset', 'uint16', 1, 'out'),
              ('Coils Chunk Data', 'bool', 464, 'out')],
@@ -1386,8 +1428,8 @@ of the request, exception code of the response and the data as received by the
 response.
 
 Any non-zero exception code indicates a problem. If the exception code
-is greater than zero then the number represents a Modbus exception code. If it is
-less than zero then it represents other errors. For example, -1 indicates that
+is greater than 0 then the number represents a Modbus exception code. If it is
+less than 0 then it represents other errors. For example, -1 indicates that
 the request timed out or that the master did not receive any valid response of the
 request within the master request timeout period as set by
 :func:`Set Modbus Configuration`.
@@ -1400,8 +1442,8 @@ gültige Antwort auf eine Read Coils-Anfrage zurück bekommt.
 Die :word:`parameters` sind die Request ID der Anfrage, der Exception Code der
 Antwort und die empfangenen Daten.
 
-Ein Exception Code der nicht Null ist, beschreibt einen Fehler. Wenn die Zahl größer Null ist,
-entspricht der Code dem Modbus Exception Code. Wenn die Zahl kleiner Null ist,
+Ein Exception Code der nicht 0 ist, beschreibt einen Fehler. Wenn die Zahl größer 0 ist,
+entspricht der Code dem Modbus Exception Code. Wenn die Zahl kleiner 0 ist,
 ist ein anderer Fehler aufgetreten. Ein Wert von -1 bedeutet, dass es einen
 Timeout bei der Anfrage gab. Die Länge dieses Timeouts kann per
 :func:`Set Modbus Configuration` gesetzt werden.
@@ -1421,8 +1463,9 @@ com['packets'].append({
 """
 This callback is called only in Modbus slave mode when the slave receives a
 valid request from a Modbus master to read holding registers. The :word:`parameters`
-are request ID of the request, the starting address and the number of holding
-registers to be read as received by the request.
+are request ID of the request, the number of the first holding register to be read and the number of holding
+registers to be read as received by the request. The number of the first holding register is called starting address for backwards compatibility reasons.
+It is not an address, but instead a holding register number in the range of 1 to 65536. The prefix digit 4 (for holding register) is omitted.
 
 To send a response of this request use :func:`Modbus Slave Answer Read Holding Registers Request`.
 """,
@@ -1430,8 +1473,9 @@ To send a response of this request use :func:`Modbus Slave Answer Read Holding R
 """
 Dieser Callback wird im Modbus-Slave Modus aufgerufen, wenn der Slave eine
 gültige Anfrage eines Masters zum lesen von Holding Registern erhält. Die :word:`parameters`
-sind die Request ID der Anfrage, die Startadresse und die Anzahl der zu lesenden
-Register.
+sind die Request ID der Anfrage, die Nummer des ersten zu lesenden Holding Registers und die Anzahl der zu lesenden
+Register. Die Nummer des ersten Holding Registers heißt aus Rückwärtskompatiblitätsgründen starting address.
+Sie ist keine Adresse, sondern eine eins-basierte Holding-Register-Nummer zwischen 1 und 65536. Die Präfixziffer 4 (für Holding Register) wird ausgelassen.
 
 Eine Antwort auf diese Anfrage kann mit der Funktion
 :func:`Modbus Slave Answer Read Holding Registers Request` gesendet werden.
@@ -1443,7 +1487,7 @@ com['packets'].append({
 'type': 'callback',
 'name': 'Modbus Master Read Holding Registers Response Low Level',
 'elements': [('Request ID', 'uint8', 1, 'out'),
-             ('Exception Code', 'int8', 1, 'out', EXCEPTION_CODE_CONSTANTS),
+             ('Exception Code', 'int8', 1, 'out', {'constant_group': 'Exception Code'}),
              ('Holding Registers Length', 'uint16', 1, 'out'),
              ('Holding Registers Chunk Offset', 'uint16', 1, 'out'),
              ('Holding Registers Chunk Data', 'uint16', 29, 'out')],
@@ -1460,8 +1504,8 @@ request ID of the request, exception code of the response and the data as receiv
 by the response.
 
 Any non-zero exception code indicates a problem. If the exception
-code is greater than zero then the number represents a Modbus exception code. If
-it is less than zero then it represents other errors. For example, -1 indicates that
+code is greater than 0 then the number represents a Modbus exception code. If
+it is less than 0 then it represents other errors. For example, -1 indicates that
 the request timed out or that the master did not receive any valid response of the
 request within the master request timeout period as set by
 :func:`Set Modbus Configuration`.
@@ -1474,8 +1518,8 @@ gültige Antwort auf eine Read Holding Registers-Anfrage zurück bekommt.
 Die :word:`parameters` sind die Request ID der Anfrage, der Exception Code der
 Antwort und die empfangenen Daten.
 
-Ein Exception Code der nicht Null ist, beschreibt einen Fehler. Wenn die Zahl größer Null ist,
-entspricht der Code dem Modbus Exception Code. Wenn die Zahl kleiner Null ist,
+Ein Exception Code der nicht 0 ist, beschreibt einen Fehler. Wenn die Zahl größer 0 ist,
+entspricht der Code dem Modbus Exception Code. Wenn die Zahl kleiner 0 ist,
 ist ein anderer Fehler aufgetreten. Ein Wert von -1 bedeutet, dass es einen
 Timeout bei der Anfrage gab. Die Länge dieses Timeouts kann per
 :func:`Set Modbus Configuration` gesetzt werden.
@@ -1495,8 +1539,9 @@ com['packets'].append({
 """
 This callback is called only in Modbus slave mode when the slave receives a
 valid request from a Modbus master to write a single coil. The :word:`parameters`
-are request ID of the request, the coil address and the value of coil to be
-written as received by the request.
+are request ID of the request, the number of the coil and the value of coil to be
+written as received by the request. The number of the coil is called coil address for backwards compatibility reasons.
+It is not an address, but instead a coil number in the range of 1 to 65536.
 
 To send a response of this request use :func:`Modbus Slave Answer Write Single Coil Request`.
 """,
@@ -1504,8 +1549,9 @@ To send a response of this request use :func:`Modbus Slave Answer Write Single C
 """
 Dieser Callback wird im Modbus-Slave Modus aufgerufen, wenn der Slave eine
 gültige Anfrage eines Masters zum schreiben einer einzelnen Coil erhält. Die :word:`parameters`
-sind die Request ID der Anfrage, die Adresse der Coil und der Wert der zu schreibenen
-Coil.
+sind die Request ID der Anfrage, die Nummer der Coil und der Wert der zu schreibenen
+Coil. Die Nummer der Coil heißt aus Rückwärtskompatiblitätsgründen starting address.
+Sie ist keine Adresse, sondern eine eins-basierte Coil-Nummer zwischen 1 und 65536.
 
 Eine Antwort auf diese Anfrage kann mit der Funktion
 :func:`Modbus Slave Answer Write Single Coil Request` gesendet werden.
@@ -1517,7 +1563,7 @@ com['packets'].append({
 'type': 'callback',
 'name': 'Modbus Master Write Single Coil Response',
 'elements': [('Request ID', 'uint8', 1, 'out'),
-             ('Exception Code', 'int8', 1, 'out', EXCEPTION_CODE_CONSTANTS)],
+             ('Exception Code', 'int8', 1, 'out', {'constant_group': 'Exception Code'})],
 'since_firmware': [1, 0, 0],
 'doc': ['c', {
 'en':
@@ -1529,8 +1575,8 @@ The :word:`parameters` are
 request ID of the request and exception code of the response.
 
 Any non-zero exception code indicates a problem.
-If the exception code is greater than zero then the number represents a Modbus
-exception code. If it is less than zero then it represents other errors. For
+If the exception code is greater than 0 then the number represents a Modbus
+exception code. If it is less than 0 then it represents other errors. For
 example, -1 indicates that the request timed out or that the master did not receive
 any valid response of the request within the master request timeout period as set
 by :func:`Set Modbus Configuration`.
@@ -1543,8 +1589,8 @@ gültige Antwort auf eine Write Single Coil-Anfrage zurück bekommt.
 Die :word:`parameters` sind die Request ID der Anfrage und der Exception Code der
 Antwort.
 
-Ein Exception Code der nicht Null ist, beschreibt einen Fehler. Wenn die Zahl größer Null ist,
-entspricht der Code dem Modbus Exception Code. Wenn die Zahl kleiner Null ist,
+Ein Exception Code der nicht 0 ist, beschreibt einen Fehler. Wenn die Zahl größer 0 ist,
+entspricht der Code dem Modbus Exception Code. Wenn die Zahl kleiner 0 ist,
 ist ein anderer Fehler aufgetreten. Ein Wert von -1 bedeutet, dass es einen
 Timeout bei der Anfrage gab. Die Länge dieses Timeouts kann per
 :func:`Set Modbus Configuration` gesetzt werden.
@@ -1563,18 +1609,20 @@ com['packets'].append({
 'en':
 """
 This callback is called only in Modbus slave mode when the slave receives a
-valid request from a Modbus master to write a single register. The :word:`parameters`
-are request ID of the request, the register address and the register value to
-be written as received by the request.
+valid request from a Modbus master to write a single holding register. The :word:`parameters`
+are request ID of the request, the number of the holding register and the register value to
+be written as received by the request. The number of the holding register is called starting address for backwards compatibility reasons.
+It is not an address, but instead a holding register number in the range of 1 to 65536. The prefix digit 4 (for holding register) is omitted.
 
 To send a response of this request use :func:`Modbus Slave Answer Write Single Register Request`.
 """,
 'de':
 """
 Dieser Callback wird im Modbus-Slave Modus aufgerufen, wenn der Slave eine
-gültige Anfrage eines Masters zum schreiben einer einzelnen Registers erhält. Die :word:`parameters`
-sind die Request ID der Anfrage, die Adresse des Registers und der Wert des zuschreibenen
-Registers.
+gültige Anfrage eines Masters zum schreiben einer einzelnen Holding Registers erhält. Die :word:`parameters`
+sind die Request ID der Anfrage, die Nummer des Holding Registers und der Wert des zuschreibenen
+Registers. Die Nummer des Holding Registers heißt aus Rückwärtskompatiblitätsgründen starting address.
+Sie ist keine Adresse, sondern eine eins-basierte Holding-Register-Nummer zwischen 1 und 65536. Die Präfixziffer 4 (für Holding Register) wird ausgelassen.
 
 Eine Antwort auf diese Anfrage kann mit der Funktion
 :func:`Modbus Slave Answer Write Single Register Request` gesendet werden.
@@ -1586,7 +1634,7 @@ com['packets'].append({
 'type': 'callback',
 'name': 'Modbus Master Write Single Register Response',
 'elements': [('Request ID', 'uint8', 1, 'out'),
-             ('Exception Code', 'int8', 1, 'out', EXCEPTION_CODE_CONSTANTS)],
+             ('Exception Code', 'int8', 1, 'out', {'constant_group': 'Exception Code'})],
 'since_firmware': [1, 0, 0],
 'doc': ['c', {
 'en':
@@ -1598,8 +1646,8 @@ The :word:`parameters` are
 request ID of the request and exception code of the response.
 
 Any non-zero exception code
-indicates a problem. If the exception code is greater than zero then the number
-represents a Modbus exception code. If it is less than zero then it represents
+indicates a problem. If the exception code is greater than 0 then the number
+represents a Modbus exception code. If it is less than 0 then it represents
 other errors. For example, -1 indicates that the request timed out or that the
 master did not receive any valid response of the request within the master request
 timeout period as set by :func:`Set Modbus Configuration`.
@@ -1612,8 +1660,8 @@ gültige Antwort auf eine Write Single Register-Anfrage zurück bekommt.
 Die :word:`parameters` sind die Request ID der Anfrage und der Exception Code der
 Antwort.
 
-Ein Exception Code der nicht Null ist, beschreibt einen Fehler. Wenn die Zahl größer Null ist,
-entspricht der Code dem Modbus Exception Code. Wenn die Zahl kleiner Null ist,
+Ein Exception Code der nicht 0 ist, beschreibt einen Fehler. Wenn die Zahl größer 0 ist,
+entspricht der Code dem Modbus Exception Code. Wenn die Zahl kleiner 0 ist,
 ist ein anderer Fehler aufgetreten. Ein Wert von -1 bedeutet, dass es einen
 Timeout bei der Anfrage gab. Die Länge dieses Timeouts kann per
 :func:`Set Modbus Configuration` gesetzt werden.
@@ -1636,8 +1684,9 @@ com['packets'].append({
 """
 This callback is called only in Modbus slave mode when the slave receives a
 valid request from a Modbus master to write multiple coils. The :word:`parameters`
-are request ID of the request, the starting address and the data to be written as
-received by the request.
+are request ID of the request, the number of the first coil and the data to be written as
+received by the request. The number of the first coil is called starting address for backwards compatibility reasons.
+It is not an address, but instead a coil number in the range of 1 to 65536.
 
 To send a response of this request use :func:`Modbus Slave Answer Write Multiple Coils Request`.
 """,
@@ -1645,7 +1694,8 @@ To send a response of this request use :func:`Modbus Slave Answer Write Multiple
 """
 Dieser Callback wird im Modbus-Slave Modus aufgerufen, wenn der Slave eine
 gültige Anfrage eines Masters zum schreiben einer mehrerer Coils erhält. Die :word:`parameters`
-sind die Request ID der Anfrage, die Startadresse der Coils und die zu schreibenen Daten.
+sind die Request ID der Anfrage, die Nummer der ersten Coil und die zu schreibenen Daten. Die Nummer der ersten Coil heißt aus Rückwärtskompatiblitätsgründen starting address.
+Sie ist keine Adresse, sondern eine eins-basierte Coil-Nummer zwischen 1 und 65536.
 
 Eine Antwort auf diese Anfrage kann mit der Funktion
 :func:`Modbus Slave Answer Write Multiple Coils Request` gesendet werden.
@@ -1657,7 +1707,7 @@ com['packets'].append({
 'type': 'callback',
 'name': 'Modbus Master Write Multiple Coils Response',
 'elements': [('Request ID', 'uint8', 1, 'out'),
-             ('Exception Code', 'int8', 1, 'out', EXCEPTION_CODE_CONSTANTS)],
+             ('Exception Code', 'int8', 1, 'out', {'constant_group': 'Exception Code'})],
 'since_firmware': [1, 0, 0],
 'doc': ['c', {
 'en':
@@ -1669,8 +1719,8 @@ The :word:`parameters` are
 request ID of the request and exception code of the response.
 
 Any non-zero exception code
-indicates a problem. If the exception code is greater than zero then the number
-represents a Modbus exception code. If it is less than zero then it represents
+indicates a problem. If the exception code is greater than 0 then the number
+represents a Modbus exception code. If it is less than 0 then it represents
 other errors. For example, -1 indicates that the request timedout or that the
 master did not receive any valid response of the request within the master request
 timeout period as set by :func:`Set Modbus Configuration`.
@@ -1683,8 +1733,8 @@ gültige Antwort auf eine Write Multiple Coils-Anfrage zurück bekommt.
 Die :word:`parameters` sind die Request ID der Anfrage und der Exception Code der
 Antwort.
 
-Ein Exception Code der nicht Null ist, beschreibt einen Fehler. Wenn die Zahl größer Null ist,
-entspricht der Code dem Modbus Exception Code. Wenn die Zahl kleiner Null ist,
+Ein Exception Code der nicht 0 ist, beschreibt einen Fehler. Wenn die Zahl größer 0 ist,
+entspricht der Code dem Modbus Exception Code. Wenn die Zahl kleiner 0 ist,
 ist ein anderer Fehler aufgetreten. Ein Wert von -1 bedeutet, dass es einen
 Timeout bei der Anfrage gab. Die Länge dieses Timeouts kann per
 :func:`Set Modbus Configuration` gesetzt werden.
@@ -1706,17 +1756,20 @@ com['packets'].append({
 'en':
 """
 This callback is called only in Modbus slave mode when the slave receives a
-valid request from a Modbus master to write multiple registers. The :word:`parameters`
-are request ID of the request, the starting address and the data to be written as
-received by the request.
+valid request from a Modbus master to write multiple holding registers. The :word:`parameters`
+are request ID of the request, the number of the first holding register and the data to be written as
+received by the request. The number of the first holding register is called starting address for backwards compatibility reasons.
+It is not an address, but instead a holding register number in the range of 1 to 65536. The prefix digit 4 (for holding register) is omitted.
 
 To send a response of this request use :func:`Modbus Slave Answer Write Multiple Registers Request`.
 """,
 'de':
 """
 Dieser Callback wird im Modbus-Slave Modus aufgerufen, wenn der Slave eine
-gültige Anfrage eines Masters zum schreiben einer mehrerer Register erhält. Die :word:`parameters`
-sind die Request ID der Anfrage, die Startadresse der Register und die zu schreibenen Daten.
+gültige Anfrage eines Masters zum schreiben einer mehrerer Holding Register erhält. Die :word:`parameters`
+sind die Request ID der Anfrage, die Nummer des ersten Holding Registers und die zu schreibenen Daten.
+Die Nummer des ersten Holding Registers heißt aus Rückwärtskompatiblitätsgründen starting address.
+Sie ist keine Adresse, sondern eine eins-basierte Holding-Register-Nummer zwischen 1 und 65536. Die Präfixziffer 4 (für Holding Register) wird ausgelassen.
 
 Eine Antwort auf diese Anfrage kann mit der Funktion
 :func:`Modbus Slave Answer Write Multiple Registers Request` gesendet werden.
@@ -1728,7 +1781,7 @@ com['packets'].append({
 'type': 'callback',
 'name': 'Modbus Master Write Multiple Registers Response',
 'elements': [('Request ID', 'uint8', 1, 'out'),
-             ('Exception Code', 'int8', 1, 'out', EXCEPTION_CODE_CONSTANTS)],
+             ('Exception Code', 'int8', 1, 'out', {'constant_group': 'Exception Code'})],
 'since_firmware': [1, 0, 0],
 'doc': ['c', {
 'en':
@@ -1740,8 +1793,8 @@ The :word:`parameters`
 are request ID of the request and exception code of the response.
 
 Any non-zero
-exception code indicates a problem. If the exception code is greater than zero then
-the number represents a Modbus exception code. If it is less than zero then it
+exception code indicates a problem. If the exception code is greater than 0 then
+the number represents a Modbus exception code. If it is less than 0 then it
 represents other errors. For example, -1 indicates that the request timedout or
 that the master did not receive any valid response of the request within the master
 request timeout period as set by :func:`Set Modbus Configuration`.
@@ -1754,8 +1807,8 @@ gültige Antwort auf eine Write Multiple Register-Anfrage zurück bekommt.
 Die :word:`parameters` sind die Request ID der Anfrage und der Exception Code der
 Antwort.
 
-Ein Exception Code der nicht Null ist, beschreibt einen Fehler. Wenn die Zahl größer Null ist,
-entspricht der Code dem Modbus Exception Code. Wenn die Zahl kleiner Null ist,
+Ein Exception Code der nicht 0 ist, beschreibt einen Fehler. Wenn die Zahl größer 0 ist,
+entspricht der Code dem Modbus Exception Code. Wenn die Zahl kleiner 0 ist,
 ist ein anderer Fehler aufgetreten. Ein Wert von -1 bedeutet, dass es einen
 Timeout bei der Anfrage gab. Die Länge dieses Timeouts kann per
 :func:`Set Modbus Configuration` gesetzt werden.
@@ -1775,8 +1828,9 @@ com['packets'].append({
 """
 This callback is called only in Modbus slave mode when the slave receives a
 valid request from a Modbus master to read discrete inputs. The :word:`parameters`
-are request ID of the request, the starting address and the number of discrete
-inputs to be read as received by the request.
+are request ID of the request, the number of the first discrete input and the number of discrete
+inputs to be read as received by the request. The number of the first discrete input is called starting address for backwards compatibility reasons.
+It is not an address, but instead a discrete input number in the range of 1 to 65536. The prefix digit 1 (for discrete input) is omitted.
 
 To send a response of this request use :func:`Modbus Slave Answer Read Discrete Inputs Request`.
 """,
@@ -1784,8 +1838,9 @@ To send a response of this request use :func:`Modbus Slave Answer Read Discrete 
 """
 Dieser Callback wird im Modbus-Slave Modus aufgerufen, wenn der Slave eine
 gültige Anfrage eines Masters zum lesen von Discrete Inputs erhält. Die :word:`parameters`
-sind die Request ID der Anfrage, die Startadresse und die Anzahl der zu lesenden
-Discrete Inputs.
+sind die Request ID der Anfrage, die Nummer des ersten Discrete Inputs und die Anzahl der zu lesenden
+Discrete Inputs. Die Nummer des ersten Discrete Inputs heißt aus Rückwärtskompatiblitätsgründen starting address.
+Sie ist keine Adresse, sondern eine eins-basierte Discrete Input-Nummer zwischen 1 und 65536. Die Präfixziffer 1 (für Discrete Input) wird ausgelassen.
 
 Eine Antwort auf diese Anfrage kann mit der Funktion
 :func:`Modbus Slave Answer Read Discrete Inputs Request` gesendet werden.
@@ -1797,7 +1852,7 @@ com['packets'].append({
 'type': 'callback',
 'name': 'Modbus Master Read Discrete Inputs Response Low Level',
 'elements': [('Request ID', 'uint8', 1, 'out'),
-             ('Exception Code', 'int8', 1, 'out', EXCEPTION_CODE_CONSTANTS),
+             ('Exception Code', 'int8', 1, 'out', {'constant_group': 'Exception Code'}),
              ('Discrete Inputs Length', 'uint16', 1, 'out'),
              ('Discrete Inputs Chunk Offset', 'uint16', 1, 'out'),
              ('Discrete Inputs Chunk Data', 'bool', 464, 'out')],
@@ -1814,8 +1869,8 @@ request ID of the request, exception code of the response and the data as receiv
 by the response.
 
 Any non-zero exception code indicates a problem. If the exception
-code is greater than zero then the number represents a Modbus exception code. If
-it is less than zero then it represents other errors. For example, -1 indicates that
+code is greater than 0 then the number represents a Modbus exception code. If
+it is less than 0 then it represents other errors. For example, -1 indicates that
 the request timedout or that the master did not receive any valid response of the
 request within the master request timeout period as set by
 :func:`Set Modbus Configuration`.
@@ -1828,8 +1883,8 @@ gültige Antwort auf eine Read Discrete Inputs-Anfrage zurück bekommt.
 Die :word:`parameters` sind die Request ID der Anfrage, der Exception Code der
 Antwort und die empfangenen Daten.
 
-Ein Exception Code der nicht Null ist, beschreibt einen Fehler. Wenn die Zahl größer Null ist,
-entspricht der Code dem Modbus Exception Code. Wenn die Zahl kleiner Null ist,
+Ein Exception Code der nicht 0 ist, beschreibt einen Fehler. Wenn die Zahl größer 0 ist,
+entspricht der Code dem Modbus Exception Code. Wenn die Zahl kleiner 0 ist,
 ist ein anderer Fehler aufgetreten. Ein Wert von -1 bedeutet, dass es einen
 Timeout bei der Anfrage gab. Die Länge dieses Timeouts kann per
 :func:`Set Modbus Configuration` gesetzt werden.
@@ -1849,8 +1904,9 @@ com['packets'].append({
 """
 This callback is called only in Modbus slave mode when the slave receives a
 valid request from a Modbus master to read input registers. The :word:`parameters`
-are request ID of the request, the starting address and the number of input
-registers to be read as received by the request.
+are request ID of the request, the number of the first input register and the number of input
+registers to be read as received by the request. The number of the first input register is called starting address for backwards compatibility reasons.
+It is not an address, but instead a input register number in the range of 1 to 65536. The prefix digit 3 (for input register) is omitted.
 
 To send a response of this request use :func:`Modbus Slave Answer Read Input Registers Request`.
 """,
@@ -1858,8 +1914,9 @@ To send a response of this request use :func:`Modbus Slave Answer Read Input Reg
 """
 Dieser Callback wird im Modbus-Slave Modus aufgerufen, wenn der Slave eine
 gültige Anfrage eines Masters zum lesen von Input Registern erhält. Die :word:`parameters`
-sind die Request ID der Anfrage, die Startadresse und die Anzahl der zu lesenden
-Register.
+sind die Request ID der Anfrage, die Nummer des ersten Input Registers und die Anzahl der zu lesenden
+Register. Die Nummer des ersten Input Registers heißt aus Rückwärtskompatiblitätsgründen starting address.
+Sie ist keine Adresse, sondern eine eins-basierte Input Register-Nummer zwischen 1 und 65536. Die Präfixziffer 3 (für Input Register) wird ausgelassen.
 
 Eine Antwort auf diese Anfrage kann mit der Funktion
 :func:`Modbus Slave Answer Read Input Registers Request` gesendet werden.
@@ -1871,7 +1928,7 @@ com['packets'].append({
 'type': 'callback',
 'name': 'Modbus Master Read Input Registers Response Low Level',
 'elements': [('Request ID', 'uint8', 1, 'out'),
-             ('Exception Code', 'int8', 1, 'out', EXCEPTION_CODE_CONSTANTS),
+             ('Exception Code', 'int8', 1, 'out', {'constant_group': 'Exception Code'}),
              ('Input Registers Length', 'uint16', 1, 'out'),
              ('Input Registers Chunk Offset', 'uint16', 1, 'out'),
              ('Input Registers Chunk Data', 'uint16', 29, 'out')],
@@ -1888,8 +1945,8 @@ request ID of the request, exception code of the response and the data as receiv
 by the response.
 
 Any non-zero exception code indicates a problem. If the exception
-code is greater than zero then the number represents a Modbus exception code. If
-it is less than zero then it represents other errors. For example, -1 indicates that
+code is greater than 0 then the number represents a Modbus exception code. If
+it is less than 0 then it represents other errors. For example, -1 indicates that
 the request timedout or that the master did not receive any valid response of the
 request within the master request timeout period as set by
 :func:`Set Modbus Configuration`.
@@ -1902,8 +1959,8 @@ gültige Antwort auf eine Read Input Registers-Anfrage zurück bekommt.
 Die :word:`parameters` sind die Request ID der Anfrage, der Exception Code der
 Antwort und die empfangenen Daten.
 
-Ein Exception Code der nicht Null ist, beschreibt einen Fehler. Wenn die Zahl größer Null ist,
-entspricht der Code dem Modbus Exception Code. Wenn die Zahl kleiner Null ist,
+Ein Exception Code der nicht 0 ist, beschreibt einen Fehler. Wenn die Zahl größer 0 ist,
+entspricht der Code dem Modbus Exception Code. Wenn die Zahl kleiner 0 ist,
 ist ein anderer Fehler aufgetreten. Ein Wert von -1 bedeutet, dass es einen
 Timeout bei der Anfrage gab. Die Länge dieses Timeouts kann per
 :func:`Set Modbus Configuration` gesetzt werden.

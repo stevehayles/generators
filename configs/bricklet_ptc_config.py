@@ -6,7 +6,7 @@
 
 # PTC Bricklet communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
@@ -26,9 +26,27 @@ com = {
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
+
+com['constant_groups'].append({
+'name': 'Filter Option',
+'type': 'uint8',
+'constants': [('50Hz', 0),
+              ('60Hz', 1)]
+})
+
+com['constant_groups'].append({
+'name': 'Wire Mode',
+'type': 'uint8',
+'constants': [('2', 2),
+              ('3', 3),
+              ('4', 4)]
+})
 
 com['packets'].append({
 'type': 'function',
@@ -115,7 +133,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Temperature` Callback ausgelöst
 wird. Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Temperature` Callback wird nur ausgelöst wenn sich die Temperatur seit
+Der :cb:`Temperature` Callback wird nur ausgelöst, wenn sich die Temperatur seit
 der letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -162,7 +180,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Resistance` Callback ausgelöst
 wird. Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Resistance` Callback wird nur ausgelöst wenn sich der Widerstand seit
+Der :cb:`Resistance` Callback wird nur ausgelöst, wenn sich der Widerstand seit
 der letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -191,7 +209,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Temperature Callback Threshold',
-'elements': [('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min', 'int32', 1, 'in'),
              ('Max', 'int32', 1, 'in')],
 'since_firmware': [1, 0, 0],
@@ -225,10 +243,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn die Temperatur *außerhalb* des min und max Wertes ist"
- "'i'",    "Callback wird ausgelöst wenn die Temperatur *innerhalb* des min und max Wertes ist"
- "'<'",    "Callback wird ausgelöst wenn die Temperatur kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn die Temperatur größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn die Temperatur *außerhalb* des min und max Wertes ist"
+ "'i'",    "Callback wird ausgelöst, wenn die Temperatur *innerhalb* des min und max Wertes ist"
+ "'<'",    "Callback wird ausgelöst, wenn die Temperatur kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn die Temperatur größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0).
 """
@@ -238,7 +256,7 @@ Der Standardwert ist ('x', 0, 0).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Temperature Callback Threshold',
-'elements': [('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min', 'int32', 1, 'out'),
              ('Max', 'int32', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -258,7 +276,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Resistance Callback Threshold',
-'elements': [('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min', 'int32', 1, 'in'),
              ('Max', 'int32', 1, 'in')],
 'since_firmware': [1, 0, 0],
@@ -292,10 +310,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn die Temperatur *außerhalb* des min und max Wertes ist"
- "'i'",    "Callback wird ausgelöst wenn die Temperatur *innerhalb* des min und max Wertes ist"
- "'<'",    "Callback wird ausgelöst wenn die Temperatur kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn die Temperatur größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn die Temperatur *außerhalb* des min und max Wertes ist"
+ "'i'",    "Callback wird ausgelöst, wenn die Temperatur *innerhalb* des min und max Wertes ist"
+ "'<'",    "Callback wird ausgelöst, wenn die Temperatur kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn die Temperatur größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0).
 """
@@ -305,7 +323,7 @@ Der Standardwert ist ('x', 0, 0).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Resistance Callback Threshold',
-'elements': [('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min', 'int32', 1, 'out'),
              ('Max', 'int32', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -401,7 +419,7 @@ since the last triggering.
 Dieser Callback wird mit der Periode, wie gesetzt mit :func:`Set Temperature Callback Period`,
 ausgelöst. Der :word:`parameter` ist die Temperatur des verbundenen Sensors.
 
-Der :cb:`Temperature` Callback wird nur ausgelöst wenn sich die Temperatur
+Der :cb:`Temperature` Callback wird nur ausgelöst, wenn sich die Temperatur
 seit der letzten Auslösung geändert hat.
 """
 }]
@@ -424,7 +442,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Temperature Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist die Temperatur des verbundenen Sensors.
 
@@ -454,7 +472,7 @@ since the last triggering.
 Dieser Callback wird mit der Periode, wie gesetzt mit :func:`Set Resistance Callback Period`,
 ausgelöst. Der :word:`parameter` ist der Widerstand des verbundenen Sensors.
 
-Der :cb:`Resistance` Callback wird nur ausgelöst wenn sich der Widerstand seit
+Der :cb:`Resistance` Callback wird nur ausgelöst, wenn sich der Widerstand seit
 der letzten Auslösung geändert hat.
 """
 }]
@@ -477,7 +495,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Resistance Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist der Widerstand des verbundenen Sensors.
 
@@ -490,8 +508,7 @@ mit :func:`Set Debounce Period` gesetzt, ausgelöst.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Noise Rejection Filter',
-'elements': [('Filter', 'uint8', 1, 'in', ('Filter Option', [('50Hz', 0),
-                                                             ('60Hz', 1)]))],
+'elements': [('Filter', 'uint8', 1, 'in', {'constant_group': 'Filter Option'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -518,8 +535,7 @@ Der Standardwert ist 0 = 50Hz.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Noise Rejection Filter',
-'elements': [('Filter', 'uint8', 1, 'out', ('Filter Option', [('50Hz', 0),
-                                                              ('60Hz', 1)]))],
+'elements': [('Filter', 'uint8', 1, 'out', {'constant_group': 'Filter Option'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -563,9 +579,7 @@ verbunden oder der Sensor selbst ist fehlerhaft.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Wire Mode',
-'elements': [('Mode', 'uint8', 1, 'in', ('Wire Mode', [('2', 2),
-                                                       ('3', 3),
-                                                       ('4', 4)]))],
+'elements': [('Mode', 'uint8', 1, 'in', {'constant_group': 'Wire Mode'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -590,9 +604,7 @@ Der Standardwert ist 2 = 2-Leiter.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Wire Mode',
-'elements': [('Mode', 'uint8', 1, 'out', ('Wire Mode', [('2', 2),
-                                                        ('3', 3),
-                                                        ('4', 4)]))],
+'elements': [('Mode', 'uint8', 1, 'out', {'constant_group': 'Wire Mode'})],
 'since_firmware': [1, 0, 0],
 'doc': ['bf', {
 'en':
@@ -622,7 +634,7 @@ By default this callback is disabled.
 'de':
 """
 Wenn dieser Callback aktiviert ist, wird der :cb:`Sensor Connected` Callback
-jedes mal ausgelöst wenn ein Pt-Sensor verbunden/getrennt wird.
+jedes mal ausgelöst, wenn ein Pt-Sensor verbunden/getrennt wird.
 
 Standardmäßig ist dieser Callback deaktiviert.
 """

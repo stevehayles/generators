@@ -6,7 +6,7 @@
 
 # Ambient Light Bricklet 2.0 communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
@@ -27,9 +27,37 @@ com = {
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
+
+com['constant_groups'].append({
+'name': 'Illuminance Range',
+'type': 'uint8',
+'constants': [('Unlimited', 6),
+              ('64000Lux', 0),
+              ('32000Lux', 1),
+              ('16000Lux', 2),
+              ('8000Lux', 3),
+              ('1300Lux', 4),
+              ('600Lux', 5)]
+})
+
+com['constant_groups'].append({
+'name': 'Integration Time',
+'type': 'uint8',
+'constants': [('50ms', 0),
+              ('100ms', 1),
+              ('150ms', 2),
+              ('200ms', 3),
+              ('250ms', 4),
+              ('300ms', 5),
+              ('350ms', 6),
+              ('400ms', 7)]
+})
 
 com['packets'].append({
 'type': 'function',
@@ -92,7 +120,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Illuminance` Callback ausgelöst
 wird. Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Illuminance` Callback wird nur ausgelöst wenn sich die
+Der :cb:`Illuminance` Callback wird nur ausgelöst, wenn sich die
 Beleuchtungsstärke seit der letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -121,7 +149,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Illuminance Callback Threshold',
-'elements': [('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min', 'uint32', 1, 'in'),
              ('Max', 'uint32', 1, 'in')],
 'since_firmware': [1, 0, 0],
@@ -155,10 +183,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn die Beleuchtungsstärke *außerhalb* des min und max Wertes ist"
- "'i'",    "Callback wird ausgelöst wenn die Beleuchtungsstärke *innerhalb* des min und max Wertes ist"
- "'<'",    "Callback wird ausgelöst wenn die Beleuchtungsstärke kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn die Beleuchtungsstärke größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn die Beleuchtungsstärke *außerhalb* des min und max Wertes ist"
+ "'i'",    "Callback wird ausgelöst, wenn die Beleuchtungsstärke *innerhalb* des min und max Wertes ist"
+ "'<'",    "Callback wird ausgelöst, wenn die Beleuchtungsstärke kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn die Beleuchtungsstärke größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0).
 """
@@ -168,7 +196,7 @@ Der Standardwert ist ('x', 0, 0).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Illuminance Callback Threshold',
-'elements': [('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min', 'uint32', 1, 'out'),
              ('Max', 'uint32', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -243,21 +271,8 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Configuration',
-'elements': [('Illuminance Range', 'uint8', 1, 'in', ('Illuminance Range', [('Unlimited', 6),
-                                                                            ('64000Lux', 0),
-                                                                            ('32000Lux', 1),
-                                                                            ('16000Lux', 2),
-                                                                            ('8000Lux', 3),
-                                                                            ('1300Lux', 4),
-                                                                            ('600Lux', 5)])),
-             ('Integration Time', 'uint8', 1, 'in', ('Integration Time', [('50ms', 0),
-                                                                          ('100ms', 1),
-                                                                          ('150ms', 2),
-                                                                          ('200ms', 3),
-                                                                          ('250ms', 4),
-                                                                          ('300ms', 5),
-                                                                          ('350ms', 6),
-                                                                          ('400ms', 7)]))],
+'elements': [('Illuminance Range', 'uint8', 1, 'in', {'constant_group': 'Illuminance Range'}),
+             ('Integration Time', 'uint8', 1, 'in', {'constant_group': 'Integration Time'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -328,21 +343,8 @@ Die Standardwerte sind 0-8000Lux Helligkeitsbereich und 200ms Integrationszeit.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Configuration',
-'elements': [('Illuminance Range', 'uint8', 1, 'out', ('Illuminance Range', [('Unlimited', 6),
-                                                                             ('64000Lux', 0),
-                                                                             ('32000Lux', 1),
-                                                                             ('16000Lux', 2),
-                                                                             ('8000Lux', 3),
-                                                                             ('1300Lux', 4),
-                                                                             ('600Lux', 5)])),
-             ('Integration Time', 'uint8', 1, 'out', ('Integration Time', [('50ms', 0),
-                                                                           ('100ms', 1),
-                                                                           ('150ms', 2),
-                                                                           ('200ms', 3),
-                                                                           ('250ms', 4),
-                                                                           ('300ms', 5),
-                                                                           ('350ms', 6),
-                                                                           ('400ms', 7)]))],
+'elements': [('Illuminance Range', 'uint8', 1, 'out', {'constant_group': 'Illuminance Range'}),
+             ('Integration Time', 'uint8', 1, 'out', {'constant_group': 'Integration Time'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -377,7 +379,7 @@ last triggering.
 Dieser Callback wird mit der Periode, wie gesetzt mit :func:`Set Illuminance Callback Period`,
 ausgelöst. Der :word:`parameter` ist die Beleuchtungsstärke des Umgebungslichtsensors.
 
-Der :cb:`Illuminance` Callback wird nur ausgelöst wenn sich die Beleuchtungsstärke seit der
+Der :cb:`Illuminance` Callback wird nur ausgelöst, wenn sich die Beleuchtungsstärke seit der
 letzten Auslösung geändert hat.
 """
 }]
@@ -400,7 +402,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Illuminance Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist die Beleuchtungsstärke des Umgebungslichtsensors.
 

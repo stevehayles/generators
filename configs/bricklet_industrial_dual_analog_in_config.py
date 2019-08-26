@@ -6,7 +6,7 @@
 
 # Industrial Dual Analog In Bricklet communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
@@ -22,13 +22,29 @@ com = {
     },
     'released': True,
     'documented': True,
-    'discontinued': False, # selling remaining stock, replaced by Industrial Dual Analog In Bricklet 2.0
+    'discontinued': True, # replaced by Industrial Dual Analog In Bricklet 2.0
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
+
+com['constant_groups'].append({
+'name': 'Sample Rate',
+'type': 'uint8',
+'constants': [('976 SPS', 0),
+              ('488 SPS', 1),
+              ('244 SPS', 2),
+              ('122 SPS', 3),
+              ('61 SPS', 4),
+              ('4 SPS', 5),
+              ('2 SPS', 6),
+              ('1 SPS', 7)]
+})
 
 com['doc'] = {
 'en':
@@ -95,7 +111,7 @@ Setzt die Periode in ms mit welcher der :cb:`Voltage` Callback für den
 übergebenen Kanal ausgelöst wird.
 Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Voltage` Callback wird nur ausgelöst wenn sich die Spannung seit der
+Der :cb:`Voltage` Callback wird nur ausgelöst, wenn sich die Spannung seit der
 letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -126,7 +142,7 @@ com['packets'].append({
 'type': 'function',
 'name': 'Set Voltage Callback Threshold',
 'elements': [('Channel', 'uint8', 1, 'in'),
-             ('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+             ('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min', 'int32', 1, 'in'),
              ('Max', 'int32', 1, 'in')],
 'since_firmware': [1, 0, 0],
@@ -162,10 +178,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn die Spannung *außerhalb* des min und max Wertes ist"
- "'i'",    "Callback wird ausgelöst wenn die Spannung *innerhalb* des min und max Wertes ist"
- "'<'",    "Callback wird ausgelöst wenn die Spannung kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn die Spannung größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn die Spannung *außerhalb* des min und max Wertes ist"
+ "'i'",    "Callback wird ausgelöst, wenn die Spannung *innerhalb* des min und max Wertes ist"
+ "'<'",    "Callback wird ausgelöst, wenn die Spannung kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn die Spannung größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0).
 """
@@ -176,7 +192,7 @@ com['packets'].append({
 'type': 'function',
 'name': 'Get Voltage Callback Threshold',
 'elements': [('Channel', 'uint8', 1, 'in'),
-             ('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+             ('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min', 'int32', 1, 'out'),
              ('Max', 'int32', 1, 'out')],
 'since_firmware': [1, 0, 0],
@@ -251,14 +267,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Sample Rate',
-'elements': [('Rate', 'uint8', 1, 'in', ('Sample Rate', [('976 SPS', 0),
-                                                         ('488 SPS', 1),
-                                                         ('244 SPS', 2),
-                                                         ('122 SPS', 3),
-                                                         ('61 SPS', 4),
-                                                         ('4 SPS', 5),
-                                                         ('2 SPS', 6),
-                                                         ('1 SPS', 7)]))],
+'elements': [('Rate', 'uint8', 1, 'in', {'constant_group': 'Sample Rate'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -283,14 +292,7 @@ Der Standardwert ist 6 (2 Werte pro Sekunde).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Sample Rate',
-'elements': [('Rate', 'uint8', 1, 'out', ('Sample Rate', [('976 SPS', 0),
-                                                          ('488 SPS', 1),
-                                                          ('244 SPS', 2),
-                                                          ('122 SPS', 3),
-                                                          ('61 SPS', 4),
-                                                          ('4 SPS', 5),
-                                                          ('2 SPS', 6),
-                                                          ('1 SPS', 7)]))],
+'elements': [('Rate', 'uint8', 1, 'out', {'constant_group': 'Sample Rate'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -389,7 +391,7 @@ last triggering.
 Dieser Callback wird mit der Periode, wie gesetzt mit :func:`Set Voltage Callback Period`,
 ausgelöst. Der :word:`parameter` ist die Spannung des Kanals.
 
-Der :cb:`Voltage` Callback wird nur ausgelöst wenn sich die Spannung seit der
+Der :cb:`Voltage` Callback wird nur ausgelöst, wenn sich die Spannung seit der
 letzten Auslösung geändert hat.
 """
 }]
@@ -413,7 +415,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Voltage Callback Threshold` gesetzt, erreicht wird.
 Der :word:`parameter` ist die Spannung des Kanals.
 

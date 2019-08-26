@@ -6,7 +6,7 @@
 
 # Accelerometer Bricklet communication config
 
-from commonconstants import THRESHOLD_OPTION_CONSTANTS
+from commonconstants import THRESHOLD_OPTION_CONSTANT_GROUP
 
 com = {
     'author': 'Olaf Lüke <olaf@tinkerforge.com>',
@@ -27,9 +27,46 @@ com = {
     'features': [
         'bricklet_get_identity'
     ],
+    'constant_groups': [],
     'packets': [],
     'examples': []
 }
+
+com['constant_groups'].append(THRESHOLD_OPTION_CONSTANT_GROUP)
+
+com['constant_groups'].append({
+'name': 'Data Rate',
+'type': 'uint8',
+'constants': [('Off', 0),
+              ('3Hz', 1),
+              ('6Hz', 2),
+              ('12Hz', 3),
+              ('25Hz', 4),
+              ('50Hz', 5),
+              ('100Hz', 6),
+              ('400Hz', 7),
+              ('800Hz', 8),
+              ('1600Hz', 9)]
+})
+
+com['constant_groups'].append({
+'name': 'Full Scale',
+'type': 'uint8',
+'constants': [('2g', 0),
+              ('4g', 1),
+              ('6g', 2),
+              ('8g', 3),
+              ('16g', 4)]
+})
+
+com['constant_groups'].append({
+'name': 'Filter Bandwidth',
+'type': 'uint8',
+'constants': [('800Hz', 0),
+              ('400Hz', 1),
+              ('200Hz', 2),
+              ('50Hz', 3)]
+})
 
 com['packets'].append({
 'type': 'function',
@@ -81,7 +118,7 @@ The default value is 0.
 Setzt die Periode in ms mit welcher der :cb:`Acceleration` Callback ausgelöst
 wird. Ein Wert von 0 deaktiviert den Callback.
 
-Der :cb:`Acceleration` Callback wird nur ausgelöst wenn sich die Acceleration
+Der :cb:`Acceleration` Callback wird nur ausgelöst, wenn sich die Acceleration
 seit der letzten Auslösung geändert hat.
 
 Der Standardwert ist 0.
@@ -110,7 +147,7 @@ gesetzt.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Acceleration Callback Threshold',
-'elements': [('Option', 'char', 1, 'in', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'in', {'constant_group': 'Threshold Option'}),
              ('Min X', 'int16', 1, 'in'),
              ('Max X', 'int16', 1, 'in'),
              ('Min Y', 'int16', 1, 'in'),
@@ -148,10 +185,10 @@ Die folgenden Optionen sind möglich:
  :widths: 10, 100
 
  "'x'",    "Callback ist inaktiv"
- "'o'",    "Callback wird ausgelöst wenn die Beschleunigung *außerhalb* des min und max Wertes ist"
- "'i'",    "Callback wird ausgelöst wenn die Beschleunigung *innerhalb* des min und max Wertes ist"
- "'<'",    "Callback wird ausgelöst wenn die Beschleunigung kleiner als der min Wert ist (max wird ignoriert)"
- "'>'",    "Callback wird ausgelöst wenn die Beschleunigung größer als der min Wert ist (max wird ignoriert)"
+ "'o'",    "Callback wird ausgelöst, wenn die Beschleunigung *außerhalb* des min und max Wertes ist"
+ "'i'",    "Callback wird ausgelöst, wenn die Beschleunigung *innerhalb* des min und max Wertes ist"
+ "'<'",    "Callback wird ausgelöst, wenn die Beschleunigung kleiner als der min Wert ist (max wird ignoriert)"
+ "'>'",    "Callback wird ausgelöst, wenn die Beschleunigung größer als der min Wert ist (max wird ignoriert)"
 
 Der Standardwert ist ('x', 0, 0, 0, 0, 0, 0, 0, 0).
 """
@@ -161,7 +198,7 @@ Der Standardwert ist ('x', 0, 0, 0, 0, 0, 0, 0, 0).
 com['packets'].append({
 'type': 'function',
 'name': 'Get Acceleration Callback Threshold',
-'elements': [('Option', 'char', 1, 'out', THRESHOLD_OPTION_CONSTANTS),
+'elements': [('Option', 'char', 1, 'out', {'constant_group': 'Threshold Option'}),
              ('Min X', 'int16', 1, 'out'),
              ('Max X', 'int16', 1, 'out'),
              ('Min Y', 'int16', 1, 'out'),
@@ -257,25 +294,9 @@ Gibt die Temperatur des Beschleunigungssensors in °C zurück.
 com['packets'].append({
 'type': 'function',
 'name': 'Set Configuration',
-'elements': [('Data Rate', 'uint8', 1, 'in', ('Data Rate', [('Off', 0),
-                                                            ('3Hz', 1),
-                                                            ('6Hz', 2),
-                                                            ('12Hz', 3),
-                                                            ('25Hz', 4),
-                                                            ('50Hz', 5),
-                                                            ('100Hz', 6),
-                                                            ('400Hz', 7),
-                                                            ('800Hz', 8),
-                                                            ('1600Hz', 9)])),
-             ('Full Scale', 'uint8', 1, 'in', ('Full Scale', [('2g', 0),
-                                                              ('4g', 1),
-                                                              ('6g', 2),
-                                                              ('8g', 3),
-                                                              ('16g', 4)])),
-             ('Filter Bandwidth', 'uint8', 1, 'in', ('Filter Bandwidth', [('800Hz', 0),
-                                                                          ('400Hz', 1),
-                                                                          ('200Hz', 2),
-                                                                          ('50Hz', 3)]))],
+'elements': [('Data Rate', 'uint8', 1, 'in', {'constant_group': 'Data Rate'}),
+             ('Full Scale', 'uint8', 1, 'in', {'constant_group': 'Full Scale'}),
+             ('Filter Bandwidth', 'uint8', 1, 'in', {'constant_group': 'Filter Bandwidth'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -314,25 +335,9 @@ Filterbandbreite.
 com['packets'].append({
 'type': 'function',
 'name': 'Get Configuration',
-'elements': [('Data Rate', 'uint8', 1, 'out', ('Data Rate', [('Off', 0),
-                                                             ('3Hz', 1),
-                                                             ('6Hz', 2),
-                                                             ('12Hz', 3),
-                                                             ('25Hz', 4),
-                                                             ('50Hz', 5),
-                                                             ('100Hz', 6),
-                                                             ('400Hz', 7),
-                                                             ('800Hz', 8),
-                                                             ('1600Hz', 9)])),
-             ('Full Scale', 'uint8', 1, 'out', ('Full Scale', [('2g', 0),
-                                                               ('4g', 1),
-                                                               ('6g', 2),
-                                                               ('8g', 3),
-                                                               ('16g', 4)])),
-             ('Filter Bandwidth', 'uint8', 1, 'out', ('Filter Bandwidth', [('800Hz', 0),
-                                                                           ('400Hz', 1),
-                                                                           ('200Hz', 2),
-                                                                           ('50Hz', 3)]))],
+'elements': [('Data Rate', 'uint8', 1, 'out', {'constant_group': 'Data Rate'}),
+             ('Full Scale', 'uint8', 1, 'out', {'constant_group': 'Full Scale'}),
+             ('Filter Bandwidth', 'uint8', 1, 'out', {'constant_group': 'Filter Bandwidth'})],
 'since_firmware': [1, 0, 0],
 'doc': ['af', {
 'en':
@@ -420,7 +425,7 @@ Dieser Callback wird mit der Periode, wie gesetzt mit
 :func:`Set Acceleration Callback Period`, ausgelöst. Die :word:`parameters`
 sind die Beschleunigungen der X-, Y- und Z-Achse.
 
-Der :cb:`Acceleration` Callback wird nur ausgelöst wenn sich die Beschleunigung
+Der :cb:`Acceleration` Callback wird nur ausgelöst, wenn sich die Beschleunigung
 seit der letzten Auslösung geändert hat.
 """
 }]
@@ -445,7 +450,7 @@ with the period as set by :func:`Set Debounce Period`.
 """,
 'de':
 """
-Dieser Callback wird ausgelöst wenn der Schwellwert, wie von
+Dieser Callback wird ausgelöst, wenn der Schwellwert, wie von
 :func:`Set Acceleration Callback Threshold` gesetzt, erreicht wird.
 Die :word:`parameters` sind die Beschleunigungen der X-, Y- und Z-Achse.
 
